@@ -1,0 +1,480 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% block title %}H5发布{% endblock %}
+{% block custom_css %}
+	<style type="text/css">
+        .he10{
+			height: 10px;
+		}
+
+		.he20 {
+			height: 20px;
+		}
+        /*设置模块部署和网络扫描高度溢出出现滚动条*/
+        #overflow_form{
+        	overflow-y: auto;
+            padding-top: 7px;
+        }
+
+		#result1{
+        	overflow-y: auto;
+			white-space: pre-wrap;
+        }
+    </style>
+
+{% endblock %}
+
+{% block custom_js %}
+	<script>
+    	$(function(){
+			// // {#  django 跨站验证需要下面的 ajaxSetup   #}
+            $.ajaxSetup({
+                 data: {csrfmiddlewaretoken: '{{ csrf_token }}' },
+            });
+
+
+//            H5部署
+            $('#h5_svn_sumbit').click(function(){
+
+                // 判断输入是否有误
+				if($.trim($('#svn_addr').val())==""){
+					$('#svn_addr_help').text('请输入SVN地址');
+					$('#svn_addr')[0].focus();
+                    //清空输入框内容，因为有时候人家是输入很多空格
+                    $('#svn_addr').val("");
+					return false;
+				}
+
+
+
+				var svn_addr=$('#svn_addr').val();
+				var svn_user=$('#svn_user').val();
+				var svn_pwd=$('#svn_pwd').val();
+				if($.trim($('#svn_version').val())==""){
+					 var svn_version = 'HEAD';
+				}else {
+				    var svn_version=$('#svn_version').val();
+                }
+
+//                下面这个是获取日期组合的方法，之所有还有一个p方法是为了给单数月份前面加一个0
+				function p(s) {
+                     return s < 10 ? '0' + s: s;
+                 }
+				var myDate = new Date();
+				var now=myDate.getFullYear()+p(myDate.getMonth()+1)+p(myDate.getDate())+"_"+p(myDate.getHours())+p(myDate.getMinutes())+p(myDate.getSeconds());
+//                本来最早用下面的zip_path作为zip文件的命名和路径，不过后来简化成用版本号来做为zip名字，更方便使用
+//				var zip_path = '/data/svnzip'+'/H5_'+now+'.zip';
+				var $btn = $(this).button('loading');
+//				清空结果打印的内容
+				$('#result1').text('正在执行，请稍后....');
+				// 上面如果都过了就开始提交了下面用ajax提交
+				$.ajax({
+					url:"{% url 'h5_svn_co' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'svn_addr':svn_addr,
+                        'svn_user':svn_user,
+                        'svn_pwd':svn_pwd,
+                        'svn_version':svn_version
+					},
+					success:function(result){
+
+						if(result.status){
+//						    获取到版本号
+						    var h5_release = result.result.split(' ');
+						    h5_release = h5_release[h5_release.length-1].replace('.','');
+						    var zip_path = '/data/svnzip/H5_'+h5_release+'.tar';
+							$('#result1').html('');
+							$('#result1').html('');
+							$('#result1').append("<span style='color: #00B600;'>SVN检出：\n</span>");
+                            $('#result1').append("<span style='color: #00B600;'>"+result.result.replace('Checked out revision','检出版本:')+"</span>");
+                            //				压缩svn文件
+                            $.ajax({
+                                url:"{% url 'h5_svn_zip' %}",
+                                type:'POST',
+                                dataType:'json',
+                                //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+                                traditional:true,
+                                data:{
+                                    'svn_addr':svn_addr,
+                                    'zip_path':zip_path
+                                },
+                                success:function(result){
+
+                                    if(result.status){
+                                        $('#result1').append("<p></p><span style='color: #00B600;'>压缩SVN文件：\n</span>");
+                                        for(var i = 0; i < result.result.length; i++) {
+                                            if(result.result[i] != './'){
+                                                $('#result1').append("<span style='color: #00B600;'>" + result.result[i] + "\n"+"</span>");
+                                            }
+                                        }
+                                        $('#result1').append("<p></p><span style='color: #00B600;'>"+"存放于：" + zip_path + "\n"+"</span>");
+                                        $('#result1').append("<span style='color: yellow;'>"+"svn操作完成"+"</span>");
+//                                        $.ajax({
+//                                            url:"{% url 'h5_svn_push' %}",
+//                                            type:'POST',
+//                                            dataType:'json',
+//                                            //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+//                                            traditional:true,
+//                                            data:{
+//                                                'zip_path':zip_path,
+//                                                'project_ip':project_ip
+//                                            },
+//                                            success:function(result){
+//
+//                                                if(result.status){
+//                                                    $('#result1').append("<p></p><span style='color: #00B600;'>"+"文件推送至服务器"+project_ip+"如下目录：\n"+"</span>");
+//                                                    $('#result1').append("<span style='color: #00B600;'>"+result.result+"</span>");
+////                                                    $.ajax({
+////                                                        url:"{% url 'h5_svn_unzip' %}",
+////                                                        type:'POST',
+////                                                        dataType:'json',
+////                                                        //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+////                                                        traditional:true,
+////                                                        data:{
+////                                                            'zip_path':zip_path,
+////                                                            'project_addr':project_addr,
+////                                                            'project_ip':project_ip
+////                                                        },
+////                                                        success:function(result){
+////
+////                                                            if(result.status){
+////                                                                $('#result1').append("<p></p><span style='color: #00B600;'>"+"文件解压至服务器"+project_ip+"的"+project_addr+"目录下：\n"+"</span>");
+////                                                                for(var i = 0; i < result.result.length; i++) {
+////                                                                    $('#result1').append("<span style='color: #00B600;'>" + result.result[i] + "\n"+"</span>");
+////                                                                }
+////
+////                                                                $btn.button('reset');
+////                                                            }else {
+////                                                                $('#result1').append("<span style='color: #A00000;'>"+result.result+"</span>");
+////                                                                $btn.button('reset');
+////                                                            }
+////
+////                                                        }
+////                                                    });
+//                                                }else {
+//                                                    $('#result1').append("<span style='color: #A00000;'>"+result.result+"</span>");
+//                                                    $btn.button('reset');
+//                                                }
+//
+//                                            }
+//                                        });
+                                        $btn.button('reset');
+                                    }else {
+                                        $('#result1').append("<span style='color: #A00000;'>"+result.result+"</span>");
+                                        $btn.button('reset');
+                                    }
+
+                                }
+                            });
+//                            $btn.button('reset');
+						}else {
+							$('#result1').html('');
+                            $('#result1').append("<span style='color: #A00000;'>"+result.result+"</span>");
+                            $btn.button('reset');
+                        }
+
+					}
+				});
+
+
+			});
+
+//            部署文件下拉框点击事件
+            $('#project_file').one("click",function () {
+                var project_file = 'H5_*.tar';
+                $.ajax({
+					url:"{% url 'h5_file' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'project_file':project_file
+
+					},
+					success:function(result){
+						if(result.status){
+						    for(var i = 0; i < result.result.length; i++) {
+                               $('#project_file').append("<option value="+result.result[i]+">"+result.result[i]+"</option>");
+                            }
+						}else {
+							$('#project_file').append("<option value=''></option>");
+                        }
+					}
+				});
+            });
+
+
+//            H5部署
+            $('#issue_sumbit').click(function(){
+				if($.trim($('#project_addr').val())==""){
+					$('#project_addr_help').text('请输入项目路径');
+					$('#project_addr')[0].focus();
+                    //清空输入框内容，因为有时候人家是输入很多空格
+                    $('#project_addr').val("");
+					return false;
+				}
+
+				if($.trim($('#project_ip').val())==""){
+					$('#project_ipr_help').text('请输入项目IP地址');
+					$('#project_ip')[0].focus();
+                    //清空输入框内容，因为有时候人家是输入很多空格
+                    $('#project_ip').val("");
+					return false;
+				}
+
+				if($.trim($('#project_file').val())==""){
+					$('#project_file_help').text('请选择部署文件');
+                    //清空输入框内容，因为有时候人家是输入很多空格
+					return false;
+				}
+
+                var project_file=$("#project_file").val();
+				var project_addr=$('#project_addr').val();
+				var project_ip=$('#project_ip').val();
+				var $btn = $(this).button('loading');
+//				清空结果打印的内容
+				$('#result1').text('正在执行，请稍后....');
+				// 上面如果都过了就开始提交了下面用ajax提交
+
+                $.ajax({
+                    url:"{% url 'h5_svn_push' %}",
+                    type:'POST',
+                    dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+                    traditional:true,
+                    data:{
+                        'project_file':project_file,
+                        'project_ip':project_ip
+                    },
+                    success:function(result){
+
+                        if(result.status){
+                            $('#result1').html('');
+                            $('#result1').append("<span style='color: #00B600;'>"+"文件推送至服务器"+project_ip+"如下目录：\n"+"</span>");
+                            $('#result1').append("<span style='color: #00B600;'>"+result.result+"</span>");
+                            $.ajax({
+                                url:"{% url 'h5_svn_unzip' %}",
+                                type:'POST',
+                                dataType:'json',
+                                //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+                                traditional:true,
+                                data:{
+                                    'project_file':project_file,
+                                    'project_addr':project_addr,
+                                    'project_ip':project_ip
+                                },
+                                success:function(result){
+
+                                    if(result.status){
+                                        $('#result1').append("<p></p><span style='color: #00B600;'>"+"以下文件解压至服务器"+project_ip+"的"+project_addr+"目录下：\n"+"</span>");
+//                                        for(var i = 0; i < result.result.length; i++) {
+//                                            if(result.result[i] != './'){
+//                                                $('#result1').append("<span style='color: #00B600;'>" + result.result[i] + "\n"+"</span>");
+//                                            }
+//
+//
+//                                        }
+                                        $('#result1').append("<span style='color: #00B600;'>" + result.result + "\n"+"</span>");
+                                        $('#result1').append("<p></p><p style='color: yellow;'>部署完成</p>");
+                                        $btn.button('reset');
+                                    }else {
+                                        $('#result1').append("<span style='color: #A00000;'>"+result.result+"</span>");
+                                        $btn.button('reset');
+                                    }
+
+                                }
+                            });
+                        }else {
+                            $('#result1').append("<span style='color: #A00000;'>"+result.result+"</span>");
+                            $btn.button('reset');
+                        }
+
+                    }
+                });
+
+
+
+			});
+
+    	});
+
+
+	</script>
+{% endblock %}
+
+{% block panel-title_content %}
+    <a href="javascript:location.reload()">H5发布</a>
+
+{% endblock %}
+
+{% block panel_body_content %}
+
+<div class="row-fluid ">
+        <div class="col-xs-5">
+            <div class="he10"></div>
+            <form class="form-inline" role="form" id='overflow_form' >
+            <!-- svn检出 -->
+                <div  style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" >
+                    <label class="label label-success " style="font-size: 17px;">步骤一：SVN操作</label>
+                    <div class="he10"></div>
+                    <label class="form-group" for="svn_addr">请输入SVN地址:</label>
+                    <input type="text" class="form-control" id="svn_addr"
+                   placeholder="例: http://192.168.1.170/svn/test1" style="font-size: 14px;width: 300px;"  required="required">
+                    <span class="" id="svn_addr_help" style="color: #FF0000;">*</span>
+
+                    <div class="he10"></div>
+                    <label class="form-group" for="svn_version">请输入SVN版本:</label>
+                    <input type="text" class="form-control" id="svn_version"
+                   placeholder="默认为最新" style="font-size: 14px;width: 300px;"  required="required">
+                    <span class="" id="svn_version_help" style="color: #FF0000;">&nbsp;</span>
+
+                    <div class="he10"></div>
+                    <label class="form-group" for="svn_user">请输入SVN账户:</label>
+                    <input type="text" class="form-control" id="svn_user"
+                    style="font-size: 14px;width: 300px;"  required="required">
+                    <span class="" id="svn_user_help" style="color: #FF0000;">*</span>
+
+                    <div class="he10"></div>
+                    <label class="form-group" for="svn_pwd">请输入SVN密码:</label>
+                    <input type="password" class="form-control" id="svn_pwd"
+                    style="font-size: 14px;width: 300px;"  required="required">
+                    <span class="" id="svn_pwd_help" style="color: #FF0000;">*</span>
+
+
+                    <p></p>
+                    <button type="button" class="btn btn-success " id="h5_svn_sumbit" data-loading-text="正在执行SVN操作...">开始执行</button>
+
+                   <div class="he10"></div>
+                </div>
+                <div class="he20"></div>
+
+                <!--解压部署项目操作  -->
+                <div  style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" >
+                    <label class="label label-info " style="font-size: 17px;">步骤二：部署操作</label>
+
+                    <div class="he10"></div>
+                    <label class="form-group" for="project_file">请选择部署文件:</label>
+                    <select class="form-control" id="project_file">
+                        <!--<option selected="selected" disabled="disabled"  style='display: none' value=''></option> -->
+                          <!--<option value="ipaddr">IP地址</option>-->
+                          <!--<option value="status">状态</option>-->
+                          <!--<option value="ipcidr">3</option>-->
+                          <!--<option value="ipcidr">4</option>-->
+                          <!--<option value="ipcidr">5</option>-->
+                    </select>
+                    <span class="" id="project_file_help" style="color: #FF0000;">*</span>
+
+                    <div class="he10"></div>
+                    <label class="form-group" for="project_addr">请输入项目路径:</label>
+                    <input type="text" class="form-control" id="project_addr"
+                   placeholder="例: /fzcd/local/h5/" style="font-size: 14px;width: 300px;"  required="required">
+                    <span class="" id="project_addr_help" style="color: #FF0000;">*</span>
+
+                    <div class="he10"></div>
+                    <label class="form-group" for="project_ip">请输入项目IP地址:</label>
+                    <input type="text" class="form-control" id="project_ip"
+                   placeholder="例: 192.168.1.14" style="font-size: 14px;width: 285px;"  required="required">
+                    <span class="" id="project_ip_help" style="color: #FF0000;">*</span>
+                    <p></p>
+                    <button type="button" class="btn btn-info " id="issue_sumbit" data-loading-text="正在执行...">开始部署</button>
+
+                   <div class="he10"></div>
+                </div>
+                <div class="he20"></div>
+
+                <!--&lt;!&ndash; 路由跟踪 &ndash;&gt;-->
+                <!--<div  style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" >-->
+                    <!--<label class="label label-primary " style="font-size: 17px;">路由跟踪</label>-->
+                    <!--<div class="he10"></div>-->
+                    <!--<label class="form-group" for="tracert_data">请输入IP或域名:</label>-->
+                    <!--<input type="text" class="form-control" id="tracert_data"-->
+                   <!--placeholder="例:192.168.1.1 " style="font-size: 14px;"  required="required">-->
+                    <!--<span class="" id="tracert_help" style="color: #FF0000;">&nbsp;</span>-->
+                    <!--<p></p>-->
+                    <!--<button type="button" class="btn btn-primary " id="tracert_sumbit" data-loading-text="正在执行...">开始扫描</button>-->
+
+                   <!--<div class="he10"></div>-->
+                <!--</div>-->
+                <!--<div class="he20"></div>-->
+            </form>
+        </div>
+        <div class="form-group col-xs-7" style="margin: 0;">
+            <label class="label label-danger " style="font-size: 17px;">结果打印</label>
+            <!-- <b>结果打印</b> -->
+            <!-- 下面这个列数cols弄100%比较大，高度我用h45来按浏览器调整，style是禁止拉伸 -->
+            <!--注意这里的textarea的字体一定要设置等宽字体，因为普通的字体在输出的时候无法和在linux下面一样，想要输出程序代码的
+            原样，最好用等宽字体，不用你自己看下有多难看就知道这里用了font-family: monospace;自带的等宽字体-->
+            <pre class="form-control " id="result1"   style="resize:none;font-weight: bold;height: 100%;margin-top: 4px;background-color:#000;color:#00B600;"></pre>
+        </div>
+    </div>
+{% endblock %}
+
+{% block another_content %}
+<!-- 模态框 -->
+<div class="modal fade juzhong upstreamserveradd"  tabindex="-1" role="dialog" aria-labelledby="upstreamserveraddlable" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header" >
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+				<h4 class="modal-title upserh4" id="upstreamserveraddlable" >
+				</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal" role="form"  >
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="upserverdata">server</label>
+                                <div class="col-sm-6">
+										<input type="text" class="form-control" id="upserverdata"
+									   placeholder="例:192.168.1.1:8080" style="font-size: 14px;"  required="required">
+									    <span class="" id="upserverdata_help1" style="color: #FF0000;">　</span>
+								</div>
+                                <!--<label class="control-label col-sm-1 " style="color: #FF0000;" >*</label>-->
+							</div>
+
+                    <!--埋参数-->
+                    <!--用来存放点击新增时候的upstream名称-->
+                    <input type="text"  id="upstreamserveradd_upstreamname" class="hidden">
+                    <!--用来存放原web服务，为了新增的时候定位在这条web下面-->
+                    <input type="text"  id="upstreamserveradd_upstreamserver" class="hidden">
+
+								</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">取消
+				</button>
+                <button type="button" class="btn btn-primary" id="upserver_submit">
+					确定提交
+				</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+
+<!--删除提示框，也是用的模态框-->
+<div class="modal fade juzhong" id="mymodal">
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:50%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">操作提醒</h4>
+            </div>
+            <div class="modal-body">
+                <p style="color: #ff0084;">确定要删除吗</p>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

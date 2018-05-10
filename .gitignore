@@ -1,0 +1,4 @@
+*.py[cod]
+logs/
+__pycache__/
+migrations/

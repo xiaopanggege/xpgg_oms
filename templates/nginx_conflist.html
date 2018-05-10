@@ -1,0 +1,322 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% block title %}Nginx管理{% endblock %}
+{% block custom_css %}
+	<style type="text/css">
+
+        /*设置表格的宽度固定，不会因为内容过长而出现换行*/
+        table{
+            table-layout:fixed;
+        }
+        /*设置表格内容过长出现滚动条*/
+        /*td{*/
+            /*overflow:auto;*/
+            /*text-overflow:clip;white-space:nowrap;*/
+        /*}*/
+
+        tbody tr:hover{
+        background-color:#9b9b9b !important;
+            color: #000;
+        }
+        /*让列表内的信息上下居中,默认是换行的，但是词内默认没换行要设置word-break实现词内换行*/
+        td{
+            vertical-align:middle !important;
+            text-align: center;
+            word-break:break-all;
+        }
+
+        th{
+            text-align: center;
+        }
+
+        /*添加表单滚动*/
+        .overflow_set{
+        	overflow: auto;
+        }
+    </style>
+
+{% endblock %}
+
+{% block custom_js %}
+	<script>
+    	$(function(){
+
+    	    // 响应式调整页面高度
+    		$(window).resize(function() {
+
+                // 表单的大小自适应窗口，不能设置100%，因为除了表单以外其他东西也会占用高度
+                $('.overflow_set').css(
+                    "height", $('.hall').height() * 0.9);
+            });
+    		$(window).resize();
+
+//    	    由于这个页面不是侧边栏的导航项目而是Nginx管理跳转后的页面，所以需要手动给Nginx管理添加选中的class
+    	    $('.nginx_cebian').addClass('active');
+
+
+//            nginx功能模态框获取按钮那一行数据，用到$(event.target)event.target 属性返回哪个 DOM 元素触发了事件和this差不多不过听说比this好
+//            $('.gongnengbutton').click(function () {
+//                var data = $(event.target).parent();
+//                $('.nginxgongneng_ip').val(data.siblings('.nginx_data_ip').html());
+//				$('.nginxgongneng_vip').val(data.siblings('.nginx_data_vip').html());
+//				$('.nginxgongneng_updatetime').val(data.siblings('.nginx_data_updatetime').html());
+//				$('.nginxgongneng_nginxstatus').val(data.siblings('.nginx_data_nginxstatus').html());
+//				$('.nginxgongneng_minionstatus').val(data.siblings('.nginx_data_minionstatus').html());
+//				$('.nginxgongneng_description').val(data.siblings('.nginx_data_description').html());
+//				$('.nginxgongneng_path').val(data.siblings('.nginx_data_path').html());
+//				$('.nginxgongneng_confpath').val(data.siblings('.nginx_data_confpath').html());
+//				$('.nginxgongneng_vhostpath').val(data.siblings('.nginx_data_vhostpath').html());
+//				$('.nginxgongneng_logspath').val(data.siblings('.nginx_data_logspath').html());
+//				$('.nginxgongneng_createdate').val(data.siblings('.nginx_data_createdate').html());
+//            });
+
+//    	    由于nginx的数据是直接取的并不是从数据库取所以做分页如果从后端做的话，每次点击下一页功能会重新跑一遍获取数据的逻辑代码，所以把分页放到前端来用js做
+             var $table = $('table');
+			 var currentPage = 0;//当前页默认值为0
+			 var pageSize = 9;//每一页显示的数目
+			 $table.bind('paging',function(){
+//			     先隐藏tbody中所有行，然后通过slice结合当前页数和页面显示的数目展现数据
+			    $table.find('tbody tr').hide().slice(currentPage*pageSize,(currentPage+1)*pageSize).show();
+			 });
+			 var sumRows = $table.find('tbody tr').length;
+			 var sumPages = Math.ceil(sumRows/pageSize);//总页数
+             var $dpager = $('<div class="page"></div>');
+			 var $pager = $('<ul class="pagination"></ul>'); //新建div，放入a标签,显示底部分页码
+			 for(var pageIndex = 0 ; pageIndex<sumPages ; pageIndex++){
+                  $('<li class="pageStyle"><a ><span>'+(pageIndex+1)+'</span></a></li>').bind("click",{"newPage":pageIndex},function(event){
+                  currentPage = event.data["newPage"];
+                  $table.trigger("paging");
+                  //触发分页函数
+                  }).appendTo($pager);
+                  $pager.append(" ");
+			  }
+              $pager.appendTo($dpager);
+			  $dpager.insertAfter($table);
+			  $table.trigger("paging");
+            //默认第一页的li标签添加选中效果
+              $('.pageStyle:first').addClass('active');
+
+			  $(".pagination li a").click(function () {
+                  $(this).parent().addClass('active');
+                  $(this).parent().siblings().removeClass('active');
+              });
+
+//          页面内查询按钮实现,下面这个功能没问题主要是分页没有加入，所以我把分页的div给隐藏了。。哈哈
+            $(".search_filename").click(function () {
+                var search_filename = $("#search_filename").val();
+                if(search_filename == ""){
+                    window.location.href=window.location.href;
+                }
+                $(".conf_filename").each(function () {
+//                    用toLowerCase()忽略大小写匹配
+                    if($(this).text().toLowerCase().indexOf(search_filename.toLowerCase())>-1){
+                        $(this).parent().css('display','table-row');
+                    }else {
+                        $(this).parent().css('display','none');
+                    }
+                    $(".page").addClass('hide');
+                });
+
+            });
+
+
+			function initTableCheckbox() {
+                        var $thr = $('table thead tr');
+                        var $checkAllTh = $('#checkAll').parent();
+                        /*将全选/反选复选框添加到表头最前，即增加一列*/
+//                        $thr.prepend($checkAllTh);
+                        /*“全选/反选”复选框*/
+                        var $checkAll = $thr.find('input');
+                        $checkAll.click(function(event){
+                            /*将所有行的选中状态设成全选框的选中状态*/
+                            $tbr.find('input').prop('checked',$(this).prop('checked'));
+                            /*并调整所有选中行的CSS样式*/
+                            if ($(this).prop('checked')) {
+                                $tbr.find('input').parent().parent().addClass('warning');
+                            } else{
+                                $tbr.find('input').parent().parent().removeClass('warning');
+                            }
+                            /*阻止向上冒泡，以防再次触发点击操作*/
+                            event.stopPropagation();
+                        });
+                        /*点击全选框所在单元格时也触发全选框的点击操作*/
+                        $checkAllTh.click(function(){
+                            $(this).find('input').click();
+                        });
+                        var $tbr = $('table tbody tr');
+                        var $checkItemTd = $('<td><input type="checkbox" name="checkItem" /></td>');
+                        /*每一行都在最前面插入一个选中复选框的单元格*/
+//                        $tbr.prepend($checkItemTd);
+                        /*点击每一行的选中复选框时*/
+                        $tbr.find('input').click(function(event){
+                            /*调整选中行的CSS样式*/
+                            $(this).parent().parent().toggleClass('warning');
+                            /*如果已经被选中行的行数等于表格的数据行数，将全选框设为选中状态，否则设为未选中状态*/
+                            $checkAll.prop('checked',$tbr.find('input:checked').length == $tbr.length ? true : false);
+                            /*阻止向上冒泡，以防再次触发点击操作*/
+                            event.stopPropagation();
+                        });
+                        /*点击每一行时也触发该行的选中操作*/
+                        $tbr.click(function(){
+                            $(this).find('input').click();
+                        });
+                    }
+                    initTableCheckbox();
+		});
+
+    </script>
+{% endblock %}
+
+{% block panel-title_content %}
+	<a href="{% url 'nginx_manage'%}">Nginx管理 》</a>
+    <!--下面这个是刷新当前页面-->
+    <a href="javascript:location.reload()">Conf文件列表</a>
+
+{% endblock %}
+
+{% block panel_body_content %}
+
+
+<div class="row-fluid ">
+    <div class="col-xs-12 overflow_set"  >
+        <div style="margin-bottom: 5px;">
+            <!--下面这里本来是用form的样式的，后来改成div是因为用form默认带了回车会提交表单的功能，所以改成div不过class还是form的哈哈-->
+            <div class="form-inline" role="form">
+                <!--<div class="form-group">-->
+                    <!--<button type="button" class="btn btn-success " data-toggle="modal" data-target="#nginxadd">新增Nginx</button>-->
+                <!--</div>-->
+
+
+                  <div class="form-group ">
+                    <label for="search_filename">文件名</label>
+                    <!--<select class="form-control" id="server_select">-->
+                      <!--<option value="ipaddr">IP地址</option>-->
+                      <!--<option value="status">状态</option>-->
+                      <!--<option value="ipcidr">3</option>-->
+                      <!--<option value="ipcidr">4</option>-->
+                      <!--<option value="ipcidr">5</option>-->
+                    <!--</select>-->
+                      <input type="text" class="form-control" id="search_filename" placeholder="请输入名称">
+                    <button type="button" class="btn btn-primary search_filename"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
+                  </div>
+
+                </div>
+
+        </div>
+        <table class="table table-hover  table-bordered table-striped table-responsive table-condensed" >
+            <!--<caption>conf文件列表</caption>-->
+            <thead>
+            <!--给下面tr加个success是bootstrap的一个类颜色会改变下呵呵-->
+              <tr class="success">
+                  <th width="4%"><input type="checkbox" id="checkAll" name="checkAll" /></th>
+                  <th width="11%">文件名</th>
+                  <th width="11%">文件目录</th>
+                  <th width="8%">状态</th>
+                  <th width="24%">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+
+                {% for i in conflist %}
+                <tr>
+                    <td><input type="checkbox" name="checkItem" /></td>
+                    <td class="conf_filename">{{ i.1 }}</td>
+                    <td class="conf_filepath">{{ i.2 }}</td>
+                    {% if '正在被编辑中' in i.3 %}
+                    <td style="color: #90111a" >{{ i.3 }}</td>
+                    <td>
+
+                    <a  href=""  class="btn btn-danger disabled" role="button">请确认文件未在被人编辑后刷新本页</a>
+                    <!--<a  href=""  class="btn btn-primary disabled" role="button">编辑</a>-->
+                    <!--<a  href="{% url 'nginx_upstream' %}?minionid={{ minionid }}&path={{ i.0 }}&nginxip={{nginxip}}"  class="btn btn-success disabled" role="button">负载切换</a>-->
+                    <!--<a  href=""  class="btn btn-success disabled" role="button">新增站点/目录</a>-->
+                    <!--<a  href=""  class="btn btn-danger disabled" role="button">删除</a>-->
+                    <!--&lt;!&ndash;<button type="button" class="btn btn-info">编辑</button>&ndash;&gt;-->
+                    <!--&lt;!&ndash;<button type="button" class="btn btn-success gongnengbutton" data-toggle="modal" data-target=".nginxgongneng">功能</button>&ndash;&gt;-->
+                    <!--&lt;!&ndash;<button type="button" class="btn btn-danger">删除</button>&ndash;&gt;-->
+                    </td>
+                    {% else%}
+                    <td  style="color: #00CC00">{{ i.3 }}</td>
+                    <td>
+                    <a  href=""  class="btn btn-info" role="button">查看</a>
+                    <a  href=""  class="btn btn-primary" role="button">编辑</a>
+                    <a  href="{% url 'nginx_upstream' %}?minionid={{ minionid }}&path={{ i.0 }}&nginxip={{nginxip}}"  class="btn btn-success" role="button">负载切换</a>
+                    <a  href=""  class="btn btn-success" role="button">新增站点/目录</a>
+                    <a  href=""  class="btn btn-danger" role="button">删除</a>
+                    </td>
+                    {%endif%}
+                </tr>
+                {% endfor %}
+
+
+
+            </tbody>
+          </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block another_content %}
+<!-- 模态框 -->
+<div class="modal fade juzhong upstreamserveradd"  tabindex="-1" role="dialog" aria-labelledby="upstreamserveraddlable" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header" >
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+				<h4 class="modal-title upserh4" id="upstreamserveraddlable" >
+				</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal" role="form"  >
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="upserverdata">server</label>
+                                <div class="col-sm-6">
+										<input type="text" class="form-control" id="upserverdata"
+									   placeholder="例:192.168.1.1:8080" style="font-size: 14px;"  required="required">
+									    <span class="" id="upserverdata_help1" style="color: #FF0000;">　</span>
+								</div>
+                                <!--<label class="control-label col-sm-1 " style="color: #FF0000;" >*</label>-->
+							</div>
+
+                    <!--埋参数-->
+                    <!--用来存放点击新增时候的upstream名称-->
+                    <input type="text"  id="upstreamserveradd_upstreamname" class="hidden">
+                    <!--用来存放原web服务，为了新增的时候定位在这条web下面-->
+                    <input type="text"  id="upstreamserveradd_upstreamserver" class="hidden">
+
+								</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">取消
+				</button>
+                <button type="button" class="btn btn-primary" id="upserver_submit">
+					确定提交
+				</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+
+<!--删除提示框，也是用的模态框-->
+<div class="modal fade juzhong" id="mymodal">
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:50%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">操作提醒</h4>
+            </div>
+            <div class="modal-body">
+                <p style="color: #ff0084;">确定要删除吗</p>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

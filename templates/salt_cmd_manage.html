@@ -1,0 +1,612 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% block title %}Salt命令集管理{% endblock %}
+{% block custom_css %}
+	<style type="text/css">
+
+        /*设置表格的宽度固定，不会因为内容过长而出现换行*/
+        table{
+            table-layout:fixed;
+        }
+        /*设置表格内容过长出现滚动条*/
+        /*td{*/
+            /*overflow:auto;*/
+            /*text-overflow:clip;white-space:nowrap;*/
+        /*}*/
+
+        tbody tr:hover{
+        background-color:#9b9b9b !important;
+            color: #000;
+        }
+        /*让列表内的信息上下居中,默认是换行的，但是词内默认没换行要设置word-break实现词内换行*/
+        td{
+            vertical-align:middle !important;
+            text-align: center;
+            word-break:break-all;
+        }
+
+        th{
+            text-align: center;
+        }
+
+        textarea{
+            /*width:300px; */
+            height:100%;
+            overflow-y:visible
+        }
+
+        /*添加表单滚动*/
+        .overflow_set{
+        	overflow: auto;
+        }
+    </style>
+
+{% endblock %}
+
+{% block custom_js %}
+<script>
+    	$(function() {
+
+    	    // 响应式调整页面高度
+    		$(window).resize(function() {
+
+                // 表单的大小自适应窗口，不能设置100%，因为除了表单以外其他东西也会占用高度
+                $('.overflow_set').css(
+                    "height", $('.hall').height() * 0.9);
+            });
+    		$(window).resize();
+
+//    	    复选框选中操作
+                /*“全选/反选”复选框*/
+                $('#checkAll').click(function(event){
+                    /*将所有行的选中状态设成全选框的选中状态*/
+                    $('input[name="checkItem"]').prop('checked',$(this).prop('checked'));
+                    /*并调整所有选中行的CSS样式*/
+                    if ($(this).prop('checked')) {
+                        $('input[name="checkItem"]').parent().parent().addClass('warning');
+                    } else{
+                        $('input[name="checkItem"]').parent().parent().removeClass('warning');
+                    }
+                    /*阻止向上冒泡，以防再次触发点击操作*/
+                    event.stopPropagation();
+                });
+                /*点击全选框所在单元格时也触发全选框的点击操作*/
+                var $checkAllTh = $('#checkAll').parent();
+                $checkAllTh.click(function(){
+                    $('#checkAll').click();
+                });
+
+                /*点击每一行的选中复选框时*/
+                $('input[name="checkItem"]').click(function(event){
+                    /*调整选中行的CSS样式*/
+                    $(this).parent().parent().toggleClass('warning');
+                    /*如果已经被选中行的行数等于表格的数据行数，将全选框设为选中状态，否则设为未选中状态*/
+                    $('#checkAll').prop('checked',$('input[name="checkItem"]:checked').length == $tbr.length ? true : false);
+                    /*阻止向上冒泡，以防再次触发点击操作*/
+                    event.stopPropagation();
+                });
+                /*点击每一行时也触发该行的选中操作*/
+                var $tbr = $('table tbody tr');
+                $tbr.click(function(){
+                    $(this).find('input').click();
+                });
+
+//            分页页面跳转
+            $('.page_go').click(function () {
+                window.location.href = window.location.href.split("?")[0]+'?search_field='+'{{ search_field }}'+'&search_content='+'{{ search_content }}'+'&page='+$("#page_index").val();
+            });
+
+
+//            查询按钮事件
+            $('.search_btn').click(function () {
+               var search_field = $('#search_field').val();
+               var search_content = $('#search_content').val();
+               window.location.href=window.location.href.split("?")[0]+'?search_field='+search_field+'&search_content='+search_content;
+            });
+
+
+//            修改备注按钮触发模态框的一些操作：内容填充
+            $('.update_description').click(function () {
+//                把当前选中的条目填充模态框minion_id和description备注信息
+                $('#update_salt_cmd').val($(this).parent().siblings('.data_salt_cmd').html());
+                $("#update_salt_cmd_description").val($(this).parent().siblings('.data_description').html());
+//                填充模态框的上边框内容
+                $('#update_salt_cmd_lable').html('修改'+$(this).parent().siblings('.data_salt_cmd').html()+'备注信息');
+
+            });
+
+//            模态框打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
+            $('#update_salt_cmd_modal').on('shown.bs.modal', function () {
+                $("#update_salt_cmd_description").focus();
+            });
+
+            $.ajaxSetup({
+                 data: {csrfmiddlewaretoken: '{{ csrf_token }}' }
+            });
+
+//            修改备注确认提交按钮触发提交更新
+            $('#update_description_btn').click(function(){
+				var salt_cmd=$('#update_salt_cmd').val();
+                var description=$("#update_salt_cmd_description").val();
+                $('#update_salt_cmd_modal').modal('toggle');
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'salt_cmd_manage_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+//                    提交的数据要和后台form验证的变量一致，不过可以多出来，只要验证的有就行，比如这里就多了project_tag_key
+					data:{
+						'salt_cmd':salt_cmd,
+                        'description':description,
+                        'salt_cmd_tag_key':'update_salt_cmd_description'
+
+					},
+					success:function(result){
+						if(result.status){
+//						    关闭加载图片的模态框
+						    $('.loading_modal').modal('toggle');
+                            toastr.success(result.result,'Success',{timeOut: 1500});
+                            setTimeout(function(){window.location.href=window.location.href}, 1000);
+						}else {
+						        $('.loading_modal').modal('toggle');
+						        toastr.error(result.result,'Error',{timeOut: 1500});
+                        }
+					}
+				});
+			});
+
+
+
+//            搜索框回车触发查询按钮事件
+            $("#search_content").keydown(function (e) {
+                if (e.keyCode == 13) {
+                    $('.search_btn').click();
+                }
+            });
+
+        //    module命令采集按钮触发模态框弹出等事件
+            $('#module_collection').click(function () {
+                $('#collection_prompt_modal').modal('toggle');
+                $('#collection_style').val('module');
+            });
+
+        //    state命令采集按钮触发模态框弹出等事件
+            $('#state_collection').click(function () {
+                $('#collection_prompt_modal').modal('toggle');
+                $('#collection_style').val('state');
+            });
+
+        //    runner命令采集按钮触发模态框弹出等事件
+            $('#runner_collection').click(function () {
+                $('#collection_prompt_modal').modal('toggle');
+                $('#collection_style').val('runner');
+            });
+
+//           采集模态框 隐藏时数据清除
+            $("#collection_prompt_modal").on("hidden.bs.modal", function() {
+                $('#collection_style').val('');
+                $('#add_search_minion_id').val('');
+                $('#add_select_minion_id').empty();
+                $('#add_selected_minion_id').empty();
+                $('#add_minion_id_help').text('　');
+
+            });
+
+//           新增发布模态框，查找minion_id,按系统类型和minion_id来查询minion
+            $('.add_search_minion_id_btn').click(function(){
+                 $('#add_select_minion_id').empty();
+                 var minion_id=$.trim($('#add_search_minion_id').val());
+                 var selected_minion_id=$('#add_selected_minion_id option');
+
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'salt_cmd_manage_ajax' %}",
+					type:'GET',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+                        'minion_id':minion_id,
+                        'salt_cmd_tag_key':'modal_search_minion_id'
+					},
+					success:function(result){
+						if(result.status){
+						    for(var i = 0; i < result.result.length; i++){
+						       $("<option value='"+result.result[i]+"'>"+result.result[i]+"</option>").appendTo("#add_select_minion_id");
+                               selected_minion_id.each(function () {
+                                    if($(this).val()==result.result[i]){
+                                        $("#add_select_minion_id option[value='" +result.result[i]+ "']").remove();
+                                    }
+                                });
+						    }
+						}else {
+						    toastr.error(result.result,'error',{timeOut: 1500});
+                        }
+					}
+				});
+			});
+
+//           新增发布模态框 minion_id选中 操作触发中间的》按钮可用
+            $("#add_select_minion_id").click(function () {
+                $("#add_select_minion_id_btn").removeClass("disabled");
+
+            });
+
+//           新增发布模态框 minion_id选中 操作触发中间的《按钮可用
+            $("#add_selected_minion_id").click(function () {
+                $("#add_delete_minion_id_btn").removeClass("disabled");
+            });
+
+//           新增发布模态框 minion_id》按钮触发选中值移动到右边
+            $("#add_select_minion_id_btn").click(function () {
+//                在这里触发清空如果没选择minion_id的错误提示,嘿嘿
+                $('#add_minion_id_help').text('　');
+                $("#add_select_minion_id option:selected").each(function () {
+                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#add_selected_minion_id");
+                    $(this).remove();
+                    $("#add_select_minion_id_btn").addClass("disabled");
+                })
+            });
+
+//           新增发布模态框 minion_id《按钮触发选中值移动到左边
+            $("#add_delete_minion_id_btn").click(function () {
+                $("#add_selected_minion_id option:selected").each(function () {
+                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#add_select_minion_id");
+                    $(this).remove();
+                    $("#add_delete_minion_id_btn").addClass("disabled");
+                })
+            });
+
+        //    确认提交执行ajax采集
+            $('#collection_button').click(function () {
+                var minion_id=$('#add_selected_minion_id option').map(function(){return $(this).val();}).get().join(",");
+                var collection_style = $('#collection_style').val();
+                if(minion_id.length==0){
+                    $('#add_minion_id_help').text('请选择minion_id');
+                    return false
+                }
+                $('#collection_prompt_modal').modal('toggle');
+                $('.loading_modal').modal('toggle');
+                $.ajax({
+					url:"{% url 'salt_cmd_manage_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+//                    由于有密码字段要加下面的cache不然老提示保存密码
+                    cache:false,
+					data:{
+						'minion_id':minion_id,
+                        'collection_style':collection_style,
+                        'salt_cmd_tag_key':'collection_info'
+
+					},
+					success:function(result){
+						if(result.status){
+                            $('.loading_modal').modal('toggle');
+                            toastr.success(result.result,'Success',{timeOut: 1500});
+                            setTimeout(function(){window.location.href=window.location.href}, 1000);
+						}else {
+						    $('.loading_modal').modal('toggle');
+						    toastr.error(result.result,'Error',{timeOut: 1500});
+                        }
+					}
+				});
+            });
+
+//            使用帮助按钮
+            $('.salt_cmd_doc_btn').click(function () {
+//                代入参数和清空一些东西
+                $('#salt_cmd_doc_info').html('');
+                var data_salt_cmd = $(this).parent().siblings('.data_salt_cmd').html();
+                $(".salt_cmd_name").html(data_salt_cmd);
+                var data_salt_cmd_doc = $(this).parent().siblings('.data_salt_cmd_doc').html();
+                $('#salt_cmd_doc_info').text(data_salt_cmd_doc);
+            });
+
+//            点击删除填充模态框
+            $('.salt_cmd_delete').click(function () {
+                $('.hidden_salt_cmd').val($(this).parent().siblings('.data_salt_cmd').html());
+            });
+
+
+//            点击确定删除项目
+            $('#salt_cmd_delete_button').click(function(){
+				var salt_cmd=$.trim($('.hidden_salt_cmd').val());
+				$('#salt_cmd_delete_modal').modal('toggle');
+				$.ajax({
+					url:"{% url 'salt_cmd_manage_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+//                    提交的数据要和后台form验证的变量一致，不过可以多出来，只要验证的有就行，比如这里就多了project_tag_key
+					data:{
+                        'salt_cmd':salt_cmd,
+                        'salt_cmd_tag_key':'salt_cmd_delete'
+
+					},
+					success:function(result){
+						if(result.status){
+                            $('.loading_modal').modal('toggle');
+                            toastr.success(result.result,'Success',{timeOut: 1500});
+                            setTimeout(function(){window.location.href=window.location.href}, 1000);
+//                            window.location.href=window.location.href;
+						}else {
+						    $('.loading_modal').modal('toggle');
+						    toastr.error(result.result,'Error',{timeOut: 1500});
+                        }
+					}
+				});
+			});
+
+        });
+</script>
+{% endblock %}
+
+{% block panel-title_content %}Salt命令集管理{% endblock %}
+
+{% block panel_body_content %}
+
+
+<div class="row-fluid ">
+    <div class="col-xs-12 overflow_set">
+                <div style="margin-bottom: 5px;">
+                <div class="form-inline" role="form">
+                    <div class="form-group">
+                        <button type="button" class="btn btn-success" id="module_collection" >module命令采集</button>
+                        <button type="button" class="btn btn-success" id="state_collection" >state命令采集</button>
+                        <button type="button" class="btn btn-success" id="runner_collection" >runner命令采集</button>
+                        <button type="button" class="btn btn-primary" id="custom_module" >自定义命令</button>
+                    </div>
+
+
+                      <div class="form-group pull-right">
+                        <label for="search_field">查询字段</label>
+                        <select class="form-control" id="search_field">
+                            <option value="search_salt_cmd">命令</option>
+                            {% if search_field == "search_salt_cmd_type" %}
+                            <option value="search_salt_cmd_type" selected>类型</option>
+                            {% else %}
+                            <option value="search_salt_cmd_type">类型</option>
+                            {% endif %}
+                        </select>
+                          <input type="text" class="form-control" id="search_content" placeholder="请输入查询条件" value="{{ search_content }}">
+                        <button type="submit" class="btn btn-primary search_btn"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
+                      </div>
+
+                    </div>
+
+            </div>
+            <table class="table table-hover  table-bordered table-striped table-responsive table-condensed" >
+                <!--<caption>主机列表</caption>-->
+                <thead>
+                <!--给下面tr加个success是bootstrap的一个类颜色会改变下呵呵-->
+                  <tr class="success">
+                      <th width="4%"><input type="checkbox" id="checkAll" name="checkAll" /></th>
+                    <th width="8%">类型</th>
+                    <th width="8%">模块</th>
+                    <th width="15%">命令</th>
+                      <th width="8%">来源</th>
+                      <th width="16%">最近一次采集时间</th>
+                      <!--<th width="6%">Minion</th>-->
+                      <th width="28%">描述备注</th>
+                      <th width="20%">操作</th>
+                  </tr>
+                </thead>
+                <tbody style="font-size: 14px;">
+                    {% for data in data_list%}
+                    <tr>
+                        <td><input type="checkbox" name="checkItem" /></td>
+                        <td class="data_salt_cmd_type">{{ data.salt_cmd_type }}</td>
+                        <td class="data_salt_cmd_module">{{ data.salt_cmd_module }}</td>
+                        <td class="data_salt_cmd">{{ data.salt_cmd }}</td>
+                        <td class="data_salt_cmd_source">{{ data.salt_cmd_source }}</td>
+                        <td class="data_update_time">{{ data.update_time }}</td>
+                        {% if  data.description  %}
+                        <td class="data_description">{{ data.description }}</td>
+                        {% else %}
+                        <td class="data_description"></td>
+                        {% endif %}
+
+                        <!--隐藏内容-->
+                        <td class="data_salt_cmd_doc hidden">{{ data.salt_cmd_doc }}</td>
+
+                        <td><button type="button" class="btn btn-info btn-sm salt_cmd_doc_btn" data-toggle="modal" data-target="#salt_cmd_doc_modal">使用帮助</button>
+                          <button type="button" class="btn btn-sm btn-primary update_description" data-toggle="modal" data-target="#update_salt_cmd_modal">更新备注</button>
+                          <button type="button" class="btn btn-danger btn-sm salt_cmd_delete" data-toggle="modal" data-target="#salt_cmd_delete_modal">删除</button>
+                          </td>
+                    </tr>
+                    {% endfor%}
+
+                </tbody>
+              </table>
+            <div>
+                <ul class="pager">
+                    {% if data_list.has_previous %}
+                    <!--注意如果url中已经有参数了比如http://192.168.68.50:8000/saltkey_manage/?status=denied那么需要把这个status加上，不然跳转错了哈哈-->
+                        <li><a href="?search_field={{ search_field }}&search_content={{ search_content }}&page={{ data_list.previous_page_number }}">上一页</a></li>
+                    {% else %}
+                        <li class="disabled"><a href="">上一页</a></li>
+                    {% endif %}
+
+                    <li class="current">
+                        页数 {{ data_list.number }} / {{ data_list.paginator.num_pages }}
+                    </li>
+
+                    {% if data_list.has_next %}
+                        <li><a href="?search_field={{ search_field }}&search_content={{ search_content }}&page={{ data_list.next_page_number }}">下一页</a></li>
+                    {% else %}
+                        <li class="disabled"><a href="">下一页</a></li>
+                    {% endif %}
+                    <li>
+                        &nbsp;&nbsp;<input type="text"  style="width: 30px;border-radius: 30%;" id="page_index">/{{ data_list.paginator.num_pages }}页
+                        <button type="button" class="btn btn-sm btn-success page_go" >跳转</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+</div>
+
+
+{% endblock %}
+
+{% block another_content %}
+<!-- 修改备注信息模态框 -->
+<<div class="modal fade juzhong" id="update_salt_cmd_modal" tabindex="-1" role="dialog" aria-labelledby="update_salt_cmd_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+				<h4 class="modal-title" id="update_salt_cmd_lable">
+					修改备注信息
+				</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal" role="form"  >
+                    <input type="text" class="form-control hidden"  id="update_salt_cmd">
+                    <textarea rows="5" cols="20" class="form-control" id="update_salt_cmd_description"></textarea>
+				</form>
+
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">取消
+				</button>
+                <button type="button" class="btn btn-primary" id="update_description_btn" data-toggle="modal" data-target=".loading_modal">
+					确认提交
+				</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+
+<!-- loading模态框 -->
+<div class="modal fade juzhong loading_modal " data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog"  aria-hidden="true" >
+	<div class="modal-dialog" style="width:100px;">
+		<div class="modal-content" style="background-color: rgba(255,255,255,0.5);">
+				<img src="../static/images/loading.gif"  alt="未加载" >
+		</div>
+	</div>
+</div>
+
+<!--使用帮助模态框-->
+<div class="modal fade juzhong" id="salt_cmd_doc_modal" tabindex="-1" role="dialog" aria-labelledby="salt_cmd_doc_lable" aria-hidden="true" >
+	<div class="modal-dialog" style="width: 780px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+				<h4 class="modal-title" id="salt_cmd_doc_lable">
+					<span class="salt_cmd_name"></span>使用帮助
+				</h4>
+
+			</div>
+			<div class="modal-body" style="padding-bottom:0;">
+                <div class="form-group" style="height:630px;">
+                    <pre class="form-control " id="salt_cmd_doc_info"   style="resize:none;font-weight: bold;line-height:100%;height: 100%;margin-top: 4px;background-color:#000;color:#00B600;"></pre>
+                </div>
+
+			</div>
+			<div class="modal-footer" style="padding: 5px 15px 5px 0;">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">
+					确认
+				</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+
+<!--采集提示框-->
+<div class="modal fade juzhong " id="collection_prompt_modal" tabindex="-1" role="dialog" aria-labelledby="collection_prompt_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:600px;">
+            <div class="modal-body">
+                <form class="form-horizontal" role="form">
+                     <div class="form-group" style="margin: 0;">
+                        <div class="col-sm-11">
+                          <input type="text" class="form-control hidden" id="collection_style"  >
+                        </div>
+                         <div class="form-group col-sm-11" style="margin-bottom: 0;">
+										<label class="control-label col-sm-2 " >Minion_ID:</label>
+                                <div class="panel panel-default col-sm-4" style="padding: 0;margin-left: 15px;margin-bottom: 0;">
+                                    <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
+                                        <div class="input-group">
+                                        <input type="text" class="form-control input-sm" id="add_search_minion_id" placeholder="查询Minion_ID">
+                                          <span class="input-group-btn">
+                                            <button type="button" class="btn btn-primary add_search_minion_id_btn btn-sm"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
+                                          </span>
+
+                                        </div>
+                                    </div>
+                                    <select size=5  multiple class="form-control panel-body" id="add_select_minion_id" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+                                    </select>
+                                </div>
+
+                                <div class="col-sm-1" style="padding: 0 10px 0 10px;">
+                                    <div style="margin-top: 30px;">
+                                        <button type="button" class="btn btn-xs btn-info disabled" id="add_select_minion_id_btn">&gt;&gt;</button>
+                                        <button type="button" class="btn btn-xs btn-info disabled" style="margin-top: 1px;" id="add_delete_minion_id_btn">&lt;&lt;</button>
+                                    </div>
+                                </div>
+
+                                <div class="panel panel-info col-sm-4" style="padding: 0;margin-bottom: 0;">
+                                    <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
+                                        <h3 class="panel-title " style="font-size: 12px;padding: 5px 10px;height: 30px;line-height: 1.5;">选中的Minion_ID</h3>
+                                    </div>
+                                    <select size=5 multiple class="form-control panel-body" id="add_selected_minion_id" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+
+                                    </select>
+                                </div>
+
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+
+                                <div class="col-sm-6 col-sm-offset-3">
+									    <span id="add_minion_id_help" style="color: #FF0000;">　</span>
+								</div>
+							</div>
+                         <div class="col-sm-11">
+                            <label class="control-label" style="padding-left: 0;text-align: left;font-weight: bold;color: #ff0084;" >请选择采集来源minion_id</label>
+                             <!--<p style="font-weight: bold;color: #ff0084;">提示：module命令采集已固定为*选择无效，其他需要选择minion</p>-->
+                         </div>
+                      </div>
+                </form>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:60%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="collection_button"> 确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--删除提示框，也是用的模态框-->
+<div class="modal fade juzhong " id="salt_cmd_delete_modal" tabindex="-1" role="dialog" aria-labelledby="salt_cmd_delete__lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:50%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">操作提醒</h4>
+            </div>
+            <div class="modal-body">
+                <!--隐藏属性，用来获取触发模态框的那条记录的相关数据-->
+                <input type="hidden" class="hidden_salt_cmd"/>
+                <p style="color: #FF000C;">确定要删除吗</p>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="salt_cmd_delete_button" data-dismiss="modal" data-toggle="modal" data-target=".loading_modal"> 确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

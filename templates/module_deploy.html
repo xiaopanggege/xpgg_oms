@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% block title %}模块部署{% endblock %}
+{% block custom_css %}
+	<style type="text/css">
+        .he10{
+			height: 10px;
+		}
+        .he20{
+			height: 20px;
+		}
+
+		/*表单滚动*/
+        .overflow_set{
+        	overflow: auto;
+        }
+
+		/*pre标签不会自动换行第二个是换行，第一个是滚动条*/
+		#result1{
+        	overflow-y: auto;
+			white-space: pre-wrap;
+        }
+    </style>
+
+{% endblock %}
+
+{% block custom_js %}
+	<script>
+		$(function () {
+
+		    // 响应式调整页面高度
+    		$(window).resize(function() {
+    		    // 结果打印框pre高度不然默认是没高度的
+	        	$('.overflow_result').css(
+	        		"height",$('.hall').height()*0.8);
+
+                // 扫描的输入表单单独适应窗口高度，不然如果以后我添加更多的扫描东西越来越长的时候会出现
+                // 整个右侧栏出现滚动条，我这样设置以后只会扫描表单那一块出现滚动，而不会然右边的结果框出现滚动条
+                $('.overflow_set').css(
+                    "height", $('.hall').height() * 0.85);
+            });
+    		$(window).resize();
+
+
+    		// 模块部署主机下拉菜单触发文本框提示内容改变
+	        $('#sel_1').change(function(){
+	         	if($(this).val()=='list'){
+	         		$('#minion_info').attr("placeholder",'请输入格式: ID,ID');
+	         		$('#minion_info').val("");
+	         	}else if($(this).val()=='glob'){
+	         		$('#minion_info').attr("placeholder",'请输入Minion主机 ID');
+	         		$('#minion_info').val("");
+	         	}else if($(this).val()=='nodegroup'){
+	         		$('#minion_info').attr("placeholder",'请输入主机组名');
+	         		$('#minion_info').val("");
+	         	}else if($(this).val()=='ipcidr'){
+	         		$('#minion_info').attr("placeholder",'请输入Minion主机 IP');
+	         		$('#minion_info').val("");
+	         	}else if($(this).val()=='grain'){
+	         		$('#minion_info').attr("placeholder",'例:os:CentOS或os:Windows');
+	         		$('#minion_info').val("");
+	         	}
+			});
+
+	        // 主机输入框获取焦点后清空提示信息keyup是键盘弹起后的操作，比较适合输入框，选择框不行所以用focus
+	    	$('#minion_info').keyup(function(){
+	    		$('#jingao1').text('*');
+	    	});
+            //	模块选择清空错误提示
+	    	$("input[type='checkbox']").focus(function(){
+	    		$('#jingao2').text('');
+	    	});
+
+			// 表单提交
+			// // {#  django 跨站验证需要下面的 ajaxSetup   #}
+            $.ajaxSetup({
+                 data: {csrfmiddlewaretoken: '{{ csrf_token }}' },
+            });
+
+            //模块部署表单提交
+			$('#modulsumbit').click(function(){
+				// 判断主机是否为空
+				if($.trim($('#minion_info').val())==""){
+					$('#jingao1').text('*不能为空');
+                    //让输入框获取焦点用下面的
+                    $('#minion_info')[0].focus();
+                    //清空输入框内容，因为有时候人家是输入很多空格
+                    $('#minion_info').val("");
+					return false;
+				}
+				// 判断是否未选择模块，state是存sls的
+				var state=[];
+				var sel=$("#modulcheck input[type='checkbox']:checked");
+				if(sel.length==0){
+//					清空上一个输入框的错误提示
+					$('#jingao1').text('*');
+					$('#jingao2').text('*请选择模块');
+					return false;
+				}
+				sel.each(function(){
+					state.push($(this).val());
+				});
+				var tgt_type=$('#sel_1').val();
+				var tgt=$.trim($('#minion_info').val());
+				var $btn = $(this).button('loading');
+				$('#result1').html('正在执行，请稍后....');
+				// 上面如果都过了就开始提交了下面用ajax提交
+				$.ajax({
+					url:"{% url 'module_deploy' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{'tgt':tgt,
+						'tgt_type':tgt_type,
+						'state':state},
+					success:function(result){
+						if(result.status){
+							$('#result1').html('');
+//							for(var i = 0; i < result.result.length; i++){
+//								var insert_data=$('#result1').html()+'<i>'+result.result[i]+'</i>';
+//								$('#result1').html(insert_data);
+							for(var i = 0; i < result.result.length; i++){
+//                                console.log(result.result[i]);
+								if(result.result[i].indexOf("Result: False")>-1){
+									$('#result1').append("<p style='color: #A00000;'>"+result.result[i]+"</p>");
+								}else if(result.result[i].indexOf("ChangesIs")>-1){
+									$('#result1').append("<p style='color: #00A0A0;'>"+result.result[i]+"</p>");
+								}else if(result.result[i].indexOf("Failed:")>-1){
+//									对汇总的第一行数据中成功失败还有改变做字体颜色区分，即修改颜色
+									var reg1=/Failed:([^\r\n]+)/g;
+									var str1=result.result[i].match(reg1);
+									var reg2=/Succeeded:([^\r\n]+)/g;
+									var str2=result.result[i].match(reg2);
+									var rep_r=result.result[i].replace(reg1,"<span style='color: #A00000;'>"+str1+"</span>");
+									rep_r=rep_r.replace(reg2,"<span style='color: #00B600;'>"+str2+"</span>");
+									$('#result1').append("<p style='color: #00A0A0;'>"+rep_r+"</p>");
+								}else{
+									$('#result1').append("<p style='color: #00B600;'>"+result.result[i]+"</p>");
+								}
+
+							}
+//							$('#result1').val(result.result);
+                            $btn.button('reset');
+						}else {
+                            $('#result1').html("<p style='color: #A00000;'>"+result.result+"</p>");
+                            $btn.button('reset');
+                        }
+
+					}
+				});
+
+			});
+		});
+	</script>
+{% endblock %}
+
+{% block panel-title_content %}模块部署{% endblock %}
+
+{% block panel_body_content %}
+
+<div class="row-fluid ">
+	<div class="col-xs-5 overflow_set">
+		<div class="he10"></div>
+		<form class="form-inline" role="form" >
+            <div  style="font-size: 15px;border: 1px #756F71 solid;border-radius: 5px;padding:0 10px 0 0;" >
+                    <label class="label label-info " style="font-size: 17px;">模块部署</label>
+                <div class="he20"></div>
+			<div class="form-group " style="margin-left: 10px;">
+				<select  class="form-control btn-info" id="sel_1" style="font-size: 15px;">
+                    <option  value="glob">主机ID</option>
+					<option  value="ipcidr">主机IP</option>
+					<option  value="list">多主机</option>
+					<option  value="nodegroup">主机组</option>
+					<option  value="grain">grain类</option>
+				</select>
+		<!-- 下面的onkeydown和onkeyup功能是实现文本框自动随数字拉长 -->
+				<input type="text" class="form-control" id="minion_info"
+			   placeholder="请输入主机minion ID" style="font-size: 14px;" onkeydown="this.onkeyup();" onkeyup="this.size=(this.value.length>25?this.value.length:27);" size="22"  required="required">
+			   <span id="jingao1"  style="color: #FF0000;">*</span>
+				<!-- <p class="text-danger  " style="color: #FF0000;">&nbsp;</p> -->
+			</div>
+			<div class="he20"></div>
+			<div style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;margin-left: 10px;" id='modulcheck'>
+				<label class="label label-info " style="font-size: 17px;">模块选择</label>
+				<div class="he10"></div>
+				<div class="container-fluid">
+					<div class="row-fluid">
+						<div class="col-xs-3">
+							<label class="checkbox-inline" >
+								<input type="checkbox" id="inlineCheckbox0" value="init">初始化
+							</label>
+						 </div>
+						<div class="col-xs-3">
+							<label class="checkbox-inline" >
+								<input type="checkbox" id="inlineCheckbox1" value="nginx">Nginx
+							</label>
+						 </div>
+						<div class="col-xs-6 col-sm-3">
+							<label class="checkbox-inline" >
+								<input type="checkbox" id="inlineCheckbox2" value="tomcat">Tomcat
+							</label>
+						</div>
+						<div class="col-xs-6 col-sm-3">
+							<label class="checkbox-inline" >
+								<input type="checkbox" id="inlineCheckbox3" value="mysql">Mysql
+							</label>
+						</div>
+						<div class="col-xs-6 col-sm-3">
+							<label class="checkbox-inline" >
+								<input type="checkbox" id="inlineCheckbox4" value="lvs">Lvs
+							</label>
+						</div>
+						<div class="col-xs-6 col-sm-3">
+							<label class="checkbox-inline" >
+								<input type="checkbox" id="inlineCheckbox5" value="php">PHP
+							</label>
+						</div>
+						<div class="col-xs-6 col-sm-3">
+							<label class="checkbox-inline" >
+								<input type="checkbox" id="inlineCheckbox6" value="jdk">JDK
+							</label>
+						</div>
+						<span id="jingao2"  style="color: #FF0000;"></span>
+					</div>
+				</div>
+				<div class="he10"></div>
+			</div>
+			<div class="he20"></div>
+			<div class="form-group " style="margin-left: 10px;">
+				<button type="button" class="btn btn-success" id="modulsumbit" data-loading-text="正在执行...">执行部署</button>
+				<!-- <label class="text-danger ">提交数据验证合法性提示栏</label> -->
+			</div>
+                <div class="he20"></div>
+            </div>
+            <div class="he20"></div>
+
+            <!--查看部署日志  -->
+            <div  style="font-size: 15px;border: 1px #756F71 solid;border-radius: 5px;padding:0 10px 0 0;" >
+                    <label class="label label-info " style="font-size: 17px;">模块部署日志查询</label>
+
+                    <div class="he10"></div>
+                    <label class="form-group" for="minion_id" style="margin-left: 10px;">请输入主机ID:</label>
+                    <input type="text" class="form-control" id="minion_id"
+                   placeholder="请输入主机minion ID" style="font-size: 14px;width: 200px;"  required="required">
+                    <button type="button" class="btn btn-success  search_log" data-toggle="modal" data-target="#search_minion_id_log" style="margin-left: 10px;">查询</button>
+
+                   <div class="he10"></div>
+                </div>
+		</form>
+	</div>
+	<div class="form-group col-xs-7 overflow_result" style="padding-top: 5px;">
+		<label class="label label-danger " style="font-size: 17px;">结果打印</label>
+		<!-- 结果打印 -->
+		<!-- 下面这个列数cols弄100%比较大，高度我用h45来按浏览器调整，style是禁止拉伸 -->
+		<!--注意如果使用标签textarea的字体一定要设置等宽字体，因为普通的字体在输出的时候无法和在linux下面一样，想要输出程序代码的
+		原样，最好用等宽字体，不用你自己看下有多难看就知道这里用了font-family: monospace;自带的等宽字体-->
+		<!--最后我发现可以直接用prc标签这个标签可以完美的输出后端代码的格式哈哈不过换行和滚动条还是要加在上面的style里-->
+		<pre class="form-control " id="result1"   style="resize:none;font-weight: bold;line-height:100%;height: 100%;margin-top: 4px;background-color:#000;color:#00B600;"></pre>
+	</div>
+</div>
+
+{% endblock %}
+
+{% block another_content %}
+<!--日志模态框-->
+<div class="modal fade juzhong" id="search_minion_id_log" tabindex="-1" role="dialog" aria-labelledby="minion_id_log_lable" aria-hidden="true" >
+	<div class="modal-dialog" style="width: 780px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+				<h4 class="modal-title" id="minion_id_log_lable">
+					<span class="minion_id_log"></span>模块部署日志<button type="button" class="btn btn-primary minion_id_log_btn pull-right" style="margin-right: 10px;">
+					刷新日志
+				    </button>
+				</h4>
+                <div style="margin-bottom: 5px;">
+
+                    <ul class="pager log_pager" style="margin: 0;">
+
+                    </ul>
+                </div>
+                <!--<span class="" id="" style="color: #FF0000;">　</span>-->
+                <div class="col-sm-1  log_create_time_label" style="padding: 0;font-weight: bold;">部署时间:</div>
+                <div class="col-sm-3 log_create_time" ></div>
+                <div class="col-sm-1  log_release_result_label" style="padding: 0;font-weight: bold;">发布结果:</div>
+                <div class="col-sm-3 log_release_result" ></div>
+                <div class="col-sm-1  log_app_username_label" style="padding: 0;font-weight: bold;">操作人:</div>
+                <div class="col-sm-3 log_app_username" ></div>
+
+			</div>
+			<div class="modal-body">
+                <div class="form-group" style="height:630px;">
+                    <pre class="form-control " id="modal_minion_id_log"   style="resize:none;font-weight: bold;line-height:100%;height: 100%;margin-top: 4px;background-color:#000;color:#00B600;"></pre>
+                </div>
+
+			</div>
+			<div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">
+					确认
+				</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+{% endblock %}

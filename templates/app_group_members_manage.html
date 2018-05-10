@@ -1,0 +1,1422 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% load custom_filter %}
+{% block title %}发布系统{% endblock %}
+{% block custom_css %}
+<style type="text/css">
+    /*设置表格的宽度固定，不会因为内容过长而出现换行*/
+    table{
+        table-layout:fixed;
+    }
+    /*设置表格内容过长出现滚动条*/
+    /*td{*/
+        /*overflow:auto;*/
+        /*text-overflow:clip;white-space:nowrap;*/
+    /*}*/
+
+
+
+    tbody tr:hover{
+    background-color:#9b9b9b !important;
+        color: #000;
+    }
+    /*让列表内的信息上下居中,默认是换行的，但是词内默认没换行要设置word-break实现词内换行*/
+    td{
+        vertical-align:middle !important;
+        text-align: center;
+        word-break:break-all;
+    }
+
+    th{
+        text-align: center;
+    }
+
+    /*pre标签不会自动换行第二个是换行，第一个是滚动条*/
+    #modal_app_log{
+        overflow-y: auto;
+        white-space: pre-wrap;
+    }
+
+    /*添加表单滚动*/
+    .overflow_set{
+        overflow: auto;
+    }
+
+    .title_content:hover{
+        color:yellow !important;
+        text-decoration: none;
+    }
+
+</style>
+
+{% endblock %}
+
+{% block custom_js %}
+<script>
+    	$(function(){
+
+    	    // 响应式调整页面高度
+    		$(window).resize(function() {
+
+                // 表单的大小自适应窗口，不能设置100%，因为除了表单以外其他东西也会占用高度
+                $('.overflow_set').css(
+                    "height", $('.hall').height() * 0.9);
+            });
+    		$(window).resize();
+
+//    	    由于这个页面不是侧边栏的导航项目而是应用发布组跳转后的页面，所以需要手动给应用发布组添加选中的class
+            $('.app_release_group_li').children().addClass('active-ditia');
+            $('.app_release_group_li').parents('.collapse').addClass('in');
+            $('.release_system_li').addClass('active');
+            $('.release_system_li').find("span.gl-change").removeClass("glyphicon-menu-left").addClass("glyphicon-menu-down");
+
+
+
+//    	    复选框选中操作
+                /*“全选/反选”复选框*/
+                $('#checkAll').click(function(event){
+                    /*将所有行的选中状态设成全选框的选中状态*/
+                    $('input[name="checkItem"]').prop('checked',$(this).prop('checked'));
+                    /*并调整所有选中行的CSS样式*/
+                    if ($(this).prop('checked')) {
+                        $('input[name="checkItem"]').parent().parent().addClass('warning');
+                    } else{
+                        $('input[name="checkItem"]').parent().parent().removeClass('warning');
+                    }
+                    /*阻止向上冒泡，以防再次触发点击操作*/
+                    event.stopPropagation();
+                });
+                /*点击全选框所在单元格时也触发全选框的点击操作*/
+                var $checkAllTh = $('#checkAll').parent();
+                $checkAllTh.click(function(){
+                    $('#checkAll').click();
+                });
+
+                /*点击每一行的选中复选框时*/
+                $('input[name="checkItem"]').click(function(event){
+                    /*调整选中行的CSS样式*/
+                    $(this).parent().parent().toggleClass('warning');
+                    /*如果已经被选中行的行数等于表格的数据行数，将全选框设为选中状态，否则设为未选中状态*/
+                    $('#checkAll').prop('checked',$('input[name="checkItem"]:checked').length == $tbr.length ? true : false);
+                    /*阻止向上冒泡，以防再次触发点击操作*/
+                    event.stopPropagation();
+                });
+                /*点击每一行时也触发该行的选中操作*/
+                var $tbr = $('table tbody tr');
+                $tbr.click(function(){
+                    $(this).find('input').click();
+                });
+
+//           bootstrap的提示工具jq
+            $("[data-toggle='tooltip']").tooltip();
+
+//          // {#  django 跨站验证需要下面的 ajaxSetup   #}
+            $.ajaxSetup({
+                 data: {csrfmiddlewaretoken: '{{ csrf_token }}' }
+            });
+
+//            分页页面跳转
+            $('.page_go').click(function () {
+                var app_group_name =$.trim($('.title_app_group_name').text());
+                window.location.href = window.location.href.split("?")[0]+'?app_group_name='+app_group_name+'&search_field='+'{{ search_field }}'+'&search_content='+'{{ search_content }}'+'&page='+$("#page_index").val();
+            });
+
+//            搜索框回车触发查询按钮事件
+            $("#search_content").keydown(function (e) {
+                if (e.keyCode == 13) {
+                    $('.search_btn').click();
+                }
+            });
+
+//            查询按钮事件
+            $('.search_btn').click(function () {
+               var search_field = $('#search_field').val();
+               var search_content = $('#search_content').val();
+               var app_group_name =$.trim($('.title_app_group_name').text());
+               window.location.href=window.location.href.split("?")[0]+'?app_group_name='+app_group_name+'&search_field='+search_field+'&search_content='+search_content;
+            });
+
+//            添加成员模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
+            $('#app_group_member_add_modal').on('shown.bs.modal', function () {
+                $("#add_search_app_name").focus();
+            });
+
+//           添加成员模态框 隐藏时数据清除,
+            $("#app_group_member_add_modal").on("hidden.bs.modal", function() {
+                $(this).removeData("bs.modal");
+//                select恢复原状挺麻烦的，我这用最蠢的清空掉2个select然后重新添加。。
+                $('#add_search_app_name').val('');
+				$('#add_select_app_name').empty();
+				$('#add_selected_app_name').empty();
+				$('#add_app_group_members_help').text('　');
+            });
+
+//           添加成员按钮触发内容填充模态框
+            $('.app_group_member_add_button').click(function () {
+//                之所以加一层if是因为minion_id由于minion表id删除会出现None的情况在minion_id全为空的时候，如果出现None我们就不需要做下面的填充内容操作，不然会填充None过去
+                if($.trim($('.app_group_members_data').val()).length != 0) {
+                    var app_name = $('.app_group_members_data').val().split(',');
+                    for (var i = 0; i < app_name.length; i++) {
+//                        我这里做的是把已经是成员的添加到选中那边，但是用hidden隐藏了，避免别人去操作这些已经存在的成员，至于删除我单独写，没毛病
+                        $("<option class='hidden' value='" + app_name[i] + "'>" + app_name[i] + "</option>").appendTo("#add_selected_app_name");
+                    }
+                }
+            });
+
+//            添加成员模态框，查找app_name
+             $('.add_search_app_name_btn').click(function(){
+                 $('#add_select_app_name').empty();
+                 var app_name=$.trim($('#add_search_app_name').val());
+                 var selected_app_name=$('#add_selected_app_name option');
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'app_group_ajax' %}",
+					type:'GET',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+                        'app_name':app_name,
+                        'app_group_tag_key':'modal_search_app_name'
+					},
+					success:function(result){
+						if(result.status){
+						    for(var i = 0; i < result.result.length; i++){
+						       $("<option value='"+result.result[i]+"'>"+result.result[i]+"</option>").appendTo("#add_select_app_name");
+                               selected_app_name.each(function () {
+                                    if($(this).val()==result.result[i]){
+                                        $("#add_select_app_name option[value='" +result.result[i]+ "']").remove();
+                                    }
+                                });
+						    }
+						}else {
+						    toastr.error(result.result,'error',{timeOut: 1500});
+                        }
+					}
+				});
+			});
+
+//           添加成员模态框 app_name选中 操作触发中间的》按钮可用
+            $("#add_select_app_name").click(function () {
+                $("#add_select_app_name_btn").removeClass("disabled");
+            });
+
+//           添加成员模态框 app_name选中 操作触发中间的《按钮可用
+            $("#add_selected_app_name").click(function () {
+                $("#add_delete_app_name_btn").removeClass("disabled");
+            });
+
+//           添加成员模态框 app_name》按钮触发选中值移动到右边
+            $("#add_select_app_name_btn").click(function () {
+//                在这里触发清空如果没选择minion_id的错误提示,嘿嘿
+                $('#add_app_group_members_help').text('　');
+                $("#add_select_app_name option:selected").each(function () {
+                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#add_selected_app_name");
+                    $(this).remove();
+                    $("#add_select_app_name_btn").addClass("disabled");
+                })
+            });
+
+//           添加成员模态框 app_name《按钮触发选中值移动到左边
+            $("#add_delete_app_name_btn").click(function () {
+                $("#add_selected_app_name option:selected").each(function () {
+                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#add_select_app_name");
+                    $(this).remove();
+                    $("#add_delete_app_name_btn").addClass("disabled");
+                })
+            });
+
+//          添加成员表单提交
+            $('#add_app_group_member_submit').click(function(){
+				var app_group_members=$('#add_selected_app_name option').map(function(){return $(this).val();}).get().join(",");
+				var source_app_name = $('.app_group_members_data').val();
+				if(source_app_name==app_group_members || app_group_members == ''){
+				    $('#add_app_group_members_help').text('没有选中的应用名称，请选择');
+				    return false
+                }
+                var app_group_name =$.trim($('.title_app_group_name').text());
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'app_group_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'app_group_members':app_group_members,
+                        'app_group_name':app_group_name,
+                        'app_group_tag_key':'app_group_member_add'
+
+					},
+					success:function(result){
+						if(result.status){
+                            $('#app_group_member_add_modal').modal('toggle');
+                            toastr.success(result.result,'Success',{timeOut: 1500});
+                            setTimeout(function(){window.location.href=window.location.href}, 1000);
+						}else {
+//						    通过表单验证返回的错误是多层嵌套字典加列表，一层key是对应提交数据的key，二层有2个key一个是code一个是message，错误信息在message里
+						    $.each(result.result, function (k,v) {
+//						        把错误信息插入到对应的错误help位子
+                                $('#add_'+k+'_help').text(v[0].message);
+                            });
+                            console.log(JSON.stringify(result.result));
+                        }
+					}
+				});
+
+			});
+
+
+//            点击 移除成员 填充模态框
+            $('.delete_app_group_member').click(function () {
+                $('#delete_app_group_member_modal').modal('toggle');
+                $('.hidden_app_name').val($(this).parent().siblings('.data_app_name').html());
+            });
+
+//            点击 移除成员 确定按钮移除成员
+            $('#delete_app_group_member_button').click(function(){
+                var app_group_name =$.trim($('.title_app_group_name').text());
+				var app_name=$.trim($('.hidden_app_name').val());
+				$('#delete_app_group_member_modal').modal('toggle');
+				$.ajax({
+					url:"{% url 'app_group_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+//                    提交的数据要和后台form验证的变量一致，不过可以多出来，只要验证的有就行，比如这里就多了project_tag_key
+					data:{
+					    'app_group_name':app_group_name,
+                        'app_name':app_name,
+                        'app_group_tag_key':'app_group_member_delete'
+
+					},
+					success:function(result){
+						if(result.status){
+                            $('.loading_modal').modal('toggle');
+                            toastr.success(result.result,'Success',{timeOut: 1500});
+                            setTimeout(function(){window.location.href=window.location.href}, 1000);
+						}else {
+						    $('.loading_modal').modal('toggle');
+						    toastr.error(result.result,'Error',{timeOut: 1500});
+                        }
+					}
+				});
+			});
+
+
+//            查看应用明细
+            $('.view_detail').click(function () {
+                $('#view_app_name').val($.trim($(this).parent().siblings('.data_app_name').html()));
+                $('#view_minion_id').val($.trim($(this).parent().siblings('.data_minion_id').html()));
+                $('#view_operation_content').val($.trim($(this).parent().siblings('.data_operation_content').text()));
+                $('#view_update_time').val($.trim($(this).parent().siblings('.data_update_time').html()));
+                $('#view_app_svn_version').val($.trim($(this).parent().parent().find('.data_app_svn_version').html()));
+                $('#view_app_path').val($.trim($(this).parent().siblings('.data_app_path').html()));
+                $('#view_app_path_owner').val($.trim($(this).parent().siblings('.data_app_path_owner').html()));
+                $('#view_app_svn_url').val($.trim($(this).parent().siblings('.data_app_svn_url').html()));
+                $('#view_app_svn_user').val($.trim($(this).parent().siblings('.data_app_svn_user').html()));
+                $('#view_app_svn_co_path').val($.trim($(this).parent().siblings('.data_app_svn_co_path').html()));
+                $('#view_app_svn_version_success').val($.trim($(this).parent().siblings('.data_app_svn_version_success').html()));
+                $('#view_execution_style').val($.trim($(this).parent().siblings('.data_execution_style').html()));
+                $('#view_operation_arguments').val($.trim($(this).parent().siblings('.data_operation_arguments').html()));
+                $('#view_app_backup_path').val($.trim($(this).parent().siblings('.data_app_backup_path').html()));
+                $('#view_create_time').val($.trim($(this).parent().siblings('.data_create_time').html()));
+                $('#view_app_group_name').val($.trim($(this).parent().siblings('.data_app_group_name').html()));
+                $('#view_description').val($.trim($(this).parent().siblings('.data_description').html()));
+                $('#view_sys_type').val($.trim($(this).parent().siblings('.data_sys_type').html()));
+
+            });
+
+
+//            检查svn版本
+            $('.check_svn').click(function () {
+                var app_name = $.trim($(this).parent().siblings('.data_app_name').html());
+                var server_svn_version = $(this).siblings('.data_server_svn_version');
+                server_svn_version.css('color','royalblue');
+                server_svn_version.html('查询..');
+                var re_button = $(this);
+//                改变按钮的样子变成正在执行。。。，原来用下面这个bootstrap自带的，发现有一个问题最后$btn.button("reset")会影响到我disabled
+//                掉按钮的操作，死活都无法添加disabled属性到button里，没办法下面改成手动写一个正在执行....
+//                var $btn = $(this).button('loading');
+                re_button.html("检查..");
+                re_button.addClass("disabled");
+
+                $.ajax({
+					url:"{% url 'app_release_ajax' %}",
+					type:'GET',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'app_name':app_name,
+                        'app_tag_key':'check_svn'
+
+					},
+					success:function(result){
+						if(result.status){
+//						    console.log(JSON.stringify(result.result));
+                            server_svn_version.css('color','royalblue');
+                            server_svn_version.html(result.result);
+                            re_button.html("检查");
+                            re_button.removeClass("disabled");
+						}else {
+						    server_svn_version.css('color','#CC5522');
+                            server_svn_version.html('查询失败');
+                            re_button.html("检查");
+                            re_button.removeClass("disabled");
+                        }
+					}
+				});
+            });
+
+//            点击 发布 按钮跳出svn版本输入模态框等操作
+            $('.release_app').click(function () {
+                $('#release_svn_version_modal').modal('toggle');
+//                清空模态框内容
+                $('#release_svn_version').val('');
+                $('#trSeq').val('');
+                $('#release_style').val('');
+                $('#release_style').val('single');
+//                获取行号，发布函数通过行号来定位发布的位子哈哈
+                var trSeq = $(this).parent().parent().parent().find("tr").index($(this).parent().parent()[0]);
+                $('#trSeq').val(trSeq);
+            });
+
+//            批量发布 按钮点击事件
+            $('.app_batch_release_button').click(function () {
+                $('#release_svn_version_modal').modal('toggle');
+//                清空模态框内容
+                $('#release_svn_version').val('');
+                $('#trSeq').val('');
+                $('#release_style').val('');
+//                利用给release_style赋值的关键字作为判断是批量还是单台发布
+                $('#release_style').val('batch');
+            });
+
+//            svn版本输入模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
+            $('#release_svn_version_modal').on('shown.bs.modal', function () {
+                $("#release_svn_version").focus();
+            });
+
+//            点击svn版本输入模态框 确认 按钮执行发布操作
+            $('#release_app_button').click(function () {
+                var release_svn_version = $('#release_svn_version').val();
+                var release_style = $('#release_style').val();
+                var tr_list = [];
+                if(release_style == 'single'){
+                    tr_list.push($('#trSeq').val());
+                }else if(release_style == 'batch'){
+                    if($('input[name="checkItem"]:checked').length<1){
+                        toastr.error('没有选中的应用','Error',{timeOut: 1500});
+                        return false
+                    }
+                    $('input[name="checkItem"]:checked').each(function () {
+                       tr_list.push($(this).parent().parent().parent().find("tr").index($(this).parent().parent()[0]));
+                    });
+                }
+
+                release_app(release_svn_version,tr_list);
+                $('#release_svn_version_modal').modal('toggle');
+            });
+
+//            应用发布 函数
+            var release_app = function (release_svn_version,tr_list) {
+                var tr_list = tr_list;
+                $.each(tr_list,function () {
+                    var app_name = $.trim($('.trSeq').eq(this).find('.data_app_name').html());
+                    var svn_version = '';
+                    var release_status = $('.trSeq').eq(this).children('.release_status');
+                    release_status.css('color','royalblue');
+                    release_status.html('发布中..');
+                    var re_button = $('.trSeq').eq(this).find('.release_app');
+                    var backup_button = $('.trSeq').eq(this).find('.backup_app');
+                    backup_button.addClass("disabled");
+                    var restore_button = $('.trSeq').eq(this).find('.restore_app');
+                    restore_button.addClass("disabled");
+    //                改变按钮的样子变成正在执行。。。，原来用下面这个bootstrap自带的，发现有一个问题最后$btn.button("reset")会影响到我disabled
+    //                掉按钮的操作，死活都无法添加disabled属性到button里，没办法下面改成手动写一个正在执行....
+    //                var $btn = $(this).button('loading');
+                    re_button.html("发布中...");
+                    re_button.addClass("disabled");
+
+                    if(release_svn_version){
+                        svn_version = release_svn_version;
+                    }else{
+                        svn_version = 'HEAD';
+                    }
+
+                    $.ajax({
+                        url:"{% url 'app_release_ajax' %}",
+                        type:'POST',
+                        dataType:'json',
+                        //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+                        traditional:true,
+                        timeout: 180000,
+                        data:{
+                            'app_name':app_name,
+                            'release_svn_version':svn_version,
+                            'app_tag_key':'release_app'
+
+
+                        },
+                        success:function(result){
+                            if(result.status){
+                                release_status.css('color','green');
+                                release_status.html('发布成功');
+                                re_button.html("发布");
+                                re_button.removeClass("disabled");
+                                backup_button.removeClass("disabled");
+                                restore_button.removeClass("disabled");
+                            }else {
+                                release_status.css('color','red');
+                                release_status.html('发布失败');
+                                re_button.html("发布");
+                                re_button.removeClass("disabled");
+                                backup_button.removeClass("disabled");
+                                restore_button.removeClass("disabled");
+                            }
+                        },
+                        error:function (xhr) {
+                            release_status.css('color','#337ab7');
+                            release_status.html('发布时间较长，请稍后查看日志');
+                            re_button.html("发布");
+                            re_button.removeClass("disabled");
+                            backup_button.removeClass("disabled");
+                            restore_button.removeClass("disabled");
+                        }
+                    });
+                });
+
+            };
+
+
+//            单项操作 弹出提示框
+            $('.app_single_release_btn').click(function () {
+                var single_cmd = $.trim($(this).text());
+                $('.single_release_svn_version').val('');
+                if(single_cmd == 'SVN更新'){
+                    $('.single_release_svn_version').removeClass('hidden');
+                }else{
+                    $('.single_release_svn_version').addClass('hidden');
+                }
+                var app_name = $.trim($(this).parent().siblings('.data_app_name').html());
+                $('.single_operation_app_name').text(app_name);
+                $('.single_cmd').text(single_cmd);
+                var trSeq = $(this).parent().parent().parent().find("tr").index($(this).parent().parent()[0]);
+                $('.single_release_trSeq').val(trSeq);
+                $('#single_operation_app_modal').modal('toggle');
+            });
+
+//            单项操作 svn版本输入模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
+            $('#single_operation_app_modal').on('shown.bs.modal', function () {
+                $('.single_release_svn_version')[0].focus()
+            });
+
+//            单项操作 点击确认执行发布单项操作
+            $('#single_operation_app_button').click(function () {
+                var svn_version='';
+                var app_name = $.trim($('.single_operation_app_name').text());
+                var single_cmd = $.trim($('.single_cmd').text());
+                var single_release_svn_version = $('.single_release_svn_version').val();
+                var trSeq = $('.single_release_trSeq').val();
+                var release_status = $('.trSeq').eq(trSeq).children('.release_status');
+                release_status.css('color','royalblue');
+                release_status.html('执行中..');
+//                禁用掉发布和还原按钮，然后改变备份按钮成备份中状态
+                var release_button = $('.trSeq').eq(trSeq).find('.release_app');
+                release_button.addClass("disabled");
+                var restore_button = $('.trSeq').eq(trSeq).find('.restore_app');
+                restore_button.addClass("disabled");
+                var backup_button = $('.trSeq').eq(trSeq).find('.backup_app');
+                backup_button.addClass("disabled");
+                if(single_release_svn_version){
+                    svn_version = single_release_svn_version;
+                }else{
+                    svn_version = 'HEAD';
+                }
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'app_release_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'app_name':app_name,
+                        'release_svn_version':svn_version,
+                        'single_cmd':single_cmd,
+                        'app_tag_key':'release_app'
+
+					},
+					success:function(result){
+						if(result.status){
+                            release_status.css('color','green');
+                            release_status.html('执行成功');
+                            backup_button.removeClass("disabled");
+                            release_button.removeClass("disabled");
+                            restore_button.removeClass("disabled");
+                        }else {
+                            release_status.css('color','red');
+                            release_status.html('执行失败');
+                            backup_button.removeClass("disabled");
+                            release_button.removeClass("disabled");
+                            restore_button.removeClass("disabled");
+                        }
+					}
+				});
+
+            });
+
+//            查询日志函数封装
+            var search_log_object = function (page) {
+                var app_name=$.trim($('.log_app_name').html());
+				var page = page||1;
+				$.ajax({
+					url:"{% url 'app_release_ajax' %}",
+					type:'GET',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+//                    提交的数据要和后台form验证的变量一致，不过可以多出来，只要验证的有就行，比如这里就多了project_tag_key
+					data:{
+                        'app_name':app_name,
+                        'page':page,
+                        'app_tag_key':'search_app_log'
+
+					},
+					success:function(result){
+					    if(result.status) {
+                            $('.log_pager').empty();
+                            if (result.has_previous) {
+                                $('<li><a href="javascript:void(0);" class="app_log_btn" onclick="search_log_object(' + result.previous_page_number + ')">上一页</a></li>').appendTo('.log_pager');
+                            } else {
+                                $('<li class="disabled"><a href="javascript:void(0);">上一页</a></li>').appendTo('.log_pager');
+                            }
+
+                            $('<li class="current"> 页数 ' + result.number + ' / ' + result.num_pages + '</li>').appendTo('.log_pager');
+
+                            if (result.has_next) {
+                                $('<li><a href="javascript:void(0);" class="app_log_btn" onclick="search_log_object(' + result.next_page_number + ')">下一页</a></li>').appendTo('.log_pager');
+                            } else {
+                                $('<li class="disabled"><a href="javascript:void(0);">下一页</a></li>').appendTo('.log_pager');
+                            }
+                            $('<li>&nbsp;&nbsp;<input type="text"  style="width: 30px;border-radius: 30%;" id="log_page_index">/' + result.num_pages + '页<button type="button" class="btn btn-sm btn-success log_page_go"  >跳转</button></li>').appendTo('.log_pager');
+
+
+                            $('#modal_app_log').empty();
+                            $.each(result.log_content,function (index,content) {
+                                $('#modal_app_log').text($('#modal_app_log').text()+content)
+                            });
+                            $('.log_create_time').html(result.create_time);
+                            $('.log_release_result').html(result.release_result);
+                            $('.log_app_username').html(result.log_app_username);
+                        }else {
+					        $('.log_pager').empty();
+						    $('#modal_app_log').empty();
+						    $('.log_create_time').html('');
+                            $('.log_release_result').html('');
+                            $('.log_app_username').html('');
+                            $('#modal_app_log').html('查询出错了，不好意思');
+                        }
+					}
+				});
+            };
+//            因为上一页下一页是用的onclick事件，而onclick只能调用windows作为上下文基点的函数所以需要加下面这个
+            window.search_log_object = search_log_object;
+
+//            日志查询按钮
+            $('.search_log').click(function () {
+//                代入参数和清空一些东西
+                $('#modal_app_log').html('');
+
+                var app_name = $(this).parent().siblings('.data_app_name').html();
+                $(".log_app_name").html(app_name);
+                search_log_object();
+            });
+
+//            日志页面 跳转按钮事件,由于按钮是动态生成的无法直接调用click实现必须用delegate，注意父元素一定要存在不是未来的
+            $('.log_pager').delegate(".log_page_go","click",function () {
+               var page_num = $('#log_page_index').val();
+               search_log_object(page_num);
+            });
+
+
+//            点击日志里的刷新，刷新日志
+            $('.app_log_btn').click(function(){
+				search_log_object();
+			});
+
+//            点击备份按钮 打开确认备份页
+            $('.backup_app').click(function () {
+                var data_app_backup_path = $(this).parent().siblings('.data_app_backup_path').html();
+                var app_name = $(this).parent().siblings('.data_app_name').html();
+                if(data_app_backup_path){
+                    var trSeq = $(this).parent().parent().parent().find("tr").index($(this).parent().parent()[0]);
+                    $('.backup_trSeq').val(trSeq);
+                    $('.backup_app_name').val(app_name);
+                    $('#backup_app_modal').modal('toggle');
+                }else{
+                    toastr.error('没有备份目录，请编辑应用增加备份目录','Error',{timeOut: 2000});
+                }
+            });
+
+//            点击备份确认页的 确认按钮，确认备份
+            $('#backup_app_button').click(function () {
+                var app_name = $('.backup_app_name').val();
+                var trSeq = $('.backup_trSeq').val();
+                var release_status = $('.trSeq').eq(trSeq).children('.release_status');
+                release_status.css('color','royalblue');
+                release_status.html('备份中..');
+//                禁用掉发布和还原按钮，然后改变备份按钮成备份中状态
+                var release_button = $('.trSeq').eq(trSeq).find('.release_app');
+                release_button.addClass("disabled");
+                var restore_button = $('.trSeq').eq(trSeq).find('.restore_app');
+                restore_button.addClass("disabled");
+                var backup_button = $('.trSeq').eq(trSeq).find('.backup_app');
+                backup_button.html("备份中...");
+                backup_button.addClass("disabled");
+
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'app_release_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'app_name':app_name,
+                        'app_tag_key':'app_backup'
+
+					},
+					success:function(result){
+						if(result.status){
+                            release_status.css('color','green');
+                            release_status.html('备份成功');
+                            backup_button.html("备份");
+                            backup_button.removeClass("disabled");
+                            release_button.removeClass("disabled");
+                            restore_button.removeClass("disabled");
+                        }else {
+                            release_status.css('color','red');
+                            release_status.html('备份失败');
+                            backup_button.html("备份");
+                            backup_button.removeClass("disabled");
+                            release_button.removeClass("disabled");
+                            restore_button.removeClass("disabled");
+                        }
+					}
+				});
+            });
+
+//            点击还原按钮 执行还原
+            $('.restore_app').click(function () {
+                var data_app_backup_path = $(this).parent().siblings('.data_app_backup_path').html();
+                var app_name = $(this).parent().siblings('.data_app_name').html();
+                if(data_app_backup_path){
+                    var trSeq = $(this).parent().parent().parent().find("tr").index($(this).parent().parent()[0]);
+                    $('.restore_trSeq').val(trSeq);
+                    $('.restore_app_name').val(app_name);
+                    $('#restore_app_modal').modal('toggle');
+                }else{
+                    toastr.error('没有备份目录，请编辑应用增加备份目录','Error',{timeOut: 2000});
+                }
+            });
+
+//            点击还原确认页的 确认按钮，确认备份
+            $('#restore_app_button').click(function () {
+                var app_name = $('.restore_app_name').val();
+                var trSeq = $('.restore_trSeq').val();
+                var release_status = $('.trSeq').eq(trSeq).children('.release_status');
+                release_status.css('color','royalblue');
+                release_status.html('还原中..');
+//                禁用掉发布和还原按钮，然后改变备份按钮成备份中状态
+                var release_button = $('.trSeq').eq(trSeq).find('.release_app');
+                release_button.addClass("disabled");
+                var backup_button = $('.trSeq').eq(trSeq).find('.backup_app');
+                backup_button.addClass("disabled");
+                var restore_button = $('.trSeq').eq(trSeq).find('.restore_app');
+                restore_button.html("还原中..");
+                restore_button.addClass("disabled");
+
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'app_release_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'app_name':app_name,
+                        'app_tag_key':'app_restore'
+
+					},
+					success:function(result){
+						if(result.status){
+                            release_status.css('color','green');
+                            release_status.html('还原成功');
+                            restore_button.html("还原");
+                            backup_button.removeClass("disabled");
+                            release_button.removeClass("disabled");
+                            restore_button.removeClass("disabled");
+                        }else {
+                            release_status.css('color','red');
+                            release_status.html('还原失败');
+                            restore_button.html("还原");
+                            backup_button.removeClass("disabled");
+                            release_button.removeClass("disabled");
+                            restore_button.removeClass("disabled");
+                        }
+					}
+				});
+            });
+		});
+
+</script>
+
+{% endblock %}
+
+{% block panel-title_content %}
+<!--<a href="{% url 'nginx_manage'%}">Nginx管理 》</a>-->
+<!--下面这个是返回上一页的数据不刷新，还有一个history.back()也是上一页并刷新页面-->
+<a href="{% url 'app_group' %}"  class="title_content">应用发布组</a>
+<span> >></span>
+<!--下面这个是刷新当前页面-->
+<a href="javascript:location.reload()"  class="title_content">"<span class="title_app_group_name">{{ app_group_name }}</span>"成员管理</a>
+{% endblock %}
+
+{% block panel_body_content %}
+
+
+<div class="row-fluid ">
+    <div class="col-xs-12 overflow_set"  >
+        <div style="margin-bottom: 5px;">
+            <!--下面这里本来是用form的样式的，后来改成div是因为用form默认带了回车会提交表单的功能，所以改成div不过class还是form的哈哈-->
+            <div class="form-inline" role="form">
+                <div class="form-group">
+                    <button type="button" class="btn btn-success app_group_member_add_button" data-toggle="modal" data-target="#app_group_member_add_modal" >添加成员</button>
+                    <!--<button type="button" class="btn btn-success app_add_button" data-toggle="modal" data-target="#app_add_modal">新增应用</button>-->
+                    <button type="button" class="btn btn-primary app_batch_release_button" >批量发布</button>
+                    {% if app_group_members_data %}
+                    <input type="text" class="app_group_members_data hidden" value={{app_group_members_data}}>
+                    {%else%}
+                    <input type="text" class="app_group_members_data hidden" value=''>
+                    {% endif %}
+                </div>
+
+
+                  <div class="form-group pull-right">
+                        <label for="search_field">查询字段</label>
+                        <select class="form-control" id="search_field">
+                            <option value="search_app_name">应用名称</option>
+                            {% if search_field == "search_minion_id" %}
+                            <option value="search_minion_id" selected>Minion_ID</option>
+                            {% else %}
+                            <option value="search_minion_id">Minion_ID</option>
+                            {% endif %}
+                        </select>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="search_content" placeholder="请输入查询条件" value="{{ search_content }}">
+                              <span class="input-group-btn">
+                                <button type="submit" class="btn btn-primary search_btn"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
+                              </span>
+                        </div>
+                        </div>
+
+
+                </div>
+
+        </div>
+        <table class="table table-hover  table-bordered table-striped  table-condensed" >
+            <!--<caption>主机列表</caption>-->
+            <thead>
+            <!--给下面tr加个success是bootstrap的一个类颜色会改变下呵呵-->
+              <tr class="success" >
+                  <th width="40px"><input type="checkbox" id="checkAll" name="checkAll" /></th>
+                  <th width="10%">应用名称</th>
+                  <th width="120px">Minion_ID</th>
+                  <th width="17%">操作步骤</th>
+                  <th  width="120px" >成员操作</th>
+                  <th width="220px" style="text-align: left;">SVN版本比对</th>
+                  <th width="220px" style="">发布操作</th>
+                  <th width="6%">发布状态</th>
+
+              </tr>
+            </thead>
+            <tbody>
+                {% for data in data_list%}
+                <tr class="trSeq">
+                    <td><input type="checkbox" name="checkItem" /></td>
+                    <td class="data_app_name">{{ data.app_name }}</td>
+                    <td class="data_minion_id">{{ data.minion_id }}</td>
+                    <td class="data_operation_content ">
+                        {% for argument in data.operation_content|my_split:','%}{% if forloop.last %}<a  class="app_single_release_btn" style="cursor: pointer;text-decoration: none;">{{ argument }}</a>{% else %}<a  class="app_single_release_btn" style="cursor: pointer;text-decoration: none;">{{ argument }}</a>>>{% endif %}{% endfor %}
+                    </td>
+                    <td class="data_update_time hidden">{{ data.update_time }}</td>
+                    <td class="data_operation" style="padding: 0;">
+                        <button type="button" class="btn btn-info btn-sm view_detail" data-toggle="modal" data-target="#view_app_modal">查看</button>
+                        <!--<button type="button" class="btn btn-info btn-sm edit_detail " data-toggle="modal" data-target="#app_add_modal">编辑</button>-->
+                        <!--<button type="button" class="btn btn-danger btn-sm delete_app" data-toggle="modal" data-target="#delete_app_modal">删除</button>-->
+                        <button type="button" class="btn btn-info btn-sm delete_app_group_member" data-toggle="tooltip" title="只是从组中移除，不删除应用">移除成员</button>
+                    </td>
+                    <td  style="padding: 0 0 0 3px;text-align: left;">应用:
+                        {% if data.app_svn_version %}
+                        <span class="data_app_svn_version" style="color: royalblue;">{{ data.app_svn_version }}</span>
+                        {% else %}
+                        <span class="data_app_svn_version" style="color: #CC5522">未检出</span>
+                        {% endif %}
+                        　库:<span class="data_server_svn_version" style="color: #CC5522">未检查</span>
+                        　{% if data.app_svn_version %}
+                        <button type="button" class="btn btn-info btn-sm check_svn " style="">检查</button>
+                        {% else%}
+                        <button type="button" class="btn btn-info btn-sm check_svn" disabled="disabled">检查</button>
+                        {% endif %}</td>
+
+                    <td class="data_release_operation" style="padding: 0;">
+                        <button type="button" class="btn btn-primary btn-sm release_app" >发布</button>
+                        <!--<button type="button" class="btn btn-primary btn-sm search_log" data-toggle="modal" data-target="#search_app_log">回滚</button>-->
+                        <button type="button" class="btn btn-info btn-sm backup_app" data-toggle="tooltip" title="如没有指定备份目录，请在应用操作编辑的应用备份目录中添加">备份</button>
+                        <button type="button" class="btn btn-info btn-sm restore_app" data-toggle="tooltip" title="仅还原应用文件不执行其他操作">还原</button>
+                        <button type="button" class="btn btn-info btn-sm search_log" data-toggle="modal" data-target="#search_app_log">日志</button>
+
+                    </td>
+                    <td class="release_status "></td>
+
+                    {% for key,value in data.operation_arguments|my_eval %}
+                    {% if key == "停止命令" or key == "映像名称和命令行" or key == "任务计划停止" or key == "停止服务名" or key == "supervisor_stop" %}
+                    <td class="data_server_stop_style hidden">{{ key }}</td>
+                    <td class="data_server_stop_cmd hidden">{{ value }}</td>
+
+                    {% elif key == "启动命令" or key == "启动服务名" or key == "任务计划启动" or key == "supervisor_start" %}
+                    <td class="data_server_start_style hidden">{{ key }}</td>
+                    <td class="data_server_start_cmd hidden">{{ value }}</td>
+                    {% elif key == "文件同步方式" %}
+                    <td class="data_sync_file_style hidden">{{ value }}</td>
+                    {% elif key == "执行命令1" %}
+                    <td class="data_execute_command_1 hidden">{{ key }}</td>
+                    <td class="data_execute_command_1_cmd hidden">{{ value }}</td>
+                    {% elif key == "执行命令2" %}
+                    <td class="data_execute_command_2 hidden">{{ key }}</td>
+                    <td class="data_execute_command_2_cmd hidden">{{ value }}</td>
+                    {% endif %}
+                    {% endfor %}
+
+                    <td class="data_sys_type hidden">{{ data.sys_type }}</td>
+                    <td class="data_app_path hidden">{{ data.app_path }}</td>
+                    <td class="data_app_path_owner hidden">{{ data.app_path_owner }}</td>
+                    <td class="data_app_svn_url hidden">{{ data.app_svn_url }}</td>
+                    <td class="data_app_svn_user hidden">{{ data.app_svn_user }}</td>
+                    <td class="data_app_svn_password hidden">{{ data.app_svn_password }}</td>
+                    <td class="data_app_svn_co_path hidden">{{ data.app_svn_co_path }}</td>
+                    <td class="data_app_svn_version_success hidden">{{ data.app_svn_version_success }}</td>
+                    <td class="data_execution_style hidden">{{ data.execution_style }}</td>
+                    <td class="data_operation_arguments hidden">{{ data.operation_arguments }}</td>
+                    <td class="data_app_backup_path hidden">{{ data.app_backup_path }}</td>
+                    <td class="data_create_time hidden">{{ data.create_time |date:"Y年m月d日 H:i:s" }}</td>
+                    <td class="data_app_group_name hidden">{{ data.app_group_name }}</td>
+                    <td class="data_description hidden">{{ data.description }}</td>
+
+
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div>
+                <ul class="pager">
+                     {% if data_list.has_previous %}
+                    <!--注意如果url中已经有参数了比如http://192.168.68.50:8000/saltkey_manage/?status=denied那么需要把这个status加上，不然跳转错了哈哈-->
+                        <li><a href="?app_group_name={{ app_group_name }}&search_field={{ search_field }}&search_content={{ search_content }}&page={{ data_list.previous_page_number }}">上一页</a></li>
+                    {% else %}
+                        <li class="disabled"><a href="">上一页</a></li>
+                    {% endif %}
+
+                    <li class="current">
+                        页数 {{ data_list.number }} / {{ data_list.paginator.num_pages }}
+                    </li>
+
+                    {% if data_list.has_next %}
+                        <li><a href="?app_group_name={{ app_group_name }}&search_field={{ search_field }}&search_content={{ search_content }}&page={{ data_list.next_page_number }}">下一页</a></li>
+                    {% else %}
+                        <li class="disabled"><a href="">下一页</a></li>
+                    {% endif %}
+                    <li>
+                        &nbsp;&nbsp;<input type="text"  style="width: 30px;border-radius: 30%;" id="page_index">/{{ data_list.paginator.num_pages }}页
+                        <button type="button" class="btn btn-sm btn-success page_go" >跳转</button>
+                    </li>
+                </ul>
+            </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block another_content %}
+
+<!-- 添加成员模态框 -->
+<div class="modal fade juzhong" id="app_group_member_add_modal" tabindex="-1" role="dialog" aria-labelledby="app_group_member_add_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+	<div class="modal-dialog" style="width: 600px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+				<h4 class="modal-title" id="app_group_member_add_lable">
+					添加成员 <span style="color: #0063DC">（已存在于组里的成员不会被查询到）</span>
+				</h4>
+                <!--<span id="xxxxxx" style="color: #FF0000;">　</span>-->
+
+			</div>
+			<div class="modal-body">
+
+                <div class="row" >
+                    <div class="col-sm-12">
+                        <form class="form-horizontal " role="form"  >
+
+							<div class="form-group ">
+										<label class="control-label col-sm-2 " >应用名称:</label>
+                                <div class="panel panel-default col-sm-4" style="padding: 0;margin-left: 15px;margin-bottom: 0;">
+                                    <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
+                                        <div class="input-group">
+                                        <input type="text" class="form-control input-sm" id="add_search_app_name" placeholder="查询应用名称">
+                                          <span class="input-group-btn">
+                                            <button type="button" class="btn btn-primary add_search_app_name_btn btn-sm"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
+                                          </span>
+
+                                        </div>
+                                    </div>
+                                    <select size=10  multiple class="form-control panel-body" id="add_select_app_name" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+                                    </select>
+                                </div>
+
+                                <div class="col-sm-1" style="padding: 0 10px 0 10px;">
+                                    <div style="margin-top: 30px;">
+                                        <button type="button" class="btn btn-xs btn-info disabled" id="add_select_app_name_btn">&gt;&gt;</button>
+                                        <button type="button" class="btn btn-xs btn-info disabled" style="margin-top: 1px;" id="add_delete_app_name_btn">&lt;&lt;</button>
+                                    </div>
+                                </div>
+
+                                <div class="panel panel-info col-sm-4" style="padding: 0;margin-bottom: 0;">
+                                    <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
+                                        <h3 class="panel-title " style="font-size: 12px;padding: 5px 10px;height: 30px;line-height: 1.5;">选中的应用名称</h3>
+                                    </div>
+                                    <select size=10 multiple class="form-control panel-body" id="add_selected_app_name" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+
+                                    </select>
+                                </div>
+
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+
+                                <div class="col-sm-6 col-sm-offset-3">
+									    <span id="add_app_group_members_help" style="color: #FF0000;">　</span>
+								</div>
+							</div>
+
+
+                    </form>
+                    </div>
+                </div>
+
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">取消
+				</button>
+                <button type="button" class="btn btn-primary" id="add_app_group_member_submit">
+					确认添加
+				</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+
+<!--删除成员提示框模态框-->
+<div class="modal fade juzhong " id="delete_app_group_member_modal" tabindex="-1" role="dialog" aria-labelledby="delete_app_group_member_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:50%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">操作提醒</h4>
+            </div>
+            <div class="modal-body">
+                <!--隐藏属性，用来获取触发模态框的那条记录的相关数据-->
+                <input type="hidden" class="hidden_app_name"/>
+                <p style="color: #0063DC;">是否要从该应用发布组中移除</p>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="delete_app_group_member_button" data-dismiss="modal" data-toggle="modal" data-target=".loading_modal"> 确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 查询发布模态框 -->
+<div class="modal fade juzhong" id="view_app_modal" tabindex="-1" role="dialog" aria-labelledby="view_app_lable" aria-hidden="true" >
+	<div class="modal-dialog" style="width: 900px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+				<h4 class="modal-title" id="view_app_lable">
+					应用详细信息
+				</h4>
+                <!--<span class="" id="view_process_help" style="color: #FF0000;">　</span>-->
+			</div>
+			<div class="modal-body">
+                <div class="row" >
+                    <div class="col-sm-6">
+                        <form class="form-horizontal " role="form">
+                            <div class="form-group">
+                                 		<label class="control-label col-sm-3 " for="view_app_name">应用名称:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_name"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+                            </div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_sys_type">系统类型:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_sys_type"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_minion_id">Minion_ID:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_minion_id"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_path">应用目录:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_path"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_path_owner">目录属主:</label>
+                                <div class="col-sm-6">
+										<input type="text" class="form-control" id="view_app_path_owner"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_svn_url">SVN地址:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_svn_url"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_svn_user">SVN账户:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_svn_user"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_svn_co_path">控制台SVN检出目录:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_svn_co_path"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_svn_version_success">最近一次成功发布SVN版本:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_svn_version_success"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_svn_version">控制台SVN版本:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_svn_version"
+									    style="font-size: 14px;" readonly="readonly">
+								</div>
+							</div>
+                            </form>
+                        </div>
+                    <div class="col-sm-6">
+                        <form class="form-horizontal " role="form">
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_execution_style">多主机执行顺序:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_execution_style"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_operation_content">操作步骤:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_operation_content"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_operation_arguments">操作相关参数:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_operation_arguments"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_backup_path">应用备份目录:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_backup_path"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_update_time">最近一次更新时间:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_update_time"
+									   style="font-size: 14px;" readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_create_time">创建时间:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_create_time"
+									   style="font-size: 14px;" readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_group_name">所属应用组:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_group_name"
+									   style="font-size: 14px;" readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_description">描述备注:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_description"
+									   style="font-size: 14px;" readonly="readonly">
+								</div>
+							</div>
+                            </form>
+                        </div>
+                </div>
+
+
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">关闭
+				</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+
+
+<!--删除提示框模态框-->
+<div class="modal fade juzhong " id="delete_app_modal" tabindex="-1" role="dialog" aria-labelledby="delete_app_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:50%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">操作提醒</h4>
+            </div>
+            <div class="modal-body">
+                <!--隐藏属性，用来获取触发模态框的那条记录的相关数据-->
+                <input type="hidden" class="hidden_app_name"/>
+                <p style="color: #0063DC;">是否要删除应用目录和应用备份目录</p>
+                <div class="form-group " id="" style="text-align: center;margin-bottom: 0;">
+                    <label class="radio-inline" style="margin-right: 20px;">
+                    <input type="radio" class="delete_app_file_select" name="delete_app_file_select"  value="delete_app_file" > 是
+                     </label>
+                    <label class="radio-inline">
+                    <input type="radio" class="delete_app_file_select" name="delete_app_file_select"   value="not_delete_app_file" > 否
+                    </label>
+                    <p class=" delete_app_file_select_help " style="color: #FF0000;margin-bottom: 0;" ></p>
+                    <!--</div>-->
+                </div>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="delete_app_button" data-dismiss="modal" data-toggle="modal" data-target=".loading_modal"> 确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- loading模态框 -->
+<div class="modal fade juzhong loading_modal " data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog"  aria-hidden="true" >
+	<div class="modal-dialog" style="width:100px;">
+		<div class="modal-content" style="background-color: rgba(255,255,255,0.5);">
+				<img src="{% static 'images/loading.gif' %}"  alt="未加载" >
+		</div>
+	</div>
+</div>
+
+<!--日志模态框-->
+<div class="modal fade juzhong" id="search_app_log" tabindex="-1" role="dialog" aria-labelledby="app_log_lable" aria-hidden="true" >
+	<div class="modal-dialog" style="width: 780px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+				<h4 class="modal-title" id="app_log_lable">
+					<span class="log_app_name"></span>日志<button type="button" class="btn btn-primary app_log_btn pull-right" style="margin-right: 10px;">
+					刷新日志
+				    </button>
+				</h4>
+                <div style="margin-bottom: 5px;">
+
+                    <ul class="pager log_pager" style="margin: 0;">
+
+                    </ul>
+                </div>
+                <!--<span class="" id="" style="color: #FF0000;">　</span>-->
+                <div class="col-sm-1  log_create_time_label" style="padding: 0;font-weight: bold;">发布时间:</div>
+                <div class="col-sm-3 log_create_time" ></div>
+                <div class="col-sm-1  log_release_result_label" style="padding: 0;font-weight: bold;">发布结果:</div>
+                <div class="col-sm-3 log_release_result" ></div>
+                <div class="col-sm-1  log_app_username_label" style="padding: 0;font-weight: bold;">操作人:</div>
+                <div class="col-sm-3 log_app_username" ></div>
+
+			</div>
+			<div class="modal-body" style="padding-bottom:0;">
+                <div class="form-group" style="height:630px;">
+                    <pre class="form-control " id="modal_app_log"   style="resize:none;font-weight: bold;line-height:100%;height: 100%;margin-top: 4px;background-color:#000;color:#00B600;"></pre>
+                </div>
+
+			</div>
+			<div class="modal-footer" style="padding: 5px 15px 5px 0;">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">
+					确认
+				</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+
+<!--SVN版本输入提示框-->
+<div class="modal fade juzhong " id="release_svn_version_modal" tabindex="-1" role="dialog" aria-labelledby="release_svn_version_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:60%;">
+            <div class="modal-body">
+                <form class="form-horizontal" role="form">
+                     <div class="form-group" style="margin: 0;">
+                        <div class="col-sm-11">
+                          <input type="text" class="form-control" id="release_svn_version" placeholder="SVN版本号" style="padding-left: 0;" autocomplete="off">
+                          <input type="text" class="form-control hidden" id="release_style"  >
+                          <input type="text" class="form-control hidden" id="trSeq" >
+                        </div>
+                         <div class="col-sm-11">
+                            <label class="control-label" style="padding-left: 0;text-align: left;" id="release_svn_version_help">请输入SVN版本号，为空则默认为最新</label>
+                         </div>
+                      </div>
+                </form>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:60%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="release_app_button"> 确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--备份提示框-->
+<div class="modal fade juzhong " id="backup_app_modal" tabindex="-1" role="dialog" aria-labelledby="backup_app_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:50%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">操作提醒</h4>
+            </div>
+            <div class="modal-body">
+                <!--隐藏属性，用来获取触发模态框的那条记录的相关数据-->
+                <input type="hidden" class="backup_app_name"/>
+                <input type="hidden" class="backup_trSeq"/>
+                <p style="text-align: center;font-weight: bold;font-size: large;">确认备份？</p>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="backup_app_button" data-dismiss="modal" > 确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--还原提示框-->
+<div class="modal fade juzhong " id="restore_app_modal" tabindex="-1" role="dialog" aria-labelledby="restore_app_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:50%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">操作提醒</h4>
+            </div>
+            <div class="modal-body">
+                <!--隐藏属性，用来获取触发模态框的那条记录的相关数据-->
+                <input type="hidden" class="restore_app_name"/>
+                <input type="hidden" class="restore_trSeq"/>
+                <p style="text-align: center;font-weight: bold;font-size: large;">确认还原？</p>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="restore_app_button" data-dismiss="modal" > 确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--单项操作提示框-->
+<div class="modal fade juzhong " id="single_operation_app_modal" tabindex="-1" role="dialog" aria-labelledby="single_operation_app_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:50%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h5 class="modal-title">操作提醒</h5>
+            </div>
+            <div class="modal-body">
+                <!--隐藏属性，用来获取触发模态框的那条记录的相关数据-->
+                <!--<input type="hidden" class="restore_app_name"/>-->
+                <input type="hidden" class="single_release_trSeq"/>
+                <p style="font-weight: bold;">应用：<span class="single_operation_app_name"></span></p>
+                <p style="font-weight: bold;">操作：<span class="single_cmd"></span></p>
+                <input  class="single_release_svn_version hidden" placeholder="SVN版本号,不填默认最新" style="border-radius: 5px;"/>
+                <p style="font-weight: bold;color: #ff0084;">确认要单独执行操作吗？</p>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="single_operation_app_button" data-dismiss="modal" > 确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

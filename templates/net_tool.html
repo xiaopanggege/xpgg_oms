@@ -1,0 +1,433 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% block title %}网络扫描{% endblock %}
+{% block custom_css %}
+	<style type="text/css">
+        .he10{
+			height: 10px;
+		}
+
+		.he20 {
+			height: 20px;
+		}
+
+        /*添加扫描表单滚动*/
+        .overflow_set{
+        	overflow: auto;
+        }
+
+		#result1{
+        	overflow-y: auto;
+			white-space: pre-wrap;
+        }
+    </style>
+
+{% endblock %}
+
+{% block custom_js %}
+<script>
+    	$(function(){
+
+    	    // 响应式调整页面高度
+    		$(window).resize(function() {
+    		    // 结果打印框pre高度不然默认是没高度的
+	        	$('.overflow_result').css(
+	        		"height",$('.hall').height()*0.8);
+
+                // 扫描的输入表单单独适应窗口高度，不然如果以后我添加更多的扫描东西越来越长的时候会出现
+                // 整个右侧栏出现滚动条，我这样设置以后只会扫描表单那一块出现滚动，而不会然右边的结果框出现滚动条
+                $('.overflow_set').css(
+                    "height", $('.hall').height() * 0.85);
+            });
+    		$(window).resize();
+
+//        因为网络扫描没有子菜单项目，而我base.html里只对子项目做了选中高亮，所以这里要单独对无子菜单的添加
+            $('.net_tool_cebian').addClass("active");
+
+			// // {#  django 跨站验证需要下面的 ajaxSetup   #}
+            $.ajaxSetup({
+                 data: {csrfmiddlewaretoken: '{{ csrf_token }}' },
+            });
+
+//            网络扫描工具
+            $('#ipscan_sumbit').click(function(){
+//                匹配192.168.1.1/24的正则
+                var reg1 = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\/([1-2]\d|3[0-2]|\d)$/
+
+                // 判断输入是否有误
+				if($.trim($('#ipscan_ip').val())==""){
+					$('#ipscan_help').text('请输入IP网段');
+					$('#ipscan_ip')[0].focus();
+                    //清空输入框内容，因为有时候人家是输入很多空格
+                    $('#ipscan_ip').val("");
+					return false;
+				}
+				if($.trim($('#ipscan_ip').val()).match(reg1)==null){
+					$('#ipscan_help').text('IP网段不合法');
+					$('#ipscan_ip')[0].focus();
+					return false;
+				}
+
+				var ipscan_ip=$('#ipscan_ip').val();
+				var $btn = $(this).button('loading');
+//				清空结果打印的内容
+				$('#result1').text('正在执行，请稍后....');
+				// 上面如果都过了就开始提交了下面用ajax提交
+				$.ajax({
+					url:"{% url 'netscantool' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'scan_type':'ipscan',
+						'ipscan_ip':ipscan_ip
+					},
+					success:function(result){
+
+						if(result.status){
+							$('#result1').text('');
+							if(result.result.length){
+								for(var i = 0; i < result.result.length; i++){
+								$('#result1').append(result.result[i]);
+								}
+							}else {
+								$('#result1').append('扫描结果为空');
+							}
+
+//							$('#result1').val(result.result);
+							$('#ipscan_help').text('');
+                            $btn.button('reset');
+						}else {
+							$('#result1').text('');
+                            $('#result1').text(result.result);
+							$('#ipscan_help').text('');
+                            $btn.button('reset');
+                        }
+
+					}
+				});
+
+			});
+
+//			TCP口扫描工具
+			$('#portscan_sumbit').click(function(){
+//			    匹配192.168.1.1/24的正则
+			    var reg1 = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\/([1-2]\d|3[0-2]|\d)$/
+//                匹配192.168.1.1的正则
+                var reg2 = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/;
+//				匹配端口0到65535
+				var reg3 =/^([0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-5]{2}[0-3][0-5])$/;
+                // 判断IP输入是否有误
+				if($.trim($('#portscan_ip').val())==""){
+					$('#portscan_help1').text('请输入IP');
+					$('#portscan_ip')[0].focus();
+                    //清空输入框内容，因为有时候人家是输入很多空格
+                    $('#portscan_ip').val("");
+					return false;
+				}
+				if($.trim($('#portscan_ip').val()).match(reg2)!=null){
+				    var portscan_ip=$.trim($('#portscan_ip').val());
+				}else if($.trim($('#portscan_ip').val()).match(reg1)!=null){
+				    var portscan_ip=$.trim($('#portscan_ip').val());
+				}else{
+				    $('#portscan_help1').text('IP不合法');
+					$('#portscan_ip')[0].focus();
+					return false;
+                }
+//				判断端口输入是否有误
+				if($.trim($('#portscan_startport').val())==""){
+					$('#portscan_help2').text('请输入起始端口');
+					$('#portscan_startport')[0].focus();
+                    //清空输入框内容，因为有时候人家是输入很多空格
+                    $('#portscan_startport').val("");
+					return false;
+				}
+
+				if($.trim($('#portscan_startport').val()).match(reg3)==null){
+					$('#portscan_help2').text('端口不合法');
+					$('#portscan_startport')[0].focus();
+					return false;
+				}
+
+				if($.trim($('#portscan_endport').val())==""){
+					$('#portscan_help2').text('请输入结束端口');
+					$('#portscan_endport')[0].focus();
+                    //清空输入框内容，因为有时候人家是输入很多空格
+                    $('#portscan_endport').val("");
+					return false;
+				}
+				if($.trim($('#portscan_endport').val()).match(reg3)==null){
+					$('#portscan_help2').text('端口不合法');
+					$('#portscan_endport')[0].focus();
+					return false;
+				}
+
+				if (parseInt($.trim($('#portscan_startport').val()))>parseInt($.trim($('#portscan_endport').val()))){
+					$('#portscan_help2').text('你是傻逼吗起始端口比结束端口还大');
+					$('#portscan_startport')[0].focus();
+					return false;
+				}
+//				清空结果打印的内容
+				$('#result1').text('正在执行，请稍后....');
+				$('#portscan_help2').text('');
+				$('#portscan_help1').text('');
+				var portscan_startport= $.trim($('#portscan_startport').val());
+				var portscan_endport=$.trim($('#portscan_endport').val());
+				var portscan_ip=$.trim($('#portscan_ip').val());
+				var $btn = $(this).button('loading');
+
+				// 上面如果都过了就开始提交了下面用ajax提交
+				$.ajax({
+					url:"{% url 'netscantool' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'scan_type':'portscan',
+						'portscan_ip':portscan_ip,
+						'portscan_startport':portscan_startport,
+						'portscan_endport':portscan_endport
+					},
+					success:function(result){
+						if(result.status){
+							$('#result1').text('');
+							if(result.result.length){
+								for(var i = 0; i < result.result.length; i++){
+								$('#result1').append(result.result[i]);
+								}
+							}else {
+								$('#result1').append('扫描结果为空');
+							}
+
+							$('#portscan_help1').text('');
+							$('#portscan_help2').text('');
+                            $btn.button('reset');
+						}else {
+							$('#result1').text('');
+                            $('#result1').text(result.result);
+							$('#portscan_help1').text('');
+							$('#portscan_help2').text('');
+                            $btn.button('reset');
+                        }
+
+					}
+				});
+
+			});
+
+
+
+//			路由跟踪工具
+			$('#tracert_sumbit').click(function(){
+//                匹配192.168.1.1的正则
+                var reg4 = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/;
+//				匹配域名
+				var reg5 =/^[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?$/;
+                // 判断IP输入是否有误
+				if($.trim($('#tracert_data').val())==""){
+					$('#tracert_help').text('请输入IP或域名');
+					$('#tracert_data')[0].focus();
+                    //清空输入框内容，因为有时候人家是输入很多空格
+                    $('#tracert_data').val("");
+					return false;
+				}
+				if($.trim($('#tracert_data').val()).match(reg4)==null && $.trim($('#tracert_data').val()).match(reg5)==null){
+					$('#tracert_help').text('IP或域名不合法');
+					$('#tracert_data')[0].focus();
+					return false;
+				}
+
+
+//				清空结果打印的内容
+				$('#result1').text('正在执行路由跟踪最多30跳，请稍后....');
+				var tracert_data= $.trim($('#tracert_data').val());
+				var $btn = $(this).button('loading');
+
+				// 上面如果都过了就开始提交了下面用ajax提交
+				$.ajax({
+					url:"{% url 'netscantool' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'scan_type':'traceroutescan',
+						'tracert_data':tracert_data
+					},
+					success:function(result){
+						if(result.status){
+							$('#result1').text('');
+							if(result.result.length){
+								for(var i = 0; i < result.result.length; i++){
+								$('#result1').append(result.result[i]);
+								}
+							}else {
+								$('#result1').append('扫描结果为空');
+							}
+
+							$('#tracert_help').text('');
+                            $btn.button('reset');
+						}else {
+							$('#result1').text('');
+                            $('#result1').text(result.result);
+							$('#tracert_help').text('');
+                            $btn.button('reset');
+                        }
+
+					}
+				});
+
+			});
+    	});
+
+
+	</script>
+{% endblock %}
+
+{% block panel-title_content %}
+    <a href="javascript:location.reload()">网络扫描</a>
+
+{% endblock %}
+
+{% block panel_body_content %}
+<div class="row-fluid" >
+    <div class="col-xs-5 overflow_set">
+        <div class="he10"></div>
+        <form class="form-inline " role="form"  >
+        <!-- IP网段扫描 -->
+            <div  style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" >
+                <label class="label label-success " style="font-size: 17px;">IP网段扫描</label>
+                <div class="he10"></div>
+                <label class="form-group" for="ipscan_ip">请输入IP网段:</label>
+                <input type="text" class="form-control" id="ipscan_ip"
+               placeholder="例:192.168.1.0/24" style="font-size: 14px;"  required="required">
+                <span class="" id="ipscan_help" style="color: #FF0000;">&nbsp;</span>
+                <p></p>
+                <button type="button" class="btn btn-success " id="ipscan_sumbit" data-loading-text="正在执行...">开始扫描</button>
+
+               <div class="he10"></div>
+            </div>
+            <div class="he20"></div>
+
+            <!--TCP端口扫描  -->
+            <div  style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" >
+                <label class="label label-info " style="font-size: 17px;">TCP端口扫描</label>
+                <div class="he10"></div>
+                <label class="form-group" for="portscan_ip">请输入IP/网段:</label>
+                <input type="text" class="form-control" id="portscan_ip"
+               placeholder="例:10.1.1.1 or 10.1.1.1/24" style="font-size: 14px;"  required="required">
+                <span class="" id="portscan_help1" style="color: #FF0000;">&nbsp;</span>
+                <p></p>
+                <label class="form-group" for="portscan_startport">请输入端口:从</label>
+                <input type="text" class="form-control" id="portscan_startport"
+               placeholder="例:80" style="font-size: 14px;width: 70px;"  required="required" value="80">
+                <label class="form-group" for="portscan_endport">到</label>
+                <input type="text" class="form-control" id="portscan_endport"
+               placeholder="例:80" style="font-size: 14px;width: 70px;"  required="required" value="80">
+                <span class="" id="portscan_help2" style="color: #FF0000;">&nbsp;</span>
+                <p></p>
+                <button type="button" class="btn btn-info " id="portscan_sumbit" data-loading-text="正在执行...">开始扫描</button>
+
+               <div class="he10"></div>
+            </div>
+            <div class="he20"></div>
+
+            <!-- 路由跟踪 -->
+            <div  style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" >
+                <label class="label label-primary " style="font-size: 17px;">路由跟踪</label>
+                <div class="he10"></div>
+                <label class="form-group" for="tracert_data">请输入IP或域名:</label>
+                <input type="text" class="form-control" id="tracert_data"
+               placeholder="例:192.168.1.1 " style="font-size: 14px;"  required="required">
+                <span class="" id="tracert_help" style="color: #FF0000;">&nbsp;</span>
+                <p></p>
+                <button type="button" class="btn btn-primary " id="tracert_sumbit" data-loading-text="正在执行...">开始扫描</button>
+
+               <div class="he10"></div>
+            </div>
+            <!--<div class="he20"></div>-->
+
+
+
+
+
+
+        </form>
+    </div>
+    <div class="form-group col-xs-7 overflow_result" style="padding-top: 5px;">
+        <label class="label label-danger " style="font-size: 17px;">结果打印</label>
+        <!-- <b>结果打印</b> -->
+        <!-- 下面这个列数cols弄100%比较大，高度我用h45来按浏览器调整，style是禁止拉伸 -->
+        <!--注意这里的textarea的字体一定要设置等宽字体，因为普通的字体在输出的时候无法和在linux下面一样，想要输出程序代码的
+        原样，最好用等宽字体，不用你自己看下有多难看就知道这里用了font-family: monospace;自带的等宽字体-->
+        <pre class="form-control " id="result1"   style="resize:none;font-weight: bold;height: 100%;margin-top: 4px;background-color:#000;color:#00B600;"></pre>
+    </div>
+</div>
+{% endblock %}
+
+{% block another_content %}
+<!-- 模态框 -->
+<div class="modal fade juzhong upstreamserveradd"  tabindex="-1" role="dialog" aria-labelledby="upstreamserveraddlable" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header" >
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+				<h4 class="modal-title upserh4" id="upstreamserveraddlable" >
+				</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal" role="form"  >
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="upserverdata">server</label>
+                                <div class="col-sm-6">
+										<input type="text" class="form-control" id="upserverdata"
+									   placeholder="例:192.168.1.1:8080" style="font-size: 14px;"  required="required">
+									    <span class="" id="upserverdata_help1" style="color: #FF0000;">　</span>
+								</div>
+                                <!--<label class="control-label col-sm-1 " style="color: #FF0000;" >*</label>-->
+							</div>
+
+                    <!--埋参数-->
+                    <!--用来存放点击新增时候的upstream名称-->
+                    <input type="text"  id="upstreamserveradd_upstreamname" class="hidden">
+                    <!--用来存放原web服务，为了新增的时候定位在这条web下面-->
+                    <input type="text"  id="upstreamserveradd_upstreamserver" class="hidden">
+
+								</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">取消
+				</button>
+                <button type="button" class="btn btn-primary" id="upserver_submit">
+					确定提交
+				</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+
+<!--删除提示框，也是用的模态框-->
+<div class="modal fade juzhong" id="mymodal">
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:50%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">操作提醒</h4>
+            </div>
+            <div class="modal-body">
+                <p style="color: #ff0084;">确定要删除吗</p>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

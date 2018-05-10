@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% block title %}Minion客户端安装部署{% endblock %}
+{% block custom_css %}
+	<style type="text/css">
+        .he10{
+			height: 10px;
+		}
+        .he20{
+			height: 20px;
+		}
+
+        /*添加扫描表单滚动*/
+        .overflow_set{
+        	overflow: auto;
+        }
+		/*pre标签不会自动换行第二个是换行，第一个是滚动条*/
+		#result1 {
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+
+{% endblock %}
+
+{% block custom_js %}
+<script>
+    	$(function(){
+
+    	    //minion_client_install页面输入框改变清空提示信息
+			$('#server_ip').keyup(function(){
+	    		$('#server_ip_help').text('*');
+	    	});
+			$('#server_username').keyup(function(){
+	    		$('#server_username_help').text('*');
+	    	});
+	    	$('#server_password').keyup(function(){
+	    		$('#server_password_help').text('*');
+	    	});
+
+    	    // 响应式调整页面高度
+    		$(window).resize(function() {
+    		    // 结果打印框pre高度不然默认是没高度的
+	        	$('.overflow_result').css(
+	        		"height",$('.hall').height()*0.8);
+
+                // 扫描的输入表单单独适应窗口高度，不然如果以后我添加更多的扫描东西越来越长的时候会出现
+                // 整个右侧栏出现滚动条，我这样设置以后只会扫描表单那一块出现滚动，而不会然右边的结果框出现滚动条
+                $('.overflow_set').css(
+                    "height", $('.hall').height() * 0.85);
+            });
+    		$(window).resize();
+            
+			// // {#  django 跨站验证需要下面的 ajaxSetup   #}
+            $.ajaxSetup({
+                 data: {csrfmiddlewaretoken: '{{ csrf_token }}' }
+            });
+
+            // 表单提交
+			$('#minion_client_install_sumbit').click(function(){
+				// 匹配192.168.1.1的正则
+				var reg1 = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/
+				// 判断主机IP是否为空
+				if($.trim($('#server_ip').val())==""){
+					$('#server_ip_help').text('*IP不能为空');
+					$('#server_ip')[0].focus();
+                    //清空输入框内容，因为有时候人家是输入很多空格
+                    $('#server_ip').val("");
+					return false;
+				}
+//				判断IP是否合规
+                if($.trim($('#server_ip').val()).match(reg1)==null){
+					$('#server_ip_help').text('*IP不合法');
+					$('#server_ip')[0].focus();
+					return false;
+                }
+				// 判断用户名是否为空
+				if($.trim($('#server_username').val())==""){
+					$('#server_username_help').text('*用户名不能为空');
+					$('#server_username')[0].focus();
+                    //清空输入框内容，因为有时候人家是输入很多空格
+                    $('#server_username').val("");
+					return false;
+				}
+				// 判断密码是否为空
+				if($.trim($('#server_password').val())==""){
+					$('#server_password_help').text('*密码不能为空');
+					$('#server_password')[0].focus();
+                    //清空输入框内容，因为有时候人家是输入很多空格
+                    $('#server_password').val("");
+					return false;
+				}
+
+				var minion_id = '';
+				// 判断Minion_id是否为空
+				if($.trim($('#minion_id').val())){
+					minion_id = $.trim($('#minion_id').val())
+				}
+
+				var master = '';
+				// 判断master是否为空
+				if($.trim($('#master').val())){
+					master = $.trim($('#master').val())
+				}
+
+				var reg2 =/^([0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-5]{2}[0-3][0-5])$/;
+				var server_port = '22';
+//				判断端口是否为空，如果不为空还要判断端口是否符合格式
+                if($.trim($('#server_port').val())){
+                    if($.trim($('#server_port').val()).match(reg2)==null){
+					$('#server_port_help').text('端口不合法');
+					$('#server_port')[0].focus();
+					return false;
+                    }else {
+                        server_port = $.trim($('#server_port').val());
+                    }
+				}
+
+				var server_ip=$.trim($('#server_ip').val());
+				var server_username=$.trim($('#server_username').val());
+				var server_password=$.trim($('#server_password').val());
+				var $btn = $(this).button('loading');
+                $('#result1').html('正在执行，请稍后....');
+				// 上面如果都过了就开始提交了下面用ajax提交
+				$.ajax({
+					url:"{% url 'minion_client_install' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'server_ip':server_ip,
+						'server_username':server_username,
+						'server_password':server_password,
+						'minion_id':minion_id,
+                        'master':master,
+                        'server_port': server_port
+					},
+					success:function(result){
+						if(result.status){
+							$('#result1').html('');
+//							for(var i = 0; i < result.result.length; i++){
+//								var insert_data=$('#result1').html()+'<i>'+result.result[i]+'</i>';
+//								$('#result1').html(insert_data);
+							for(var i = 0; i < result.result.length; i++){
+
+								if(result.result[i].indexOf("Result: False")>-1){
+									$('#result1').append("<p style='color: #A00000;'>"+result.result[i]+"</p>");
+								}else if(result.result[i].indexOf("ChangesIs")>-1){
+									$('#result1').append("<p style='color: #00A0A0;'>"+result.result[i]+"</p>");
+								}else if(result.result[i].indexOf("Failed:")>-1){
+//									对汇总的第一行数据中成功失败还有改变做字体颜色区分，即修改颜色
+									var reg1=/Failed:([^\r\n]+)/g;
+									var str1=result.result[i].match(reg1);
+									var reg2=/Succeeded:([^\r\n]+)/g;
+									var str2=result.result[i].match(reg2);
+									var rep_r=result.result[i].replace(reg1,"<span style='color: #A00000;'>"+str1+"</span>");
+									rep_r=rep_r.replace(reg2,"<span style='color: #00B600;'>"+str2+"</span>");
+									$('#result1').append("<p style='color: #00A0A0;'>"+rep_r+"</p>");
+								}else{
+									$('#result1').append("<p style='color: #00B600;'>"+result.result[i]+"</p>");
+								}
+
+							}
+//							$('#result1').val(result.result);
+                            $btn.button('reset');
+						}else {
+							$('#result1').html('');
+                            $('#result1').html(result.result);
+                            $btn.button('reset');
+                        }
+					},
+					error: function(xhr){
+						$('#result1').html('');
+						$('#result1').append("错误提示"+xhr.status+" "+xhr.statusText);
+//						$('#ipscan_help').text('');
+						$btn.button('reset');
+                    }
+				});
+
+			});
+
+		});
+
+    </script>
+{% endblock %}
+
+{% block panel-title_content %}Minion客户端安装部署{% endblock %}
+
+{% block panel_body_content %}
+
+<div class="row-fluid ">
+    <div class="col-xs-5 overflow_set">
+        <div class="he10"></div>
+        <form class="form-inline" role="form" >
+            <!-- <label class="label label-info " style="font-size: 17px;">模块选择</label> -->
+            <div  style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" >
+                <div class="alert alert-warning" style="font-weight: bold;">目前仅提供客户端系统为CentOS版本7和6的Minion部署</div>
+                <label class="label label-danger " style="font-size: 17px;">必填参数</label>
+                <div class="he20"></div>
+                <label for="server_ip" >&nbsp;&nbsp;主机IP:</label>
+                <input type="text" class="form-control" id="server_ip"
+               placeholder="请输入要部署的主机IP" style="font-size: 14px;"  size="22"  required="required">
+               <span id="server_ip_help"  style="color: #FF0000;font-size: 14px;">*</span>
+                <!-- <p class="text-danger  " style="color: #FF0000;">&nbsp;</p> -->
+                <div class="he20"></div>
+                <label for="server_username" >&nbsp;&nbsp;用户名:</label>
+                <input type="text" class="form-control" id="server_username"
+               value="root"  style="font-size: 14px;"  size="22"  required="required">
+               <span id="server_username_help"  style="color: #FF0000;font-size: 14px;">*</span>
+               <div class="he20"></div>
+                <label for="server_password" >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;密码:</label>
+                <input type="password" class="form-control" id="server_password"
+               placeholder="请输入密码" style="font-size: 14px;"  size="22"  required="required">
+               <span id="server_password_help"  style="color: #FF0000;font-size: 14px;">*</span>
+               <div class="he20"></div>
+               <label class="label label-info " style="font-size: 17px;">可选参数</label>
+                <div class="he20"></div>
+                <label for="minion_id" >&nbsp;&nbsp;Minion_id:</label>
+                <input type="text" class="form-control" id="minion_id"
+               placeholder="默认为主机hostname"  style="font-size: 14px;"  size="22"  required="required">
+               <span id="minion_id_help"  style="color: #FF0000;font-size: 14px;">&nbsp;</span>
+                <div class="he20"></div>
+                <label for="server_port" >&nbsp;&nbsp;&nbsp;&nbsp;SSH端口:</label>
+                <input type="text" class="form-control" id="server_port"
+               placeholder="默认22" style="font-size: 14px;"  size="22"  required="required">
+               <span id="server_port_help"  style="color: #FF0000;font-size: 14px;"></span>
+                <div class="he20"></div>
+                <label for="master" >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Master:</label>
+                <input type="text" class="form-control" id="master"
+               placeholder="默认为192.168.68.50"  style="font-size: 14px;"  size="22"  required="required">
+               <span id="master_help"  style="color: #FF0000;font-size: 14px;">&nbsp;</span>
+               <div class="he20"></div>
+               <button type="button" class="btn btn-success" id="minion_client_install_sumbit" data-loading-text="正在执行..." style="margin: 0 auto;display:block;">执行部署</button>
+               <div class="he20"></div>
+            </div>
+
+
+            <div class="he20"></div>
+        </form>
+    </div>
+    <div class="form-group col-xs-7 overflow_result" style="padding-top: 5px;">
+        <label class="label label-danger " style="font-size: 17px;">结果打印</label>
+        <!-- 结果打印 -->
+        <!-- 下面这个列数cols弄100%比较大，高度我用h45来按浏览器调整，style是禁止拉伸 -->
+        <!--注意如果使用标签textarea的字体一定要设置等宽字体，因为普通的字体在输出的时候无法和在linux下面一样，想要输出程序代码的
+        原样，最好用等宽字体，不用你自己看下有多难看就知道这里用了font-family: monospace;自带的等宽字体-->
+        <!--最后我发现可以直接用pre标签这个标签可以完美的输出后端代码的格式哈哈不过换行和滚动条还是要加在上面的style里-->
+        <pre class="form-control "  id="result1"  style="resize:none;font-weight: bold;line-height:100%;height: 100%;margin-top: 4px;background-color:#000;color:#00B600;"></pre>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block another_content %}
+<!-- 模态框 -->
+<div class="modal fade juzhong" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+				<h4 class="modal-title" id="myModalLabel">
+					IP：192.168.126.154
+				</h4>
+			</div>
+			<div class="modal-body">
+				在这里添加一些文本
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">关闭
+				</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+{% endblock %}

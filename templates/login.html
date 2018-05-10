@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+{% load staticfiles %}
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>{% block title %}{% endblock %}</title>
+    <meta name="keywords" content="{{ SITE_NAME }}" />
+    <meta name="description" content="{{ SITE_DESC }}" />
+
+<!--{xiaopgg}-->
+    <link  href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <script  src="{% static 'js/jquery-1.11.1.min.js'%}"></script>
+    <script  src="{% static 'js/bootstrap.min.js'%}"></script>
+    <script  src="{% static 'js/xiaopggyunwei.js'%}"></script>
+    <link rel="stylesheet" href="{% static 'css/toastr.min.css'%}">
+    <script src="{% static 'js/toastr.min.js'%}"></script>
+    <style>
+    	html, body{
+    		margin: 0;
+    		padding: 0;
+    	}
+    	body{
+    		background: url("{% static 'images/login_body.jpg'%}") center no-repeat ;
+    	}
+    	/*.login_form{*/
+    		/*background: url("{% static 'images/login_form.jpg'%}") no-repeat ;*/
+    		/*border: 1px;*/
+    		/*border-radius: 6px;*/
+    		/*background-size:cover;*/
+    		/*!*我用js来垂直居中*!*/
+    	/*}*/
+
+		.he20{
+			height: 20px;
+		}
+    </style>
+	<script>
+
+		$(function(){
+
+		    // 响应式调整页面高度
+    		$(window).resize(function(){
+                //登录页表单窗口居中
+                $('.login_form').css(
+	            "margin-top", ($(window).height() - $('.login_form').outerHeight()) / 2);
+	        	});
+    		$(window).resize(); //这条要放上面函数的下面才能执行玛德
+
+			<!--全局设置回车按钮触发的是登陆按钮操作-->
+			document.onkeydown = function(e){
+				var ev = document.all ? window.event : e;
+				if(ev.keyCode==13) {
+					$('#login_submit').click();
+
+    		 }
+			};
+//			设置访问页面后焦点直接在用户名位子
+			$('#username').focus();
+
+			$.ajaxSetup({
+                 data: {csrfmiddlewaretoken: '{{ csrf_token }}' }
+            });
+
+            //登陆表单提交
+            $('#login_submit').click(function(){
+
+                // 判断输入是否为空
+				if($.trim($('#username').val())==""){
+					$('#login_err').text('请输入用户名');
+                    //让输入框获取焦点用下面的
+                    $("#username")[0].focus();
+                    //清空输入框内容，因为有时候输入很多空格，我判断他为空
+                    $('#username').val("");
+					return false;
+				};
+				if($.trim($('#password').val())==""){
+					$('#login_err').text('请输入密码');
+                    $("#password")[0].focus();
+                    $('#password').val("");
+					return false;
+				};
+
+				var username=$('#username').val();
+                var password=$('#password').val();
+                var next=$('#next').val();
+				// 上面如果都过了就开始提交了下面用ajax提交
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'login' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'username':username,
+                        'password':password,
+                        'next':next
+					},
+					success:function(result){
+						if(result.status){
+//							从后端取到跳转的路径，通过下面代码实现跳转，因为用了ajax所以不能后端直接跳转
+                            window.location.href=result.result;
+						}else {
+                            $('#login_err').text('你输入的密码和账户不匹配');
+                            $('#password').val("");
+                        }
+					}
+				});
+
+			});
+		});
+	</script>
+</head>
+<body>
+	<div class="container">
+		<div class="row">
+			<div class="col-xs-4 col-xs-offset-4 login_form">
+				<form action="" class="form-horizontal  " id="login_form">
+					<h3 class="form-title text-center" >小胖哥哥运维系统</h3>
+					<div class="he20"></div>
+					<div class="form-group  has-feedback">
+					<!-- has-feedback和下面的form-control-feedback配合给输入框加了一个小图标 -->
+						<div class="col-xs-8 col-xs-offset-2">
+						<span class="glyphicon glyphicon-user form-control-feedback"></span>
+						<input type="text" class="form-control requerid" id="username"
+								   placeholder="请输入用户名">
+						</div>
+					</div>
+					<div class="form-group has-feedback">
+						<div class="col-xs-8 col-xs-offset-2">
+							<span class="glyphicon glyphicon-lock form-control-feedback"></span>
+							<input type="password" class="form-control" id="password"
+								   placeholder="请输入密码">
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-xs-offset-2 col-xs-8">
+							<div id="login_err" style="color: #FF0000;  height: 20px;font-weight: bold">
+								&nbsp;
+							</div>
+						</div>
+					</div>
+					 <input type="hidden" id="next" name="next" value="{{ request.GET.next }}">
+					<div class="form-group">
+						<div class="col-xs-offset-3 col-xs-6">
+							<button id="login_submit" type="button" class="btn btn-success btn-block" style="font-size: larger;font-weight: bold" >登录</button>
+						</div>
+					</div>
+				</form>
+
+			</div>
+		</div>
+	</div>
+</body>
+</html>

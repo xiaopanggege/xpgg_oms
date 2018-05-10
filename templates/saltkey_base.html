@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% block title %}SaltKey管理{% endblock %}
+{% block custom_css %}
+	<style type="text/css">
+
+        /*设置表格的宽度固定，不会因为内容过长而出现换行*/
+        table{
+            table-layout:fixed;
+        }
+        /*设置表格内容过长出现滚动条*/
+        /*td{*/
+            /*overflow:auto;*/
+            /*text-overflow:clip;white-space:nowrap;*/
+        /*}*/
+
+        tbody tr:hover{
+        background-color:#9b9b9b !important;
+            color: #000;
+        }
+        /*让列表内的信息上下居中,默认是换行的，但是词内默认没换行要设置word-break实现词内换行*/
+        td{
+            vertical-align:middle !important;
+            text-align: center;
+            word-break:break-all;
+        }
+
+        th{
+            text-align: center;
+        }
+
+        /*添加表单滚动*/
+        .overflow_set{
+        	overflow: auto;
+        }
+
+        .list-group{
+            position: relative;
+
+        }
+
+        .salt_key_tag :hover {
+            z-index: 1;
+            box-shadow: 0 15px 30px rgba(0,0,0,.1);
+            border-top: 1px solid #63cdee;
+            margin-top: -1px;
+            transform: translateY(-3px);
+            border-radius: 5px;
+        }
+    </style>
+
+    <script>
+        $(function() {
+
+            // 响应式调整页面高度
+    		$(window).resize(function() {
+
+                // 表单的大小自适应窗口，不能设置100%，因为除了表单以外其他东西也会占用高度
+                $('.overflow_set').css(
+                    "height", $('.hall').height() -250);
+            });
+    		$(window).resize();
+
+            $.ajaxSetup({
+                 data: {csrfmiddlewaretoken: '{{ csrf_token }}' }
+            });
+
+//            刷新salt-key
+            $('.flush_salt_key').click(function () {
+                $('.loading_modal').modal('toggle');
+                $.ajax({
+					url:"{% url 'salt_key_global' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'global_flush_salt_key':'global_flush_salt_key'
+					},
+					success:function(result){
+						if(result.status){
+                                $('.loading_modal').modal('toggle');
+                                toastr.success(result.result,'Success',{timeOut: 1500});
+                                setTimeout(function(){window.location.href=window.location.href}, 1000);
+						}else {
+						    $('.loading_modal').modal('toggle');
+						    toastr.error(result.result,'警告：',{timeOut: 2500});
+                        }
+					}
+				});
+            });
+
+//            删除所有key的操作
+//            先把点击删除的那条记录的数据传给删除的那个弹出确认模态框
+            $(".delete_all_key").click(function () {
+                $('.hidden_minion_id').val("*");
+                $('.salt_key_delete_modal').modal('toggle');
+            });
+//           点击确认执行删除操作,注意下面的salt_key_delete按钮是在基类saltkey_base.html里的模态框所以和其他几个公用，之前出了一个denied删除问题
+//            因为删除denied调用的不是url:"{% url 'salt_key_delete' %}"而是url:"{% url 'salt_key_denied_delete' %}",而其他几个
+//            删除都是调用url:"{% url 'salt_key_delete' %}"没有问题，导致在denied删除的时候我重新又写了一个确认删除的js，变成2个都运行
+//            变成又删除了denied的minion又删除了公用方法下的minion导致如果在其他状态比如accepted下有同样的minion都会被删除因为js同样被调用了
+//            所以后来我对denied的确认删除模态框单独写了下就行了
+            $(".salt_key_delete").click(function () {
+                var minion_id =  $('.hidden_minion_id').val();
+                $.ajax({
+					url:"{% url 'salt_key_delete' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'minion_id':[minion_id]
+					},
+					success:function(result){
+						if(result.status){
+                            $('.loading_modal').modal('toggle');
+                            window.location.href=window.location.href;
+
+						}else {
+//						    $('.loading_modal').modal('toggle');
+						    toastr.error(result.result,'删除失败：',{timeOut: 2500});
+                        }
+					}
+				});
+            });
+
+//           点击接受执行认证key操作
+            $(".accept_all_key").click(function () {
+                var minion_id =  "*";
+                $.ajax({
+					url:"{% url 'salt_key_accept' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'minion_id':[minion_id]
+					},
+					success:function(result){
+						if(result.status){
+                            $('.loading_modal').modal('toggle');
+                            window.location.href=window.location.href;
+
+						}else {
+						    $('.loading_modal').modal('toggle');
+						    toastr.error(result.result,'error：',{timeOut: 2500});
+                        }
+					}
+				});
+            });
+
+        });
+    </script>
+
+{% endblock %}
+
+<!--妈的发现js没办法在这里直接加必须在最父类那个加-->
+{% block panel-title_content %}SaltKey管理{% endblock %}
+
+{% block panel_body_content %}
+
+
+<div class="row-fluid ">
+    <div class="col-xs-3 salt_key_tag"   >
+
+        <div class="list-group " >
+            <div class="list-group-item  active" style="background-color: #337A5C;">
+                <h4 class="list-group-item-heading " style="position: relative">
+                    已认证KEYS<button  type="button" class="btn btn-info pull-right saltkey_unaccepted" style="padding: 0 12px;" onclick='window.location.href="/saltkey_manage?status=unaccepted&search="'>
+                    详细查询</button>
+                </h4>
+            </div>
+            <ul class="list-group">
+            <li class="list-group-item list-group-item-success" style="font-size: 17px;"><span class="badge" style="background-color: #337A5C;font-size: 17px;">{{ accepted_count }}</span>主机数量：</li>
+            </ul>
+             <a href="/saltkey_manage?status=accepted&search=" style="position: absolute;z-index: 2; top: 0;left: 0;right: 0;bottom: 0;"></a>
+        </div>
+
+    </div>
+    <div class="col-xs-3 salt_key_tag" >
+
+         <div class="list-group ">
+            <div class="list-group-item  active" style="background-color: #337ACD;">
+                <h4 class="list-group-item-heading ">
+                    待认证KEYS<button type="button" class="btn btn-info pull-right saltkey_unaccepted" style="padding: 0 12px;" onclick='window.location.href="/saltkey_manage?status=unaccepted&search="'>
+                    详细查询</button>
+                </h4>
+            </div>
+            <ul class="list-group">
+            <li class="list-group-item list-group-item-success" style="font-size: 17px;"><span class="badge" style="background-color: #337ACD;font-size: 17px;">{{ unaccepted_count }}</span>主机数量：</li>
+            </ul>
+             <a href="/saltkey_manage?status=unaccepted&search=" style="position: absolute;z-index: 2; top: 0;left: 0;right: 0;bottom: 0;"></a>
+        </div>
+    </div>
+    <div class="col-xs-3 salt_key_tag" >
+         <div class="list-group ">
+            <div class="list-group-item  active" style="background-color: burlywood;">
+                <h4 class="list-group-item-heading ">
+                    未被允许KEYS<button type="button" class="btn btn-info pull-right saltkey_denied" style="padding: 0 12px;" onclick='window.location.href="/saltkey_manage?status=denied&search="'>
+                    详细查询</button>
+                </h4>
+            </div>
+            <ul class="list-group">
+            <!--<li class="list-group-item list-group-item-warning"><span class="badge">2017-06-06-17:30</span>最近更新时间：</li>-->
+            <li class="list-group-item list-group-item-success" style="font-size: 17px;"><span class="badge" style="background-color: burlywood;font-size: 17px;">{{ denied_count }}</span>主机数量：</li>
+            </ul>
+             <a href="/saltkey_manage?status=denied&search=" style="position: absolute;z-index: 2; top: 0;left: 0;right: 0;bottom: 0;"></a>
+        </div>
+    </div>
+    <div class="col-xs-3 salt_key_tag">
+         <div class="list-group ">
+            <div class="list-group-item  active" style="background-color: brown;">
+                <h4 class="list-group-item-heading ">
+                    已拒绝KEYS<button type="button" class="btn btn-info pull-right saltkey_rejected" style="padding: 0 12px;" onclick='window.location.href="/saltkey_manage?status=rejected&search="'>
+                    详细查询
+                </button>
+                </h4>
+            </div>
+            <ul class="list-group">
+            <!--<li class="list-group-item list-group-item-warning"><span class="badge">2017-06-06-17:30</span>最近更新时间：</li>-->
+            <li class="list-group-item list-group-item-success" style="font-size: 17px;"><span class="badge" style="background-color: brown;font-size: 17px;">{{ rejected_count }}</span>主机数量：</li>
+            </ul>
+             <a href="/saltkey_manage?status=rejected&search=" style="position: absolute;z-index: 2; top: 0;left: 0;right: 0;bottom: 0;"></a>
+        </div>
+    </div>
+</div>
+<div class="row-fluid ">
+        <div class="col-xs-12 "  >
+             <div class="form-inline" role="form">
+                <nav class="navbar navbar-default" role="navigation">
+                    <div class="container-fluid">
+                        <div class="navbar-header">
+                            <span class="navbar-brand" style="color: #0063DC;background-color: azure">全局操作：</span>
+                        </div>
+                        <button type="button" class="btn btn-primary navbar-btn flush_salt_key">刷新KEY列表</button>
+                        <button type="button" class="btn btn-primary navbar-btn accept_all_key" data-toggle="tooltip" title="由于官方api功能不完善只能接受所有已认证、待认证的KEY，include-rejected等功能无效">接受所有KEY</button>
+                        <button type="button" class="btn btn-danger navbar-btn delete_all_key" data-toggle="tooltip" title="未被允许的KEY无法被全局删除">删除所有KEY</button>
+                    </div>
+                </nav>
+            </div>
+        </div>
+    </div>
+<div class="row-fluid ">
+    <div class="col-xs-12 overflow_set"  >
+         {% block saltkey_list %}{% endblock %}
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block another_content %}
+<!-- loading模态框 -->
+<div class="modal fade juzhong loading_modal " data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog"  aria-hidden="true" >
+	<div class="modal-dialog" style="width:100px;">
+		<div class="modal-content" style="background-color: rgba(255,255,255,0.5);">
+				<img src="../static/images/loading.gif"  alt="未加载" >
+		</div>
+	</div>
+</div>
+
+<!--删除提示框，也是用的模态框-->
+<div class="modal fade juzhong salt_key_delete_modal">
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:50%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">操作提醒</h4>
+            </div>
+            <div class="modal-body">
+                <!--隐藏属性，用来获取触发模态框的那条记录的相关数据-->
+                <input type="hidden" class="hidden_minion_id"/>
+                <p style="color: #FF000C;">确定要删除吗</p>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger salt_key_delete" data-dismiss="modal" data-toggle="modal" data-target=".loading_modal"> 确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

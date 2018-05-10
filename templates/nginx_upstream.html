@@ -1,0 +1,493 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% block title %}Nginx管理{% endblock %}
+
+
+{% block custom_css %}
+	<style type="text/css">
+        /*设置nginx切换右边页的高度溢出出现滚动条*/
+        #overflow_form{
+            overflow-y: auto;
+        }
+        /*设置表格的宽度固定，不会因为内容过长而出现换行*/
+        table{
+            table-layout:fixed;
+        }
+        /*设置表格内容过长出现滚动条*/
+        /*td{*/
+            /*overflow:auto;*/
+            /*text-overflow:clip;white-space:nowrap;*/
+        /*}*/
+
+        tbody tr:hover{
+        background-color:#9b9b9b !important;
+            color: #000;
+        }
+        /*让列表内的信息上下居中,默认是换行的，但是词内默认没换行要设置word-break实现词内换行*/
+        td{
+            vertical-align:middle !important;
+            text-align: center;
+            word-break:break-all;
+        }
+
+        th{
+            text-align: center;
+        }
+
+		/*添加表单滚动*/
+        .overflow_set{
+        	overflow: auto;
+        }
+    </style>
+
+{% endblock %}
+
+{% block custom_js %}
+<script>
+    	$(function(){
+
+    	    // 响应式调整页面高度
+    		$(window).resize(function() {
+
+                // 表单的大小自适应窗口，不能设置100%，因为除了表单以外其他东西也会占用高度
+                $('.overflow_set').css(
+                    "height", $('.hall').height() * 0.9);
+            });
+    		$(window).resize();
+
+//    	    由于这个页面不是侧边栏的导航项目而是Nginx管理跳转后的页面，所以需要手动给Nginx管理添加选中的class
+    	    $('.nginx_cebian').addClass('active');
+
+//    	    由于nginx的数据是直接取的并不是从数据库取所以做分页如果从后端做的话，每次点击下一页功能会重新跑一遍获取数据的逻辑代码，所以把分页放到前端来用js做
+			 var $table = $('table');
+			 var currentPage = 0;//当前页默认值为0
+			 var pageSize = 9;//每一页显示的数目
+//            给下面的方法绑定一个名字叫paging，下面用trigger就是触发这个隐藏并且显示相应数据
+			 $table.bind('paging',function(){
+//			     先隐藏tbody中所有行，然后通过slice结合当前页数和页面显示的数目展现数据
+			    $table.find('tbody tr').hide().slice(currentPage*pageSize,(currentPage+1)*pageSize).show();
+			 });
+			 var sumRows = $table.find('tbody tr').length;
+			 var sumPages = Math.ceil(sumRows/pageSize);//总页数
+             var $dpager = $('<div class="page"></div>');
+			 var $pager = $('<ul class="pagination"></ul>'); //新建div，放入a标签,显示底部分页码
+			 for(var pageIndex = 0 ; pageIndex<sumPages ; pageIndex++){
+                  $('<li class="pageStyle"><a ><span>'+(pageIndex+1)+'</span></a></li>').bind("click",{"newPage":pageIndex},function(event){
+                  currentPage = event.data["newPage"];
+                  $table.trigger("paging");
+                  //触发分页函数
+                  }).appendTo($pager);
+                  $pager.append(" ");
+			  }
+              $pager.appendTo($dpager);
+			  $dpager.insertAfter($table);
+			  $table.trigger("paging");
+
+            //默认第一页的li标签添加选中效果
+			  $('.pageStyle:first').addClass('active');
+
+			  $(".pagination li a").click(function () {
+                  $(this).parent().addClass('active');
+                  $(this).parent().siblings().removeClass('active');
+
+              });
+
+//          页面内查询按钮实现,下面这个功能没问题主要是分页没有加入，所以我把分页的div给隐藏了。。哈哈
+            $(".upstream_search").click(function () {
+                var upstream_search = $("#upstream_search").val();
+                if(upstream_search == ""){
+                    window.location.href=window.location.href;
+                }
+                $(".upstream_name").each(function () {
+//                    用toLowerCase()忽略大小写匹配
+                    if($(this).text().toLowerCase().indexOf(upstream_search.toLowerCase())>-1){
+                        $(this).parent().css('display','table-row');
+                    }else {
+                        $(this).parent().css('display','none');
+                    }
+                    $(".page").addClass('hide');
+                });
+
+            });
+
+//    	    由于这个页面不是侧边栏的导航项目而是Nginx管理跳转后的页面，所以需要手动给Nginx管理添加选中的class
+    	    $('.nginx_manage').addClass('active');
+
+//            在修改状态的时候触发操作按钮变成btn-success，默认都是disabled禁用的
+			$('.upstream_status').change(function(){
+	         		$(this).parent().siblings('.change_parent').children('.status_change').attr("class",'btn  btn-success status_change');
+                    $(this).parent().siblings('.change_result').html('');
+
+//                    下面2个是原来在reload配置旁边的一个错误提示span，不过后来改成用toastr提示插件来实现了哈哈
+//                    $('.reloadhelp').css({color:"red"});
+//                    $('.reloadhelp').text('注意相同upstream的web服务如果全down掉，在reload时会提示"no servers are inside upstream in"错误');
+			});
+
+
+			// // {#  django 跨站验证需要下面的 ajaxSetup   #}
+            $.ajaxSetup({
+                 data: {csrfmiddlewaretoken: '{{ csrf_token }}' }
+            });
+
+            //执行状态变更
+			$('.status_change').click(function() {
+                // 获取表格字段value
+                var upstream_name = $(this).parent().siblings('.upstream_name').html();
+                var upstream_server = $(this).parent().siblings('.upstream_server').html();
+                var upstream_status = $(this).parent().siblings('.status_parent').children().val();
+				var minionid = $('.minionid').val();
+				var path = $('.path').val();
+//                给当前按钮定义变量，因为在ajax中无法直接使用this，this在ajax中含义不同
+				var re_button = $(this);
+//                改变按钮的样子变成正在执行。。。，原来用下面这个bootstrap自带的，发现有一个问题最后$btn.button("reset")会影响到我disabled
+//                掉按钮的操作，死活都无法添加disabled属性到button里，没办法下面改成手动写一个正在执行....
+//                var $btn = $(this).button('loading');
+                re_button.html("执行中...");
+                re_button.addClass("disabled");
+
+//                定义td操作结果的位子，下面要给他插入内容
+                var change_result = $(this).parent().siblings('.change_result');
+
+//				先做一层判断upstream_name如果执行是否全部被down了，如果是不允许down操作
+				var name_count = 0;
+				$('.upstream_name').each(function () {
+					if($(this).html() == upstream_name && $(this).siblings('.status_parent').children().val() == 'up'){
+						name_count += 1;
+					}
+				});
+//               如果up的计数为0则不允许down
+				if(name_count == 0){
+                    change_result.html("<span class='label label-danger' style='font-size: 17px;'>失败,只有一条UP记录无法down</span>");
+                    $(this).parent().siblings('.status_parent').children().val('up');
+                    toastr.error('无法变更状态，如果变更则该upstream名称下将没有UP的server了');
+                    re_button.html("状态变更");
+                    re_button.attr("class",'btn  status_change disabled');
+                    return false;
+				}
+
+                $.ajax({
+					url:"{% url 'nginx_upstream' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{'upstream_name':upstream_name,
+						'upstream_server':upstream_server,
+						'upstream_status':upstream_status,
+						'minionid':minionid,
+                        'path':path
+					},
+					success:function(result){
+						if(result.status){
+							change_result.html("<span class='label label-success' style='font-size: 17px;'>"+result.result+"</span>");
+                            re_button.html("状态变更");
+                            re_button.attr("class",'btn  status_change disabled');
+
+						}else {
+                            change_result.html("<span class='label label-danger' style='font-size: 17px;'>"+result.result+"</span>");
+                            re_button.html("状态变更");
+                            re_button.attr("class",'btn  status_change disabled');
+                        }
+
+					}
+				});
+            });
+//            nginx reload操作
+			$('.reloadnginx').click(function () {
+				var minionid = $('.minionid').val();
+                var nginxip = $('.nginxip').val();
+                if(minionid == ""){
+					return false;
+				}
+				if(nginxip == ""){
+					return false;
+				}
+                var $btn = $(this).button('loading');
+				$.ajax({
+					url:"{% url 'nginx_reload' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'minionid':minionid,
+                        'nginxip':nginxip
+					},
+					success:function(result){
+						if(result.status){
+						    toastr.success(result.result,'Success',{timeOut: 1500});
+//                            成功后，清空操作结果列的数据，不然看着好像没reload一样
+                            $('.change_result').html('');
+                            $btn.button('reset');
+
+						}else {
+						    toastr.error(result.result,'reload失败',{timeOut: 0, extendedTimeOut: 0, closeButton: true});
+//						    $('.reloadhelp').text("&nbsp;");
+//						    $('.reloadhelp').css({color:"red"});
+//                            $('.reloadhelp').text('reload失败');
+
+                            $btn.button('reset');
+                        }
+
+					}
+				});
+			});
+
+//			新增upstream的server弹出模态框操作
+            $('.upstreamserveraddbutton').click(function () {
+                var data = $(event.target).parent();
+                $('.upserh4').html('upstream名称：'+data.siblings('.upstream_name').html());
+//                要清空下面2个框的内容不让每次打开都出现上一次的嘎嘎
+                $('#upserverdata').val('');
+                $('#upserverdata_help1').text('　');
+                $('#upstreamserveradd_upstreamname').val(data.siblings('.upstream_name').html());
+                $('#upstreamserveradd_upstreamserver').val(data.siblings('.upstream_server').html());
+//				$('.nginxgongneng_vip').val(data.siblings('.nginx_data_vip').html());
+//				$('.nginxgongneng_updatetime').val(data.siblings('.nginx_data_updatetime').html());
+//				$('.nginxgongneng_nginxstatus').val(data.siblings('.nginx_data_nginxstatus').html());
+//				$('.nginxgongneng_minionstatus').val(data.siblings('.nginx_data_minionstatus').html());
+//				$('.nginxgongneng_description').val(data.siblings('.nginx_data_description').html());
+//				$('.nginxgongneng_path').val(data.siblings('.nginx_data_path').html());
+//				$('.nginxgongneng_confpath').val(data.siblings('.nginx_data_confpath').html());
+//				$('.nginxgongneng_vhostpath').val(data.siblings('.nginx_data_vhostpath').html());
+//				$('.nginxgongneng_logspath').val(data.siblings('.nginx_data_logspath').html());
+//				$('.nginxgongneng_createdate').val(data.siblings('.nginx_data_createdate').html());
+//                $('.nginxgongneng_minionid').val(data.siblings('.nginx_data_minionid').html());
+
+//                var minionid = $('.nginxgongneng_minionid').val();
+//                var nginxconfpath = $('.nginxgongneng_confpath').val();
+//                var nginxvhostpath = $('.nginxgongneng_vhostpath').val();
+//				var nginxip = $('.nginxgongneng_ip').val();
+//				$('#nginx_conflist').attr('href','{% url "nginx_conflist" %}?minionid='+minionid+'&confpath='+nginxconfpath+'&vhostspath='+nginxvhostpath+'&nginxip='+nginxip+'');
+            });
+
+            $('.upstreamserveradd').on('shown.bs.modal', function () {
+                $('#upserverdata').focus();
+            });
+
+            $('#upserver_submit').click(function () {
+
+//                匹配192.168.1.1:8000的正则
+                var reg = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5]):([0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-5]{2}[0-3][0-5])$/;
+
+                // 判断IP:端口输入是否有误
+				if($.trim($('#upserverdata').val())==""){
+					$('#upserverdata_help1').text('server不能为空');
+					$('#upserverdata')[0].focus();
+                    //清空输入框内容，因为有时候人家是输入很多空格
+                    $('#upserverdata').val("");
+					return false;
+				}
+				if($.trim($('#upserverdata').val()).match(reg)==null){
+					$('#upserverdata_help1').text('不好意思目前只支持ip:端口的格式');
+					$('#upserverdata')[0].focus();
+					return false;
+				}
+				var upserverdata = $.trim($('#upserverdata').val());
+				var upstreamname = $('#upstreamserveradd_upstreamname').val();
+				var minionid = $('.minionid').val();
+                var path = $('.path').val();
+//                下面这个是用来存放要新增server的上一条是哪条，从点击新增的条目中的web获取，不让都不知道插入在哪里你说对吧
+                var srserver = $('#upstreamserveradd_upstreamserver').val();
+				$.ajax({
+					url:"{% url 'nginx_upstreamserver_add' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'upserverdata':upserverdata,
+                        'upstreamname':upstreamname,
+                        'minionid':minionid,
+                        'srserver':srserver,
+                        'path':path
+					},
+					success:function(result){
+						if(result.status){
+							$('.upstreamserveradd').modal('hide');
+                            toastr.success('添加成功，1.5秒后刷新');
+//							从后端取到跳转的路径，通过下面代码实现跳转，因为用了ajax所以不能后端直接跳转
+                            setTimeout(function () {
+                                window.location.href=window.location.href;
+                            }, 1500);
+//							window.location.href=window.location.href;
+//                          或者window.location.reload();
+						}else {
+						    toastr.error('添加失败，请联系管理员');
+//                            change_result.html("<span class='label label-danger' style='font-size: 17px;'>失败</span>");
+                        }
+
+					}
+				});
+            });
+            //upstream新增模态框里改变清空提示信息
+			$('#upserverdata').keyup(function(){
+			    //这里面加了一个表情符号的空，用&nbsp;不行，哈哈厉害吧
+	    		$('#upserverdata_help1').text('　');
+	    	});
+		});
+
+    </script>
+{% endblock %}
+
+{% block panel-title_content %}
+<a href="{% url 'nginx_manage'%}">Nginx管理 》</a>
+<!--下面这个是返回上一页的数据不刷新，还有一个history.back()也是上一页并刷新页面-->
+<a href="javascript:history.go(-1)">Conf文件列表 》</a>
+<!--下面这个是刷新当前页面-->
+<a href="javascript:location.reload()">Upstream列表</a>
+
+{% endblock %}
+
+{% block panel_body_content %}
+
+<div class="row-fluid ">
+	<div class="col-xs-12 overflow_set"  >
+			<div style="margin-bottom: 5px;">
+				<!--下面这里本来是用form的样式的，后来改成div是因为用form默认带了回车会提交表单的功能，所以改成div不过class还是form的哈哈-->
+				<div class="form-inline" role="form">
+					<div class="form-group">
+						<button type="button" class="btn btn-success reloadnginx" data-loading-text="正在执行...">reload配置文件</button>
+                        <!--下面这个是以前用来提示出错信息的span-->
+						<span class="reloadhelp"  style="color: #FF0000;"></span>
+					</div>
+					<!--埋了一个minionid，不需要显示-->
+					<input type="text" value="{{ minionid}}" class="minionid hidden">
+					<input type="text" value="{{ nginxip}}" class="nginxip hidden">
+					<input type="text" value="{{ path}}" class="path hidden">
+
+					  <div class="form-group pull-right">
+						<label for="upstream_search">upstream名称</label>
+						<!--<select class="form-control" id="server_select">-->
+						  <!--<option value="upstreamname">upstream名称</option>-->
+						  <!--&lt;!&ndash;<option value="status">状态</option>&ndash;&gt;-->
+						  <!--&lt;!&ndash;<option value="ipcidr">3</option>&ndash;&gt;-->
+						  <!--&lt;!&ndash;<option value="ipcidr">4</option>&ndash;&gt;-->
+						  <!--&lt;!&ndash;<option value="ipcidr">5</option>&ndash;&gt;-->
+						<!--</select>-->
+						  <input type="text" class="form-control" id="upstream_search" placeholder="请输入名称">
+						<button type="button" class="btn btn-primary upstream_search"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
+					  </div>
+
+					</div>
+
+			</div>
+			<table class="table table-hover  table-bordered table-striped table-responsive table-condensed" >
+				<!--<caption>nginx_upstream列表</caption>-->
+				<thead>
+				<!--给下面tr加个success是bootstrap的一个类颜色会改变下呵呵-->
+				  <tr class="success">
+					<th width="18%">upstream 名称</th>
+					<th width="18%">关联web服务</th>
+					  <th width="8%">状态</th>
+					  <th width="25%"> 操作</th>
+					  <th width="18%">操作结果</th>
+				  </tr>
+				</thead>
+				<tbody>
+				  {% for e in upstreamlist%}
+				  {% for i in e.1%}
+				  <tr>
+
+					  <td class="upstream_name">{{ e.0 }}</td>
+					  {% if '#' in i %}
+					<td class="upstream_server">{{ i | slice:"1:" }}</td>
+					<td class="status_parent">
+						<select  class="btn btn-info upstream_status" >
+						<option  value="up" >&nbsp;&nbsp;UP</option>
+						<option  selected = "selected" value="down">DOWN</option>
+						</select>
+					</td>
+					  {% else %}
+					  <td class="upstream_server">{{ i  }}</td>
+					  <td class="status_parent">
+						  <select  class="btn btn-info upstream_status"  >
+							<option selected = "selected" value="up" >&nbsp;&nbsp;UP</option>
+							<option  value="down">DOWN</option>
+						  </select>
+					  </td>
+					  {% endif %}
+					  <td class="change_parent">
+						  <button type="button" class="btn  disabled status_change" >状态变更</button>
+						  <button type="button" class="btn  btn-primary upstreamserveraddbutton" data-toggle="modal" data-target=".upstreamserveradd">新增</button>
+						  <button type="button" class="btn  btn-danger " data-toggle="modal" data-target="#mymodal">删除</button>
+						  <!--<button type="button" class="btn  btn-danger" >删除</button>-->
+					  <!--<button type="button" class="btn btn-info">编辑</button>-->
+					  <!--<button type="button" class="btn btn-danger">删除</button>-->
+					  </td>
+					  <td class="change_result"></td>
+				  </tr>
+				  {% endfor %}
+					{% endfor %}
+
+				</tbody>
+			  </table>
+		</div>
+</div>
+
+{% endblock %}
+
+{% block another_content %}
+<!-- 模态框 -->
+<div class="modal fade juzhong upstreamserveradd"  tabindex="-1" role="dialog" aria-labelledby="upstreamserveraddlable" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header" >
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+				<h4 class="modal-title upserh4" id="upstreamserveraddlable" >
+				</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal" role="form"  >
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="upserverdata">server</label>
+                                <div class="col-sm-6">
+										<input type="text" class="form-control" id="upserverdata"
+									   placeholder="例:192.168.1.1:8080" style="font-size: 14px;"  required="required">
+									    <span class="" id="upserverdata_help1" style="color: #FF0000;">　</span>
+								</div>
+                                <!--<label class="control-label col-sm-1 " style="color: #FF0000;" >*</label>-->
+							</div>
+
+                    <!--埋参数-->
+                    <!--用来存放点击新增时候的upstream名称-->
+                    <input type="text"  id="upstreamserveradd_upstreamname" class="hidden">
+                    <!--用来存放原web服务，为了新增的时候定位在这条web下面-->
+                    <input type="text"  id="upstreamserveradd_upstreamserver" class="hidden">
+
+								</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">取消
+				</button>
+                <button type="button" class="btn btn-primary" id="upserver_submit">
+					确定提交
+				</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+
+<!--删除提示框，也是用的模态框-->
+<div class="modal fade juzhong" id="mymodal">
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:50%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">操作提醒</h4>
+            </div>
+            <div class="modal-body">
+                <p style="color: #ff0084;">确定要删除吗</p>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
