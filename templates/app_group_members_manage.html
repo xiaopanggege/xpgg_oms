@@ -93,6 +93,7 @@
                 });
 
                 /*点击每一行的选中复选框时*/
+                var $tbr = $('table tbody tr');
                 $('input[name="checkItem"]').click(function(event){
                     /*调整选中行的CSS样式*/
                     $(this).parent().parent().toggleClass('warning');
@@ -101,9 +102,8 @@
                     /*阻止向上冒泡，以防再次触发点击操作*/
                     event.stopPropagation();
                 });
-                /*点击每一行时也触发该行的选中操作*/
-                var $tbr = $('table tbody tr');
-                $tbr.click(function(){
+                /*点击复选框的父框也触发选中*/
+                $('input[name="checkItem"]').parent().click(function(){
                     $(this).find('input').click();
                 });
 
@@ -971,7 +971,7 @@
 
                 <div class="row" >
                     <div class="col-sm-12">
-                        <form class="form-horizontal " role="form"  >
+                        <div class="form-horizontal " role="form"  >
 
 							<div class="form-group ">
 										<label class="control-label col-sm-2 " >应用名称:</label>
@@ -1013,7 +1013,7 @@
 							</div>
 
 
-                    </form>
+                    </div>
                     </div>
                 </div>
 

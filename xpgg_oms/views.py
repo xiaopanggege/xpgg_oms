@@ -3378,3 +3378,112 @@ def app_group_ajax(request):
         logger.error('应用发布组ajax提交处理有问题', e)
         result['result'] = '应用发布组ajax提交处理有问题'
         return JsonResponse(result)
+
+
+# 发布系统 应用授权 主
+def app_auth(request):
+    try:
+        if request.method == 'GET':
+            # 默认如果没有get到的话值为None，这里我需要为空''，所以下面修改默认值为''
+            search_field = request.GET.get('search_field', '')
+            search_content = request.GET.get('search_content', '')
+            if search_content is '':
+                app_auth_data = AppAuth.objects.all()
+                data_list = getPage(request, app_auth_data, 12)
+            else:
+                if search_field == 'search_myuser_username':
+                    app_auth_data = AppAuth.objects.filter(username__contains=search_content)
+                    data_list = getPage(request, app_auth_data, 12)
+                elif search_field == 'search_app_name':
+                    app_auth_data = AppGroup.objects.filter(app_perms__contains=search_content)
+                    data_list = getPage(request, app_auth_data, 12)
+                elif search_field == 'search_app_group_name':
+                    app_auth_data = AppGroup.objects.filter(app_group_perms__contains=search_content)
+                    data_list = getPage(request, app_auth_data, 12)
+                else:
+                    data_list = ""
+            return render(request, 'app_auth.html',
+                          {'data_list': data_list, 'search_field': search_field, 'search_content': search_content})
+    except Exception as e:
+        logger.error('应用授权页面有问题', e)
+        return render(request, 'app_auth.html')
+
+
+# 发布系统 应用授权 ajax提交处理
+def app_auth_ajax(request):
+    result = {'result': None, 'status': False}
+    app_log = []
+    try:
+        if request.is_ajax():
+            # 在ajax提交时候多一个字段作为标识，来区分多个ajax提交哈，厉害！
+            if request.POST.get('app_group_tag_key') == 'app_group_add':
+                obj = AppGroupAddForm(request.POST)
+                if obj.is_valid():
+                    AppGroup.objects.create(app_group_name=obj.cleaned_data["app_group_name"], description=obj.cleaned_data["description"])
+                    result['result'] = '成功'
+                    result['status'] = True
+                else:
+                    error_str = obj.errors.as_json()
+                    result['result'] = json.loads(error_str)
+                return JsonResponse(result)
+            elif request.GET.get('app_group_tag_key') == 'modal_search_app_name':
+
+                app_name = request.GET.get('app_name')
+                app_name_list = AppRelease.objects.filter(app_name__contains=app_name).order_by(
+                    'create_time').values_list('app_name', flat=True)
+                result['result'] = list(app_name_list)
+                result['status'] = True
+                return JsonResponse(result)
+            elif request.POST.get('app_group_tag_key') == 'app_group_update':
+                obj = AppGroupUpdateForm(request.POST)
+                if obj.is_valid():
+                    AppGroup.objects.filter(app_group_name=obj.cleaned_data["app_group_name"]).update(
+                        description=obj.cleaned_data["description"])
+                    result['result'] = '成功'
+                    result['status'] = True
+                else:
+                    error_str = obj.errors.as_json()
+                    result['result'] = json.loads(error_str)
+                return JsonResponse(result)
+            elif request.POST.get('app_group_tag_key') == 'app_group_delete':
+                app_group_name = request.POST.get('app_group_name')
+                try:
+                    AppGroup.objects.filter(app_group_name=app_group_name).delete()
+                    result['result'] = '成功'
+                    result['status'] = True
+                except Exception as e:
+                    result['result'] = str(e)
+                return JsonResponse(result)
+            elif request.POST.get('app_group_tag_key') == 'app_group_member_add':
+                obj = AppGroupUpdateForm(request.POST)
+                if obj.is_valid():
+                    AppGroup.objects.filter(app_group_name=obj.cleaned_data["app_group_name"]).update(
+                        app_group_members=obj.cleaned_data["app_group_members"])
+                else:
+                    error_str = obj.errors.as_json()
+                    result['result'] = json.loads(error_str)
+                    return JsonResponse(result)
+                result['result'] = '成功'
+                result['status'] = True
+                return JsonResponse(result)
+            elif request.POST.get('app_group_tag_key') == 'app_group_member_delete':
+                app_name = request.POST.get('app_name')
+                app_group_name = request.POST.get('app_group_name')
+                try:
+                    app_group_members = AppGroup.objects.get(app_group_name=app_group_name).app_group_members
+                    app_group_members_list = app_group_members.split(',')
+                    app_group_members_list.remove(app_name)
+                    app_group_members = ','.join(app_group_members_list)
+                    AppGroup.objects.filter(app_group_name=app_group_name).update(app_group_members=app_group_members)
+                    result['result'] = '成功'
+                    result['status'] = True
+                except Exception as e:
+                    result['result'] = str(e)
+                return JsonResponse(result)
+            else:
+                result['result'] = '应用发布组ajax提交了错误的tag'
+                return JsonResponse(result)
+    except Exception as e:
+        logger.error('应用发布组ajax提交处理有问题', e)
+        result['result'] = '应用发布组ajax提交处理有问题'
+        return JsonResponse(result)

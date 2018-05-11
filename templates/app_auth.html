@@ -279,7 +279,7 @@
 
 {% endblock %}
 
-{% block panel-title_content %}应用发布组{% endblock %}
+{% block panel-title_content %}应用授权{% endblock %}
 
 {% block panel_body_content %}
 
@@ -289,19 +289,19 @@
         <div style="margin-bottom: 5px;">
             <!--下面这里本来是用form的样式的，后来改成div是因为用form默认带了回车会提交表单的功能，所以改成div不过class还是form的哈哈-->
             <div class="form-inline" role="form">
-                <div class="form-group">
-                    <button type="button" class="btn btn-success app_group_add_button" data-toggle="modal" data-target="#app_group_add_modal">新增应用组</button>
-                </div>
-
-
-                  <div class="form-group pull-right">
+                <div class="form-group ">
                       <label for="search_field">查询字段</label>
                       <select class="form-control" id="search_field">
+                          <option value="search_myuser_username">用户名称</option>
+                          {% if search_field == "search_app_group_name" %}
+                          <option value="search_app_name" selected>应用名称</option>
                           <option value="search_app_group_name">应用组名称</option>
-                          {% if search_field == "search_app_group_members" %}
-                          <option value="search_app_group_members" selected>应用组成员</option>
+                          {% elif search_field == "search_app_group_members" %}
+                          <option value="search_app_name">应用名称</option>
+                          <option value="search_app_group_name" selected>应用组名称</option>
                           {% else %}
-                          <option value="search_app_group_members">应用组成员</option>
+                          <option value="search_app_name">应用名称</option>
+                          <option value="search_app_group_name">应用组名称</option>
                           {% endif %}
 
                       </select>
@@ -312,9 +312,10 @@
                               </span>
                         </div>
                   </div>
-
-
+                <div class="form-group pull-right">
+                    <button type="button" class="btn btn-success app_group_add_button " data-toggle="modal" data-target="#app_group_add_modal">刷新用户</button>
                 </div>
+            </div>
 
         </div>
         <table class="table table-hover  table-bordered table-striped table-responsive table-condensed" >
@@ -322,12 +323,12 @@
             <thead>
             <!--给下面tr加个success是bootstrap的一个类颜色会改变下呵呵-->
               <tr class="success">
-                  <th width="4%"><input type="checkbox" id="checkAll" name="checkAll" /></th>
-                  <th width="6%">ID</th>
-                  <th width="10%">应用组名称</th>
-                  <th width="30%">应用组成员</th>
-                  <th width="20%">备注</th>
-                  <th width="20%">操作</th>
+                  <th width="5%"><input type="checkbox" id="checkAll" name="checkAll" /></th>
+                  <th width="10%">用户名称</th>
+                  <th width="25%">应用权限</th>
+                  <th width="25%">应用组权限</th>
+                  <th width="10%">描述备注</th>
+                  <th width="25%">操作</th>
 
               </tr>
             </thead>
@@ -336,12 +337,16 @@
                 {% for data in data_list%}
                 <tr>
                     <td><input type="checkbox" name="checkItem" /></td>
-                    <td class="data_id">{{ data.id }}</td>
-                    <td class="data_app_group_name">{{ data.app_group_name }}</td>
-                    {% if data.app_group_members %}
-                    <td class="data_app_group_members" title="{{data.app_group_members}}">{{ data.app_group_members | truncatechars:60 }}</td>
+                    <td class="data_username">{{ data.username }}</td>
+                    {% if data.app_perms %}
+                    <td class="data_app_perms" title="{{data.data_app_perms}}">{{ data.app_perms | truncatechars:60 }}</td>
                     {% else %}
-                    <td class="data_app_group_members"></td>
+                    <td class="data_app_perms"></td>
+                    {% endif %}
+                    {% if data.app_group_perms %}
+                    <td class="data_app_group_perms" title="{{data.app_group_perms}}">{{ data.app_group_perms | truncatechars:60 }}</td>
+                    {% else %}
+                    <td class="data_app_group_perms"></td>
                     {% endif %}
                     <td class="data_description">{{ data.description }}</td>
                     <td class="">

@@ -137,7 +137,7 @@ DATABASES = {
         # 如果InnoDB Strict Mode也是严格模式也需要加下面的
         #     'init_command': 'SET innodb_strict_mode=1',
         #     之前是通过utf8创建的数据库，所以下面的这个注释掉，如果用utf8mb4可以试着打开这个
-            # 'charset': 'utf8mb4',
+        #     'charset': 'utf8mb4',
         },
     }
 }

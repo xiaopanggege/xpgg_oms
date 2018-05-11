@@ -74,7 +74,7 @@
 				$('#result1').text('正在执行，请稍后....');
 				// 上面如果都过了就开始提交了下面用ajax提交
 				$.ajax({
-					url:"{% url 'netscantool' %}",
+					url:"{% url 'net_tool' %}",
 					type:'POST',
 					dataType:'json',
                     //如果数据是列表即数组的话要加下面这个traditional不然传不过去
@@ -179,7 +179,7 @@
 
 				// 上面如果都过了就开始提交了下面用ajax提交
 				$.ajax({
-					url:"{% url 'netscantool' %}",
+					url:"{% url 'net_tool' %}",
 					type:'POST',
 					dataType:'json',
                     //如果数据是列表即数组的话要加下面这个traditional不然传不过去
@@ -247,7 +247,7 @@
 
 				// 上面如果都过了就开始提交了下面用ajax提交
 				$.ajax({
-					url:"{% url 'netscantool' %}",
+					url:"{% url 'net_tool' %}",
 					type:'POST',
 					dataType:'json',
                     //如果数据是列表即数组的话要加下面这个traditional不然传不过去
