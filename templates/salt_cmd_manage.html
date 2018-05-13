@@ -194,7 +194,7 @@
 
             });
 
-//           新增发布模态框，查找minion_id,按系统类型和minion_id来查询minion
+//           采集模态框，查找minion_id
             $('.add_search_minion_id_btn').click(function(){
                  $('#add_select_minion_id').empty();
                  var minion_id=$.trim($('#add_search_minion_id').val());
@@ -228,18 +228,23 @@
 				});
 			});
 
-//           新增发布模态框 minion_id选中 操作触发中间的》按钮可用
+//           采集模态框 minion_id选中 操作触发中间的》按钮可用
             $("#add_select_minion_id").click(function () {
-                $("#add_select_minion_id_btn").removeClass("disabled");
-
+                var minion_id_list=$('#add_select_minion_id option:selected').map(function(){return $(this).val();}).get().join(",");
+                if(minion_id_list.length != 0){
+                    $("#add_select_minion_id_btn").removeClass("disabled");
+                }
             });
 
-//           新增发布模态框 minion_id选中 操作触发中间的《按钮可用
+//           采集模态框 minion_id选中 操作触发中间的《按钮可用
             $("#add_selected_minion_id").click(function () {
-                $("#add_delete_minion_id_btn").removeClass("disabled");
+                var minion_id_list=$('#add_selected_minion_id option:selected').map(function(){return $(this).val();}).get().join(",");
+                if(minion_id_list.length != 0) {
+                    $("#add_delete_minion_id_btn").removeClass("disabled");
+                }
             });
 
-//           新增发布模态框 minion_id》按钮触发选中值移动到右边
+//           采集模态框 minion_id》按钮触发选中值移动到右边
             $("#add_select_minion_id_btn").click(function () {
 //                在这里触发清空如果没选择minion_id的错误提示,嘿嘿
                 $('#add_minion_id_help').text('　');
@@ -250,7 +255,7 @@
                 })
             });
 
-//           新增发布模态框 minion_id《按钮触发选中值移动到左边
+//           采集模态框 minion_id《按钮触发选中值移动到左边
             $("#add_delete_minion_id_btn").click(function () {
                 $("#add_selected_minion_id option:selected").each(function () {
                     $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#add_select_minion_id");
@@ -522,10 +527,10 @@
 </div>
 
 <!--采集提示框-->
-<div class="modal fade juzhong " id="collection_prompt_modal" tabindex="-1" role="dialog" aria-labelledby="collection_prompt_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+<div class="modal fade juzhong " id="collection_prompt_modal" tabindex="-1" role="dialog" aria-labelledby="collection_prompt_lable" aria-hidden="true" data-backdrop="static" >
     <div class="modal-dialog">
         <!--下面这个modal-content的div可以调整整个模态框的大小-->
-        <div class="modal-content" style="width:600px;">
+        <div class="modal-content" style="width:720px;">
             <div class="modal-body">
                 <form class="form-horizontal" role="form">
                      <div class="form-group" style="margin: 0;">
@@ -587,7 +592,7 @@
 </div>
 
 <!--删除提示框，也是用的模态框-->
-<div class="modal fade juzhong " id="salt_cmd_delete_modal" tabindex="-1" role="dialog" aria-labelledby="salt_cmd_delete__lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+<div class="modal fade juzhong " id="salt_cmd_delete_modal" tabindex="-1" role="dialog" aria-labelledby="salt_cmd_delete__lable" aria-hidden="true" data-backdrop="static" >
     <div class="modal-dialog">
         <!--下面这个modal-content的div可以调整整个模态框的大小-->
         <div class="modal-content" style="width:50%;">

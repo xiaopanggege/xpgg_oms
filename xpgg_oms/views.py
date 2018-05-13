@@ -1438,9 +1438,211 @@ def salt_key_reject(request):
         return JsonResponse(response_data)
 
 
-#获取minion status信息
-def minion_status():
-    pass
+# salt_exe执行salt命令页
+def salt_exe(request):
+    try:
+        if request.method == 'GET':
+            return render(request, 'salt_exe.html')
+        else:
+            server_ip = request.POST.get('server_ip')
+            server_username = request.POST.get('server_username')
+            server_password = request.POST.get('server_password')
+            # 我在前端设置了如果没输入minion_id则会返回''空，不过这个还是会被django的get收到只是变成minion_id=''还是存在minion_id的
+            # 所以我在后端的sls文件里加了判断如果为''的判断
+            minion_id = request.POST.get('minion_id')
+            if request.POST.get('master'):
+                master = request.POST.get('master')
+            else:
+                master = settings.SITE_SALT_MASTER_IP
+            server_port = request.POST.get('server_port')
+            try:
+                # 直接打开耦合性就比较差了，我这为了方便，其实最好是用salt的cmd.run来打开写入比较正规，而且低耦合
+                with open(r'/etc/salt/roster','w') as roster:
+                    # 本来我是没打算用覆盖写入的方式，后来想想如果不用覆盖写入判断起来更耗性能，所以干脆简单点改成覆盖了
+                    roster.write('\n%s:\n  host: %s\n  user: %s\n  passwd: %s\n  port: %s\n' % (server_ip, server_ip, server_username, server_password, server_port))
+                print('主机信息写入成功')
+            except Exception as e:
+                print('写入主机信息失败')
+                return JsonResponse({'result': '写入主机信息失败', 'status': False})
+            else:
+                data = {'client': 'ssh',
+                        'tgt': server_ip,
+                        'fun': 'test.ping'
+                        }
+                try:
+                    rpost = requests.post('%s/run' % settings.SITE_SALT_API_URL, json=data)
+                    rpost.raise_for_status()
+                    #这里要注意！！！！！，这步测试客户机连通性基本100%不会报错，因为报错也会返回错误结果，所以这里的try是
+                    #为了验证接口是否能正常通信
+                except Exception as e:
+                    reponse_data = 'ssh接口有问题，请联系管理员处理'
+                    print(reponse_data + str(e))
+                    logger.error(reponse_data + str(e))
+                    return JsonResponse({'result': reponse_data, 'status': False})
+                else:
+                    if 'Permission denied, please try again' in json.dumps(rpost.json()):
+                        response_data = {'result': '用户名或密码错误', 'status': False}
+                        print('minion部署失败了用户名或密码错误',rpost.json())
+                        return JsonResponse(response_data)
+                    elif 'Connection refused' in json.dumps(rpost.json()):
+                        response_data = {'result': '无法连接%s,请确认IP是否正确' % server_ip, 'status': False}
+                        print('minion部署失败了无法连接该地址', rpost.json())
+                        return JsonResponse(response_data)
+                    elif '"return": true' in json.dumps(rpost.json()):
+                        print('连通性以及用户名密码验证成功')
+                        # 如果目标主机验证没有问题则开始执行部署工作，我有个想法是ajax写2层嵌套，就是验证做一层成功先在页面
+                        # 返回一个成功的提示并且显示开始部署然后再到后台执行部署，不过没仔细想如何实现，这里就先不做两层直接后台一次处理
+                        minion_data = {'client': 'ssh',
+                                'tgt': server_ip,
+                                'fun': 'state.sls',
+                                # 注意下面pillar的写法，主要是双引号内带单引号或者单引号内带双引号，不要全用单引号或双引号不然会报错
+                                'arg': ["minion", "pillar={'minion_id':'%s','master':'%s'}" % (minion_id, master)]
+                                }
+                        try:
+                            minion_post = requests.post('http://192.168.68.50:8080/run', json=minion_data)
+                            minion_post.raise_for_status()
+                        except Exception as e:
+                            minion_response = '主机%s部署minion客户端失败请联系管理员：' % server_ip
+                            print(minion_response + str(e))
+                            logger.error(minion_response + str(e))
+                            # return logger.info(e + ' 无法获取数据')
+                            return JsonResponse({'result': minion_response, 'status': False})
+                        else:
+                            # 格式化输出
+                            data_list = ssh_format_state(minion_post.json())
+                            minion_response = {'result': data_list, 'status': True}
+                            return JsonResponse(minion_response)
+                    else:
+                        response_data = {'result': '无法连接%s,请确认master是否可以和客户机通信' % server_ip, 'status': False}
+                        logger.error('minion部署失败了请确认master是否可以和客户机通信' + str(rpost.json()))
+                        return JsonResponse(response_data)
+    except Exception as e:
+        logger.error('minion安装部署报错：', e)
+
+
+# salt_exe_ajax执行salt命令ajax操作
+def salt_exe_ajax(request):
+    result = {'result': None, 'status': False}
+    try:
+        if request.is_ajax():
+            # 在ajax提交时候多一个字段作为标识，来区分多个ajax提交哈，厉害！
+            if request.GET.get('salt_cmd_tag_key') == 'modal_search_minion_id':
+                minion_id = request.GET.get('minion_id')
+                minion_id_list = MinionList.objects.filter(minion_id__contains=minion_id).order_by(
+                    'create_date').values_list('minion_id', flat=True)
+                result['result'] = list(minion_id_list)
+                result['status'] = True
+                return JsonResponse(result)
+            elif request.POST.get('salt_cmd_tag_key') == 'collection_info':
+                minion_id = request.POST.get('minion_id')
+                collection_style = request.POST.get('collection_style')
+                try:
+                    with requests.Session() as s:
+                        saltapi = SaltAPI(session=s)
+                        if saltapi.get_token() is False:
+                            error_data = 'salt命令集采集信息获取SaltAPI调用get_token请求出错'
+                            result['result'] = error_data
+                            return JsonResponse(result)
+                        else:
+                            if collection_style == 'state':
+                                response_data = saltapi.sys_state_doc_api(tgt=minion_id, tgt_type='list')
+                            elif collection_style == 'runner':
+                                response_data = saltapi.sys_runner_doc_api(tgt=minion_id, tgt_type='list')
+                            else:
+                                response_data = saltapi.sys_doc_api(tgt=minion_id, tgt_type='list')
+                            # 当调用api失败的时候会返回false
+                            if response_data is False:
+                                error_data = 'salt命令集采集信息失败，SaltAPI调用采集api请求出错'
+                                result['result'] = error_data
+                                return JsonResponse(result)
+                            else:
+                                response_data = response_data['return'][0]
+                                try:
+                                    # 用来存放掉线或者访问不到的minion_id信息
+                                    info = ''
+                                    # state的使用帮助特殊，比如cmd.run会有一个头cmd的说明，所以要对cmd这样做一个处理把他加入到cmd.run的使用帮助中
+                                    if collection_style == 'state':
+                                        a = {}
+                                        b = {}
+                                        for min_id, cmd_dict in response_data.items():
+                                            if isinstance(cmd_dict, dict):
+                                                for salt_cmd, salt_cmd_doc in cmd_dict.items():
+                                                    if len(salt_cmd.split('.')) == 1:
+                                                        a[salt_cmd] = salt_cmd_doc
+                                                    else:
+                                                        b[salt_cmd] = salt_cmd_doc
+                                                for salt_cmd in b.keys():
+                                                    try:
+                                                        b[salt_cmd] = salt_cmd.split('.')[0] + ':\n' + str(
+                                                            a[salt_cmd.split('.')[0]]).replace('\n',
+                                                                                           '\n    ') + '\n\n' + salt_cmd + ':\n' + str(
+                                                            b[salt_cmd])
+                                                    except Exception as e:
+                                                        logger.error('state采集后台错误：' + str(e))
+                                                        result['result'] = 'state采集后台错误：' + str(e)
+                                                        return JsonResponse(result)
+                                                    updated_values = {'salt_cmd': salt_cmd, 'salt_cmd_type': collection_style,
+                                                                      'salt_cmd_module': salt_cmd.split('.')[0],
+                                                                      'salt_cmd_source': 'minion', 'salt_cmd_doc': b[salt_cmd],
+                                                                      'update_time': time.strftime('%Y年%m月%d日 %X')}
+                                                    SaltCmdInfo.objects.update_or_create(salt_cmd=salt_cmd, salt_cmd_type=collection_style, defaults=updated_values)
+                                            elif isinstance(cmd_dict, bool):
+                                                info += ' 不过minion_id:' + min_id + '掉线了没有从它采集到数据'
+                                        result['result'] = '采集完成' + info
+                                        result['status'] = True
+                                        return JsonResponse(result)
+                                    else:
+                                        for min_id, cmd_dict in response_data.items():
+                                            if isinstance(cmd_dict, dict):
+                                                for salt_cmd, salt_cmd_doc in cmd_dict.items():
+                                                    salt_cmd_doc = str(salt_cmd) + ':\n' + str(salt_cmd_doc)
+                                                    updated_values = {'salt_cmd': salt_cmd, 'salt_cmd_type': collection_style,
+                                                                      'salt_cmd_module': salt_cmd.split('.')[0],
+                                                                      'salt_cmd_source': 'minion', 'salt_cmd_doc': salt_cmd_doc,
+                                                                      'update_time': time.strftime('%Y年%m月%d日 %X')}
+                                                    SaltCmdInfo.objects.update_or_create(salt_cmd=salt_cmd, salt_cmd_type=collection_style, defaults=updated_values)
+                                            elif isinstance(cmd_dict, bool):
+                                                info += ' 不过minion_id:' + min_id + '掉线了没有从它采集到数据'
+                                        result['result'] = '采集完成' + info
+                                        result['status'] = True
+                                        return JsonResponse(result)
+                                except Exception as e:
+                                    logger.error('采集后台错误：' + str(e))
+                                    result['result'] = '采集后台错误：' + str(e)
+                                    return JsonResponse(result)
+                except Exception as e:
+                    logger.error('采集信息出错：'+str(e))
+                    result['result'] = '采集信息出错'
+                    return JsonResponse(result)
+            elif request.POST.get('salt_cmd_tag_key') == 'update_salt_cmd_description':
+                salt_cmd = request.POST.get('salt_cmd')
+                description = request.POST.get('description')
+                try:
+                    SaltCmdInfo.objects.filter(salt_cmd=salt_cmd).update(update_time=time.strftime('%Y年%m月%d日 %X'),
+                                                                         description=description)
+                    result['result'] = '修改成功'
+                    result['status'] = True
+                except Exception as e:
+                    message = '修改失败', str(e)
+                    logger.error(message)
+                    result['result'] = message
+                return JsonResponse(result)
+            elif request.POST.get('salt_cmd_tag_key') == 'salt_cmd_delete':
+                salt_cmd = request.POST.get('salt_cmd')
+                try:
+                    SaltCmdInfo.objects.filter(salt_cmd=salt_cmd).delete()
+                    result['result'] = '成功'
+                    result['status'] = True
+                except Exception as e:
+                    message = '修改失败', str(e)
+                    logger.error(message)
+                    result['result'] = message
+                return JsonResponse(result)
+    except Exception as e:
+        logger.error('salt命令集ajax提交处理有问题', e)
+        result['result'] = 'salt命令集ajax提交处理有问题'
+        return JsonResponse(result)
+
 
 # #nginx添加功能
 # def nginx_add(request):

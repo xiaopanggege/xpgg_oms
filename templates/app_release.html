@@ -112,6 +112,7 @@
 //            新增发布模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
             $('#app_add_modal').on('shown.bs.modal', function () {
                 $("#add_app_name").focus();
+                $("input[name='add_sys_type']").eq(0).click();
             });
 
 
@@ -129,6 +130,7 @@
 				$('#add_app_svn_url').val('');
 				$('#add_app_svn_user').val('');
 				$('#add_app_svn_password').val('');
+				$('#add_app_svn_password').prop('type', 'text');
 				$("input[name='add_execution_style']").eq(0).click();
 				$("#add_select_operation").empty();
                 $("#add_selected_operation").empty();
@@ -276,14 +278,20 @@
 			});
 
 //           新增发布模态框 minion_id选中 操作触发中间的》按钮可用
-            $("#add_select_minion_id").click(function () {
-                $("#add_select_minion_id_btn").removeClass("disabled");
+            $('#add_select_minion_id').click(function () {
+                var minion_id_list=$('#add_select_minion_id option:selected').map(function(){return $(this).val();}).get().join(",");
+                if(minion_id_list.length != 0){
+                    $("#add_select_minion_id_btn").removeClass("disabled");
+                }
 
             });
 
 //           新增发布模态框 minion_id选中 操作触发中间的《按钮可用
             $("#add_selected_minion_id").click(function () {
-                $("#add_delete_minion_id_btn").removeClass("disabled");
+                var minion_id_list=$('#add_selected_minion_id option:selected').map(function(){return $(this).val();}).get().join(",");
+                if(minion_id_list.length != 0) {
+                    $("#add_delete_minion_id_btn").removeClass("disabled");
+                }
             });
 
 //           新增发布模态框 minion_id》按钮触发选中值移动到右边
@@ -309,13 +317,19 @@
 
 //           新增发布模态框 操作选择 可选触发中间的》按钮可用
             $("#add_select_operation").click(function () {
-                $("#add_select_operation_btn").removeClass("disabled");
+                var operation_list=$('#add_select_operation option:selected').map(function(){return $(this).val();}).get().join(",");
+                if(operation_list.length != 0) {
+                    $("#add_select_operation_btn").removeClass("disabled");
+                }
 
             });
 
 //           新增发布模态框 操作选择 选中操作触发中间的《按钮可用
             $("#add_selected_operation").click(function () {
-                $("#add_delete_operation_btn").removeClass("disabled");
+                var operation_list=$('#add_selected_operation option:selected').map(function(){return $(this).val();}).get().join(",");
+                if(operation_list.length != 0) {
+                    $("#add_delete_operation_btn").removeClass("disabled");
+                }
             });
 
 //           新增发布模态框 操作选择 》按钮触发选中值移动到右边
@@ -1658,7 +1672,7 @@
 {% block another_content %}
 
 <!-- 添加发布模态框 -->
-<div class="modal fade juzhong" id="app_add_modal" tabindex="-1" role="dialog" aria-labelledby="app_add_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+<div class="modal fade juzhong" id="app_add_modal" tabindex="-1" role="dialog" aria-labelledby="app_add_lable" aria-hidden="true" data-backdrop="static" >
 	<div class="modal-dialog" style="width: 1200px;">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -1675,7 +1689,7 @@
 
                 <div class="row" >
                     <div class="col-sm-6">
-                        <form class="form-horizontal " role="form"  >
+                        <div class="form-horizontal " role="form"  >
                             <div class="form-group">
 										<label class="control-label col-sm-2 " for="add_app_name">应用名称:</label>
                                 <div class="col-sm-6">
@@ -1770,7 +1784,8 @@
 							<div class="form-group">
 										<label class="control-label col-sm-2 " for="add_app_svn_user">SVN账户:</label>
                                 <div class="col-sm-8">
-										<input type="text" class="form-control" id="add_app_svn_user"
+                                        <input type="text" name="fuck_user" style="display:none;">
+										<input type="text" name="fuck_user" class="form-control" id="add_app_svn_user"
 									   style="font-size: 14px;" autocomplete="off" required="required" >
 									    <span class="" id="add_app_svn_user_help" style="color: #FF0000;">　</span>
 								</div>
@@ -1781,17 +1796,17 @@
 										<label class="control-label col-sm-2 " for="add_app_svn_password">SVN密码:</label>
                                 <div class="col-sm-8">
                                     <!--防止自动填充-->
-                                        <input type="password" autocomplete="off" style="display:none;">
-										<input type="password" class="form-control" id="add_app_svn_password"
+                                        <input type="text" name="fuck_pwd" style="display:none;">
+										<input type="text" name="fuck_pwd" onfocus="this.type='password'" class="form-control" id="add_app_svn_password"
 									   style="font-size: 14px;"  autocomplete="off"  required="required" >
 									    <span class="" id="add_app_svn_password_help" style="color: #FF0000;">　</span>
 								</div>
                                 <label class="control-label  " style="color: #FF0000;" >*</label>
 							</div>
-                    </form>
+                    </div>
                     </div>
                     <div class="col-sm-6">
-                        <form class="form-horizontal " role="form"  >
+                        <div class="form-horizontal " role="form"  >
                             <div class="form-group " id="add_release_sequence_div">
                                     <label class="control-label col-sm-3 " >多主机执行顺序:</label>
                                 <div class="col-sm-8">
@@ -1979,7 +1994,7 @@
 								</div>
 							</div>
 
-                        </form>
+                        </div>
 				    </div>
                 </div>
 
@@ -2181,7 +2196,7 @@
 
 
 <!--删除提示框，也是用的模态框-->
-<div class="modal fade juzhong " id="delete_app_modal" tabindex="-1" role="dialog" aria-labelledby="delete_app_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+<div class="modal fade juzhong " id="delete_app_modal" tabindex="-1" role="dialog" aria-labelledby="delete_app_lable" aria-hidden="true" data-backdrop="static" >
     <div class="modal-dialog">
         <!--下面这个modal-content的div可以调整整个模态框的大小-->
         <div class="modal-content" style="width:50%;">
@@ -2266,7 +2281,7 @@
 </div>
 
 <!--SVN版本输入提示框-->
-<div class="modal fade juzhong " id="release_svn_version_modal" tabindex="-1" role="dialog" aria-labelledby="release_svn_version_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+<div class="modal fade juzhong " id="release_svn_version_modal" tabindex="-1" role="dialog" aria-labelledby="release_svn_version_lable" aria-hidden="true" data-backdrop="static">
     <div class="modal-dialog">
         <!--下面这个modal-content的div可以调整整个模态框的大小-->
         <div class="modal-content" style="width:60%;">
@@ -2294,7 +2309,7 @@
 </div>
 
 <!--备份提示框-->
-<div class="modal fade juzhong " id="backup_app_modal" tabindex="-1" role="dialog" aria-labelledby="backup_app_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+<div class="modal fade juzhong " id="backup_app_modal" tabindex="-1" role="dialog" aria-labelledby="backup_app_lable" aria-hidden="true" data-backdrop="static">
     <div class="modal-dialog">
         <!--下面这个modal-content的div可以调整整个模态框的大小-->
         <div class="modal-content" style="width:50%;">
@@ -2318,7 +2333,7 @@
 </div>
 
 <!--还原提示框-->
-<div class="modal fade juzhong " id="restore_app_modal" tabindex="-1" role="dialog" aria-labelledby="restore_app_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+<div class="modal fade juzhong " id="restore_app_modal" tabindex="-1" role="dialog" aria-labelledby="restore_app_lable" aria-hidden="true" data-backdrop="static">
     <div class="modal-dialog">
         <!--下面这个modal-content的div可以调整整个模态框的大小-->
         <div class="modal-content" style="width:50%;">
@@ -2342,7 +2357,7 @@
 </div>
 
 <!--单项操作提示框-->
-<div class="modal fade juzhong " id="single_operation_app_modal" tabindex="-1" role="dialog" aria-labelledby="single_operation_app_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+<div class="modal fade juzhong " id="single_operation_app_modal" tabindex="-1" role="dialog" aria-labelledby="single_operation_app_lable" aria-hidden="true" data-backdrop="static">
     <div class="modal-dialog">
         <!--下面这个modal-content的div可以调整整个模态框的大小-->
         <div class="modal-content" style="width:50%;">

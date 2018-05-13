@@ -198,12 +198,18 @@
 
 //           添加成员模态框 app_name选中 操作触发中间的》按钮可用
             $("#add_select_app_name").click(function () {
-                $("#add_select_app_name_btn").removeClass("disabled");
+                var app_name_list=$('#add_select_app_name option:selected').map(function(){return $(this).val();}).get().join(",");
+                if(app_name_list.length != 0) {
+                    $("#add_select_app_name_btn").removeClass("disabled");
+                }
             });
 
 //           添加成员模态框 app_name选中 操作触发中间的《按钮可用
             $("#add_selected_app_name").click(function () {
-                $("#add_delete_app_name_btn").removeClass("disabled");
+                var app_name_list=$('#add_selected_app_name option:selected').map(function(){return $(this).val();}).get().join(",");
+                if(app_name_list.length != 0) {
+                    $("#add_delete_app_name_btn").removeClass("disabled");
+                }
             });
 
 //           添加成员模态框 app_name》按钮触发选中值移动到右边
@@ -954,7 +960,7 @@
 {% block another_content %}
 
 <!-- 添加成员模态框 -->
-<div class="modal fade juzhong" id="app_group_member_add_modal" tabindex="-1" role="dialog" aria-labelledby="app_group_member_add_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+<div class="modal fade juzhong" id="app_group_member_add_modal" tabindex="-1" role="dialog" aria-labelledby="app_group_member_add_lable" aria-hidden="true" data-backdrop="static" >
 	<div class="modal-dialog" style="width: 600px;">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -1030,7 +1036,7 @@
 </div>
 
 <!--删除成员提示框模态框-->
-<div class="modal fade juzhong " id="delete_app_group_member_modal" tabindex="-1" role="dialog" aria-labelledby="delete_app_group_member_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+<div class="modal fade juzhong " id="delete_app_group_member_modal" tabindex="-1" role="dialog" aria-labelledby="delete_app_group_member_lable" aria-hidden="true" data-backdrop="static">
     <div class="modal-dialog">
         <!--下面这个modal-content的div可以调整整个模态框的大小-->
         <div class="modal-content" style="width:50%;">
@@ -1232,7 +1238,7 @@
 
 
 <!--删除提示框模态框-->
-<div class="modal fade juzhong " id="delete_app_modal" tabindex="-1" role="dialog" aria-labelledby="delete_app_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+<div class="modal fade juzhong " id="delete_app_modal" tabindex="-1" role="dialog" aria-labelledby="delete_app_lable" aria-hidden="true" data-backdrop="static">
     <div class="modal-dialog">
         <!--下面这个modal-content的div可以调整整个模态框的大小-->
         <div class="modal-content" style="width:50%;">
@@ -1265,7 +1271,7 @@
 </div>
 
 <!-- loading模态框 -->
-<div class="modal fade juzhong loading_modal " data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog"  aria-hidden="true" >
+<div class="modal fade juzhong loading_modal " data-backdrop="static"  tabindex="-1" role="dialog"  aria-hidden="true" >
 	<div class="modal-dialog" style="width:100px;">
 		<div class="modal-content" style="background-color: rgba(255,255,255,0.5);">
 				<img src="{% static 'images/loading.gif' %}"  alt="未加载" >
@@ -1317,7 +1323,7 @@
 </div>
 
 <!--SVN版本输入提示框-->
-<div class="modal fade juzhong " id="release_svn_version_modal" tabindex="-1" role="dialog" aria-labelledby="release_svn_version_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+<div class="modal fade juzhong " id="release_svn_version_modal" tabindex="-1" role="dialog" aria-labelledby="release_svn_version_lable" aria-hidden="true" data-backdrop="static">
     <div class="modal-dialog">
         <!--下面这个modal-content的div可以调整整个模态框的大小-->
         <div class="modal-content" style="width:60%;">
@@ -1345,7 +1351,7 @@
 </div>
 
 <!--备份提示框-->
-<div class="modal fade juzhong " id="backup_app_modal" tabindex="-1" role="dialog" aria-labelledby="backup_app_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+<div class="modal fade juzhong " id="backup_app_modal" tabindex="-1" role="dialog" aria-labelledby="backup_app_lable" aria-hidden="true" data-backdrop="static" >
     <div class="modal-dialog">
         <!--下面这个modal-content的div可以调整整个模态框的大小-->
         <div class="modal-content" style="width:50%;">
@@ -1369,7 +1375,7 @@
 </div>
 
 <!--还原提示框-->
-<div class="modal fade juzhong " id="restore_app_modal" tabindex="-1" role="dialog" aria-labelledby="restore_app_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+<div class="modal fade juzhong " id="restore_app_modal" tabindex="-1" role="dialog" aria-labelledby="restore_app_lable" aria-hidden="true" data-backdrop="static" >
     <div class="modal-dialog">
         <!--下面这个modal-content的div可以调整整个模态框的大小-->
         <div class="modal-content" style="width:50%;">
@@ -1393,7 +1399,7 @@
 </div>
 
 <!--单项操作提示框-->
-<div class="modal fade juzhong " id="single_operation_app_modal" tabindex="-1" role="dialog" aria-labelledby="single_operation_app_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+<div class="modal fade juzhong " id="single_operation_app_modal" tabindex="-1" role="dialog" aria-labelledby="single_operation_app_lable" aria-hidden="true" data-backdrop="static" >
     <div class="modal-dialog">
         <!--下面这个modal-content的div可以调整整个模态框的大小-->
         <div class="modal-content" style="width:50%;">

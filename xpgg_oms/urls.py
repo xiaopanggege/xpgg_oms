@@ -2,7 +2,7 @@ from django.conf.urls import url
 from . import views
 
 urlpatterns = [
-    #url(r'^$',views.index,name='index'),
+    # url(r'^$',views.index,name='index'),
     url(r'^$', views.index, name='index'),
     url(r'^login/$', views.do_login, name='login'),
     url(r'^logout/$', views.do_logout, name='logout'),
@@ -19,6 +19,8 @@ urlpatterns = [
     url(r'^salt_key_reject/$', views.salt_key_reject, name='salt_key_reject'),
     url(r'^salt_cmd_manage/$', views.salt_cmd_manage, name='salt_cmd_manage'),
     url(r'^salt_cmd_manage_ajax/$', views.salt_cmd_manage_ajax, name='salt_cmd_manage_ajax'),
+    url(r'^salt_exe/$', views.salt_exe, name='salt_exe'),
+    url(r'^salt_exe_ajax/$', views.salt_exe_ajax, name='salt_exe_ajax'),
     url(r'^server_list/$', views.server_list, name='server_list'),
     url(r'^nginx_upstream/$', views.nginx_upstream, name='nginx_upstream'),
     url(r'^nginx_manage/$', views.nginx_manage, name='nginx_manage'),
@@ -38,8 +40,7 @@ urlpatterns = [
     url(r'^h5_svn_push/$', views.h5_svn_push, name='h5_svn_push'),
     url(r'^h5_svn_unzip/$', views.h5_svn_unzip, name='h5_svn_unzip'),
     url(r'^h5_file/$', views.h5_file, name='h5_file'),
-    #上面这个是测试模块部署，因为我封装了saltapi所以重构了一次代码
     # url(r'^nginx_add/$',views.nginx_add,name='nginx_add'),
-    #url(r'^archive/$',views.archive,name='archive'),
+    # url(r'^archive/$',views.archive,name='archive'),
     url(r'^test/$', views.server_list, name='test'),
 ]
