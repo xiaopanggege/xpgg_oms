@@ -42,6 +42,11 @@
         overflow: auto;
     }
 
+    input:-webkit-autofill,textarea:-webkit-autofill,select:-webkit-autofill {
+        -webkit-box-shadow: 0 0 0 500px white inset;
+    }
+    
+
 </style>
 
 {% endblock %}
@@ -696,6 +701,8 @@
                 $("#add_app_submit").addClass("hidden");
                 $("#update_app_submit").removeClass("hidden");
                 $("#clone_app_submit").removeClass("hidden");
+                // 把密码框改成password
+                $('#add_app_svn_password').prop('type','password');
                 // 模态框标题修改
                 $('#app_add_lable').html('编辑应用发布');
 
@@ -1796,9 +1803,9 @@
 										<label class="control-label col-sm-2 " for="add_app_svn_password">SVN密码:</label>
                                 <div class="col-sm-8">
                                     <!--防止自动填充-->
-                                        <input type="text" name="fuck_pwd" style="display:none;">
+                                        <input type="password" name="fuck_pwd" style="display:none;">
 										<input type="text" name="fuck_pwd" onfocus="this.type='password'" class="form-control" id="add_app_svn_password"
-									   style="font-size: 14px;"  autocomplete="off"  required="required" >
+									   style="font-size: 14px;background-color: white;"  autocomplete="off"  required="required" >
 									    <span class="" id="add_app_svn_password_help" style="color: #FF0000;">　</span>
 								</div>
                                 <label class="control-label  " style="color: #FF0000;" >*</label>

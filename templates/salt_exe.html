@@ -378,7 +378,7 @@
                         <label class="control-label col-sm-2 " for="add_app_path_owner">目录属主:</label>
                 <div class="col-sm-6">
                         <input type="text" class="form-control" id="add_app_path_owner"
-                         style="font-size: 14px;"  required="required" value="root">
+                           required="required" value="root" style="ime-mode:disabled" onkeyup="this.value=this.value.replace(/[\u4e00-\u9fa5]/g,'')">
                         <span class="" id="add_app_path_owner_help" style="color: #FF0000;">　</span>
                 </div>
                 <label class="control-label  " style="color: #FF0000;" >*</label>
