@@ -42,8 +42,9 @@
         overflow: auto;
     }
 
+    /*解决谷歌自动填充把input框底色变成黄色问题*/
     input:-webkit-autofill,textarea:-webkit-autofill,select:-webkit-autofill {
-        -webkit-box-shadow: 0 0 0 500px white inset;
+        -webkit-box-shadow: 0 0 0 1000px white inset !important;
     }
     
 
@@ -286,7 +287,7 @@
             $('#add_select_minion_id').click(function () {
                 var minion_id_list=$('#add_select_minion_id option:selected').map(function(){return $(this).val();}).get().join(",");
                 if(minion_id_list.length != 0){
-                    $("#add_select_minion_id_btn").removeClass("disabled");
+                    $("#add_select_minion_id_btn").attr("disabled",false);
                 }
 
             });
@@ -295,7 +296,7 @@
             $("#add_selected_minion_id").click(function () {
                 var minion_id_list=$('#add_selected_minion_id option:selected').map(function(){return $(this).val();}).get().join(",");
                 if(minion_id_list.length != 0) {
-                    $("#add_delete_minion_id_btn").removeClass("disabled");
+                    $("#add_delete_minion_id_btn").attr("disabled",false);
                 }
             });
 
@@ -306,7 +307,7 @@
                 $("#add_select_minion_id option:selected").each(function () {
                     $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#add_selected_minion_id");
                     $(this).remove();
-                    $("#add_select_minion_id_btn").addClass("disabled");
+                    $("#add_select_minion_id_btn").attr("disabled",true);
                 })
             });
 
@@ -315,7 +316,7 @@
                 $("#add_selected_minion_id option:selected").each(function () {
                     $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#add_select_minion_id");
                     $(this).remove();
-                    $("#add_delete_minion_id_btn").addClass("disabled");
+                    $("#add_delete_minion_id_btn").attr("disabled",true);
                 })
             });
 
@@ -324,7 +325,7 @@
             $("#add_select_operation").click(function () {
                 var operation_list=$('#add_select_operation option:selected').map(function(){return $(this).val();}).get().join(",");
                 if(operation_list.length != 0) {
-                    $("#add_select_operation_btn").removeClass("disabled");
+                    $("#add_select_operation_btn").attr("disabled",false);
                 }
 
             });
@@ -333,7 +334,7 @@
             $("#add_selected_operation").click(function () {
                 var operation_list=$('#add_selected_operation option:selected').map(function(){return $(this).val();}).get().join(",");
                 if(operation_list.length != 0) {
-                    $("#add_delete_operation_btn").removeClass("disabled");
+                    $("#add_delete_operation_btn").attr("disabled",false);
                 }
             });
 
@@ -360,7 +361,7 @@
                     else if($.trim($(this).val())=="执行命令2"){
                         $("#add_execute_command_2_div").removeClass("hidden");
                     }
-                    $("#add_select_operation_btn").addClass("disabled");
+                    $("#add_select_operation_btn").attr("disabled",true);
                 })
             });
 
@@ -385,7 +386,7 @@
                     else if($.trim($(this).val())=="执行命令2"){
                         $("#add_execute_command_2_div").addClass("hidden");
                     }
-                    $("#add_delete_operation_btn").addClass("disabled");
+                    $("#add_delete_operation_btn").attr("disabled",true);
                 })
             });
 
@@ -1065,7 +1066,7 @@
 //                掉按钮的操作，死活都无法添加disabled属性到button里，没办法下面改成手动写一个正在执行....
 //                var $btn = $(this).button('loading');
                 re_button.html("检查..");
-                re_button.addClass("disabled");
+                re_button.attr("disabled",true);
 
                 $.ajax({
 					url:"{% url 'app_release_ajax' %}",
@@ -1084,12 +1085,12 @@
                             server_svn_version.css('color','royalblue');
                             server_svn_version.html(result.result);
                             re_button.html("检查");
-                            re_button.removeClass("disabled");
+                            re_button.attr("disabled",false);
 						}else {
 						    server_svn_version.css('color','#CC5522');
                             server_svn_version.html('查询失败');
                             re_button.html("检查");
-                            re_button.removeClass("disabled");
+                            re_button.attr("disabled",false);
                         }
 					}
 				});
@@ -1156,14 +1157,14 @@
                     release_status.html('发布中..');
                     var re_button = $('.trSeq').eq(this).find('.release_app');
                     var backup_button = $('.trSeq').eq(this).find('.backup_app');
-                    backup_button.addClass("disabled");
+                    backup_button.attr("disabled",true);
                     var restore_button = $('.trSeq').eq(this).find('.restore_app');
-                    restore_button.addClass("disabled");
+                    restore_button.attr("disabled",true);
     //                改变按钮的样子变成正在执行。。。，原来用下面这个bootstrap自带的，发现有一个问题最后$btn.button("reset")会影响到我disabled
     //                掉按钮的操作，死活都无法添加disabled属性到button里，没办法下面改成手动写一个正在执行....
     //                var $btn = $(this).button('loading');
                     re_button.html("发布中...");
-                    re_button.addClass("disabled");
+                    re_button.attr("disabled",true);
 
                     if(release_svn_version){
                         svn_version = release_svn_version;
@@ -1190,25 +1191,25 @@
                                 release_status.css('color','green');
                                 release_status.html('发布成功');
                                 re_button.html("发布");
-                                re_button.removeClass("disabled");
-                                backup_button.removeClass("disabled");
-                                restore_button.removeClass("disabled");
+                                re_button.attr("disabled",false);
+                                backup_button.attr("disabled",false);
+                                restore_button.attr("disabled",false);
                             }else {
                                 release_status.css('color','red');
                                 release_status.html('发布失败');
                                 re_button.html("发布");
-                                re_button.removeClass("disabled");
-                                backup_button.removeClass("disabled");
-                                restore_button.removeClass("disabled");
+                                re_button.attr("disabled",false);
+                                backup_button.attr("disabled",false);
+                                restore_button.attr("disabled",false);
                             }
                         },
                         error:function (xhr) {
                             release_status.css('color','#337ab7');
                             release_status.html('发布时间较长，请稍后查看日志');
                             re_button.html("发布");
-                            re_button.removeClass("disabled");
-                            backup_button.removeClass("disabled");
-                            restore_button.removeClass("disabled");
+                            re_button.attr("disabled",false);
+                            backup_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
                         }
                     });
                 });
@@ -1250,11 +1251,11 @@
                 release_status.html('执行中..');
 //                禁用掉发布和还原按钮，然后改变备份按钮成备份中状态
                 var release_button = $('.trSeq').eq(trSeq).find('.release_app');
-                release_button.addClass("disabled");
+                release_button.attr("disabled",true);
                 var restore_button = $('.trSeq').eq(trSeq).find('.restore_app');
-                restore_button.addClass("disabled");
+                restore_button.attr("disabled",true);
                 var backup_button = $('.trSeq').eq(trSeq).find('.backup_app');
-                backup_button.addClass("disabled");
+                backup_button.attr("disabled",true);
                 if(single_release_svn_version){
                     svn_version = single_release_svn_version;
                 }else{
@@ -1278,15 +1279,15 @@
 						if(result.status){
                             release_status.css('color','green');
                             release_status.html('执行成功');
-                            backup_button.removeClass("disabled");
-                            release_button.removeClass("disabled");
-                            restore_button.removeClass("disabled");
+                            backup_button.attr("disabled",false);
+                            release_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
                         }else {
                             release_status.css('color','red');
                             release_status.html('执行失败');
-                            backup_button.removeClass("disabled");
-                            release_button.removeClass("disabled");
-                            restore_button.removeClass("disabled");
+                            backup_button.attr("disabled",false);
+                            release_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
                         }
 					}
 				});
@@ -1395,12 +1396,12 @@
                 release_status.html('备份中..');
 //                禁用掉发布和还原按钮，然后改变备份按钮成备份中状态
                 var release_button = $('.trSeq').eq(trSeq).find('.release_app');
-                release_button.addClass("disabled");
+                release_button.attr("disabled",true);
                 var restore_button = $('.trSeq').eq(trSeq).find('.restore_app');
-                restore_button.addClass("disabled");
+                restore_button.attr("disabled",true);
                 var backup_button = $('.trSeq').eq(trSeq).find('.backup_app');
                 backup_button.html("备份中...");
-                backup_button.addClass("disabled");
+                backup_button.attr("disabled",true);
 
 //				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
 				$.ajax({
@@ -1419,16 +1420,16 @@
                             release_status.css('color','green');
                             release_status.html('备份成功');
                             backup_button.html("备份");
-                            backup_button.removeClass("disabled");
-                            release_button.removeClass("disabled");
-                            restore_button.removeClass("disabled");
+                            backup_button.attr("disabled",false);
+                            release_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
                         }else {
                             release_status.css('color','red');
                             release_status.html('备份失败');
                             backup_button.html("备份");
-                            backup_button.removeClass("disabled");
-                            release_button.removeClass("disabled");
-                            restore_button.removeClass("disabled");
+                            backup_button.attr("disabled",false);
+                            release_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
                         }
 					}
 				});
@@ -1457,12 +1458,12 @@
                 release_status.html('还原中..');
 //                禁用掉发布和还原按钮，然后改变备份按钮成备份中状态
                 var release_button = $('.trSeq').eq(trSeq).find('.release_app');
-                release_button.addClass("disabled");
+                release_button.attr("disabled",true);
                 var backup_button = $('.trSeq').eq(trSeq).find('.backup_app');
-                backup_button.addClass("disabled");
+                backup_button.attr("disabled",true);
                 var restore_button = $('.trSeq').eq(trSeq).find('.restore_app');
                 restore_button.html("还原中..");
-                restore_button.addClass("disabled");
+                restore_button.attr("disabled",true);
 
 //				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
 				$.ajax({
@@ -1481,16 +1482,16 @@
                             release_status.css('color','green');
                             release_status.html('还原成功');
                             restore_button.html("还原");
-                            backup_button.removeClass("disabled");
-                            release_button.removeClass("disabled");
-                            restore_button.removeClass("disabled");
+                            backup_button.attr("disabled",false);
+                            release_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
                         }else {
                             release_status.css('color','red');
                             release_status.html('还原失败');
                             restore_button.html("还原");
-                            backup_button.removeClass("disabled");
-                            release_button.removeClass("disabled");
-                            restore_button.removeClass("disabled");
+                            backup_button.attr("disabled",false);
+                            release_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
                         }
 					}
 				});
@@ -1791,9 +1792,11 @@
 							<div class="form-group">
 										<label class="control-label col-sm-2 " for="add_app_svn_user">SVN账户:</label>
                                 <div class="col-sm-8">
-                                        <input type="text" name="fuck_user" style="display:none;">
+
 										<input type="text" name="fuck_user" class="form-control" id="add_app_svn_user"
 									   style="font-size: 14px;" autocomplete="off" required="required" >
+                                    <!--防止自动填充  注意位子要放在下面passwd中间-->
+                                        <input type="text" name="fuck_user" style="display:none;">
 									    <span class="" id="add_app_svn_user_help" style="color: #FF0000;">　</span>
 								</div>
                                 <label class="control-label  " style="color: #FF0000;" >*</label>
@@ -1804,8 +1807,8 @@
                                 <div class="col-sm-8">
                                     <!--防止自动填充-->
                                         <input type="password" name="fuck_pwd" style="display:none;">
-										<input type="text" name="fuck_pwd" onfocus="this.type='password'" class="form-control" id="add_app_svn_password"
-									   style="font-size: 14px;background-color: white;"  autocomplete="off"  required="required" >
+										<input type="password" name="fuck_pwd"  class="form-control" id="add_app_svn_password"
+									   style="font-size: 14px;background-color: white;"  autocomplete="new-password"  required="required" >
 									    <span class="" id="add_app_svn_password_help" style="color: #FF0000;">　</span>
 								</div>
                                 <label class="control-label  " style="color: #FF0000;" >*</label>

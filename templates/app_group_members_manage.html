@@ -136,12 +136,12 @@
                window.location.href=window.location.href.split("?")[0]+'?app_group_name='+app_group_name+'&search_field='+search_field+'&search_content='+search_content;
             });
 
-//            添加成员模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
+//            编辑成员模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
             $('#app_group_member_add_modal').on('shown.bs.modal', function () {
                 $("#add_search_app_name").focus();
             });
 
-//           添加成员模态框 隐藏时数据清除,
+//           编辑成员模态框 隐藏时数据清除,
             $("#app_group_member_add_modal").on("hidden.bs.modal", function() {
                 $(this).removeData("bs.modal");
 //                select恢复原状挺麻烦的，我这用最蠢的清空掉2个select然后重新添加。。
@@ -151,19 +151,20 @@
 				$('#add_app_group_members_help').text('　');
             });
 
-//           添加成员按钮触发内容填充模态框
+//           编辑成员按钮触发内容填充模态框
             $('.app_group_member_add_button').click(function () {
 //                之所以加一层if是因为minion_id由于minion表id删除会出现None的情况在minion_id全为空的时候，如果出现None我们就不需要做下面的填充内容操作，不然会填充None过去
                 if($.trim($('.app_group_members_data').val()).length != 0) {
                     var app_name = $('.app_group_members_data').val().split(',');
                     for (var i = 0; i < app_name.length; i++) {
-//                        我这里做的是把已经是成员的添加到选中那边，但是用hidden隐藏了，避免别人去操作这些已经存在的成员，至于删除我单独写，没毛病
-                        $("<option class='hidden' value='" + app_name[i] + "'>" + app_name[i] + "</option>").appendTo("#add_selected_app_name");
+//                        我这里做的是把已经是成员的添加到选中那边
+                        $("<option  value='" + app_name[i] + "'>" + app_name[i] + "</option>").appendTo("#add_selected_app_name");
                     }
                 }
+                $("#add_delete_app_name_btn").attr("disabled",true);
             });
 
-//            添加成员模态框，查找app_name
+//            编辑成员模态框，查找app_name
              $('.add_search_app_name_btn').click(function(){
                  $('#add_select_app_name').empty();
                  var app_name=$.trim($('#add_search_app_name').val());
@@ -196,43 +197,43 @@
 				});
 			});
 
-//           添加成员模态框 app_name选中 操作触发中间的》按钮可用
+//           编辑成员模态框 app_name选中 操作触发中间的》按钮可用
             $("#add_select_app_name").click(function () {
                 var app_name_list=$('#add_select_app_name option:selected').map(function(){return $(this).val();}).get().join(",");
                 if(app_name_list.length != 0) {
-                    $("#add_select_app_name_btn").removeClass("disabled");
+                    $("#add_select_app_name_btn").attr("disabled",false);
                 }
             });
 
-//           添加成员模态框 app_name选中 操作触发中间的《按钮可用
+//           编辑成员模态框 app_name选中 操作触发中间的《按钮可用
             $("#add_selected_app_name").click(function () {
                 var app_name_list=$('#add_selected_app_name option:selected').map(function(){return $(this).val();}).get().join(",");
                 if(app_name_list.length != 0) {
-                    $("#add_delete_app_name_btn").removeClass("disabled");
+                    $("#add_delete_app_name_btn").attr("disabled",false);
                 }
             });
 
-//           添加成员模态框 app_name》按钮触发选中值移动到右边
+//           编辑成员模态框 app_name》按钮触发选中值移动到右边
             $("#add_select_app_name_btn").click(function () {
 //                在这里触发清空如果没选择minion_id的错误提示,嘿嘿
                 $('#add_app_group_members_help').text('　');
                 $("#add_select_app_name option:selected").each(function () {
                     $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#add_selected_app_name");
                     $(this).remove();
-                    $("#add_select_app_name_btn").addClass("disabled");
+                    $("#add_select_app_name_btn").attr("disabled",true);
                 })
             });
 
-//           添加成员模态框 app_name《按钮触发选中值移动到左边
+//           编辑成员模态框 app_name《按钮触发选中值移动到左边
             $("#add_delete_app_name_btn").click(function () {
                 $("#add_selected_app_name option:selected").each(function () {
                     $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#add_select_app_name");
                     $(this).remove();
-                    $("#add_delete_app_name_btn").addClass("disabled");
+                    $("#add_delete_app_name_btn").attr("disabled",true);
                 })
             });
 
-//          添加成员表单提交
+//          编辑成员表单提交
             $('#add_app_group_member_submit').click(function(){
 				var app_group_members=$('#add_selected_app_name option').map(function(){return $(this).val();}).get().join(",");
 				var source_app_name = $('.app_group_members_data').val();
@@ -346,7 +347,7 @@
 //                掉按钮的操作，死活都无法添加disabled属性到button里，没办法下面改成手动写一个正在执行....
 //                var $btn = $(this).button('loading');
                 re_button.html("检查..");
-                re_button.addClass("disabled");
+                re_button.attr("disabled",true);
 
                 $.ajax({
 					url:"{% url 'app_release_ajax' %}",
@@ -365,12 +366,12 @@
                             server_svn_version.css('color','royalblue');
                             server_svn_version.html(result.result);
                             re_button.html("检查");
-                            re_button.removeClass("disabled");
+                            re_button.attr("disabled",false);
 						}else {
 						    server_svn_version.css('color','#CC5522');
                             server_svn_version.html('查询失败');
                             re_button.html("检查");
-                            re_button.removeClass("disabled");
+                            re_button.attr("disabled",false);
                         }
 					}
 				});
@@ -437,14 +438,15 @@
                     release_status.html('发布中..');
                     var re_button = $('.trSeq').eq(this).find('.release_app');
                     var backup_button = $('.trSeq').eq(this).find('.backup_app');
-                    backup_button.addClass("disabled");
+                    // backup_button.attr("disabled",true);
+                    backup_button.attr("disabled",true);
                     var restore_button = $('.trSeq').eq(this).find('.restore_app');
-                    restore_button.addClass("disabled");
+                    restore_button.attr("disabled",true);
     //                改变按钮的样子变成正在执行。。。，原来用下面这个bootstrap自带的，发现有一个问题最后$btn.button("reset")会影响到我disabled
     //                掉按钮的操作，死活都无法添加disabled属性到button里，没办法下面改成手动写一个正在执行....
     //                var $btn = $(this).button('loading');
                     re_button.html("发布中...");
-                    re_button.addClass("disabled");
+                    re_button.attr("disabled",true);
 
                     if(release_svn_version){
                         svn_version = release_svn_version;
@@ -471,25 +473,25 @@
                                 release_status.css('color','green');
                                 release_status.html('发布成功');
                                 re_button.html("发布");
-                                re_button.removeClass("disabled");
-                                backup_button.removeClass("disabled");
-                                restore_button.removeClass("disabled");
+                                re_button.attr("disabled",false);
+                                backup_button.attr("disabled",false);
+                                restore_button.attr("disabled",false);
                             }else {
                                 release_status.css('color','red');
                                 release_status.html('发布失败');
                                 re_button.html("发布");
-                                re_button.removeClass("disabled");
-                                backup_button.removeClass("disabled");
-                                restore_button.removeClass("disabled");
+                                re_button.attr("disabled",false);
+                                backup_button.attr("disabled",false);
+                                restore_button.attr("disabled",false);
                             }
                         },
                         error:function (xhr) {
                             release_status.css('color','#337ab7');
                             release_status.html('发布时间较长，请稍后查看日志');
                             re_button.html("发布");
-                            re_button.removeClass("disabled");
-                            backup_button.removeClass("disabled");
-                            restore_button.removeClass("disabled");
+                            re_button.attr("disabled",false);
+                            backup_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
                         }
                     });
                 });
@@ -531,11 +533,11 @@
                 release_status.html('执行中..');
 //                禁用掉发布和还原按钮，然后改变备份按钮成备份中状态
                 var release_button = $('.trSeq').eq(trSeq).find('.release_app');
-                release_button.addClass("disabled");
+                release_button.attr("disabled",true);
                 var restore_button = $('.trSeq').eq(trSeq).find('.restore_app');
-                restore_button.addClass("disabled");
+                restore_button.attr("disabled",true);
                 var backup_button = $('.trSeq').eq(trSeq).find('.backup_app');
-                backup_button.addClass("disabled");
+                backup_button.attr("disabled",true);
                 if(single_release_svn_version){
                     svn_version = single_release_svn_version;
                 }else{
@@ -559,15 +561,15 @@
 						if(result.status){
                             release_status.css('color','green');
                             release_status.html('执行成功');
-                            backup_button.removeClass("disabled");
-                            release_button.removeClass("disabled");
-                            restore_button.removeClass("disabled");
+                            backup_button.attr("disabled",false);
+                            release_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
                         }else {
                             release_status.css('color','red');
                             release_status.html('执行失败');
-                            backup_button.removeClass("disabled");
-                            release_button.removeClass("disabled");
-                            restore_button.removeClass("disabled");
+                            backup_button.attr("disabled",false);
+                            release_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
                         }
 					}
 				});
@@ -676,12 +678,12 @@
                 release_status.html('备份中..');
 //                禁用掉发布和还原按钮，然后改变备份按钮成备份中状态
                 var release_button = $('.trSeq').eq(trSeq).find('.release_app');
-                release_button.addClass("disabled");
+                release_button.attr("disabled",true);
                 var restore_button = $('.trSeq').eq(trSeq).find('.restore_app');
-                restore_button.addClass("disabled");
+                restore_button.attr("disabled",true);
                 var backup_button = $('.trSeq').eq(trSeq).find('.backup_app');
                 backup_button.html("备份中...");
-                backup_button.addClass("disabled");
+                backup_button.attr("disabled",true);
 
 //				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
 				$.ajax({
@@ -700,16 +702,16 @@
                             release_status.css('color','green');
                             release_status.html('备份成功');
                             backup_button.html("备份");
-                            backup_button.removeClass("disabled");
-                            release_button.removeClass("disabled");
-                            restore_button.removeClass("disabled");
+                            backup_button.attr("disabled",false);
+                            release_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
                         }else {
                             release_status.css('color','red');
                             release_status.html('备份失败');
                             backup_button.html("备份");
-                            backup_button.removeClass("disabled");
-                            release_button.removeClass("disabled");
-                            restore_button.removeClass("disabled");
+                            backup_button.attr("disabled",false);
+                            release_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
                         }
 					}
 				});
@@ -738,12 +740,12 @@
                 release_status.html('还原中..');
 //                禁用掉发布和还原按钮，然后改变备份按钮成备份中状态
                 var release_button = $('.trSeq').eq(trSeq).find('.release_app');
-                release_button.addClass("disabled");
+                release_button.attr("disabled",true);
                 var backup_button = $('.trSeq').eq(trSeq).find('.backup_app');
-                backup_button.addClass("disabled");
+                backup_button.attr("disabled",true);
                 var restore_button = $('.trSeq').eq(trSeq).find('.restore_app');
                 restore_button.html("还原中..");
-                restore_button.addClass("disabled");
+                restore_button.attr("disabled",true);
 
 //				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
 				$.ajax({
@@ -762,16 +764,16 @@
                             release_status.css('color','green');
                             release_status.html('还原成功');
                             restore_button.html("还原");
-                            backup_button.removeClass("disabled");
-                            release_button.removeClass("disabled");
-                            restore_button.removeClass("disabled");
+                            backup_button.attr("disabled",false);
+                            release_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
                         }else {
                             release_status.css('color','red');
                             release_status.html('还原失败');
                             restore_button.html("还原");
-                            backup_button.removeClass("disabled");
-                            release_button.removeClass("disabled");
-                            restore_button.removeClass("disabled");
+                            backup_button.attr("disabled",false);
+                            release_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
                         }
 					}
 				});
@@ -800,7 +802,7 @@
             <!--下面这里本来是用form的样式的，后来改成div是因为用form默认带了回车会提交表单的功能，所以改成div不过class还是form的哈哈-->
             <div class="form-inline" role="form">
                 <div class="form-group">
-                    <button type="button" class="btn btn-success app_group_member_add_button" data-toggle="modal" data-target="#app_group_member_add_modal" >添加成员</button>
+                    <button type="button" class="btn btn-success app_group_member_add_button" data-toggle="modal" data-target="#app_group_member_add_modal" >编辑成员</button>
                     <!--<button type="button" class="btn btn-success app_add_button" data-toggle="modal" data-target="#app_add_modal">新增应用</button>-->
                     <button type="button" class="btn btn-primary app_batch_release_button" >批量发布</button>
                     {% if app_group_members_data %}
@@ -959,7 +961,7 @@
 
 {% block another_content %}
 
-<!-- 添加成员模态框 -->
+<!-- 编辑成员模态框 -->
 <div class="modal fade juzhong" id="app_group_member_add_modal" tabindex="-1" role="dialog" aria-labelledby="app_group_member_add_lable" aria-hidden="true" data-backdrop="static" >
 	<div class="modal-dialog" style="width: 600px;">
 		<div class="modal-content">
@@ -968,7 +970,7 @@
 					&times;
 				</button>
 				<h4 class="modal-title" id="app_group_member_add_lable">
-					添加成员 <span style="color: #0063DC">（已存在于组里的成员不会被查询到）</span>
+					编辑成员
 				</h4>
                 <!--<span id="xxxxxx" style="color: #FF0000;">　</span>-->
 
