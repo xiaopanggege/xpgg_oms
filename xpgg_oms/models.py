@@ -146,6 +146,25 @@ class AppGroup(models.Model):
         return str(self.id)
 
 
+# 应用授权表
+class AppAuth(models.Model):
+    my_user_id = models.IntegerField(verbose_name='用户ID', unique=True)
+    username = models.CharField(max_length=50, verbose_name='用户名称', unique=True)
+    app_perms = models.TextField(verbose_name='应用权限', blank=True, null=True)
+    app_group_perms = models.TextField(verbose_name='应用组权限', blank=True, null=True)
+    update_time = models.CharField(max_length=50, verbose_name='最近更新时间', blank=True, null=True)
+    create_time = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+    description = models.CharField(max_length=200, verbose_name='描述备注', blank=True, null=True)
+
+    class Meta:
+        verbose_name = '应用授权表'
+        verbose_name_plural = verbose_name
+        ordering = ['username']
+
+    def __str__(self):
+        return str(self.username)
+    
+
 # salt命令集信息表
 class SaltCmdInfo(models.Model):
     salt_cmd = models.CharField(max_length=100, verbose_name='命令')
@@ -168,20 +187,4 @@ class SaltCmdInfo(models.Model):
         return self.salt_cmd
 
 
-# 应用授权表
-class AppAuth(models.Model):
-    my_user_id = models.IntegerField(verbose_name='用户ID', unique=True)
-    username = models.CharField(max_length=50, verbose_name='用户名称', unique=True)
-    app_perms = models.TextField(verbose_name='应用权限', blank=True, null=True)
-    app_group_perms = models.TextField(verbose_name='应用组权限', blank=True, null=True)
-    update_time = models.CharField(max_length=50, verbose_name='最近更新时间', blank=True, null=True)
-    create_time = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
-    description = models.TextField(verbose_name='描述备注', blank=True, null=True)
 
-    class Meta:
-        verbose_name = '应用授权表'
-        verbose_name_plural = verbose_name
-        ordering = ['username']
-
-    def __str__(self):
-        return str(self.username)

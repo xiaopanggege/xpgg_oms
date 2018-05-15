@@ -236,11 +236,6 @@
 //          编辑成员表单提交
             $('#add_app_group_member_submit').click(function(){
 				var app_group_members=$('#add_selected_app_name option').map(function(){return $(this).val();}).get().join(",");
-				var source_app_name = $('.app_group_members_data').val();
-				if(source_app_name==app_group_members || app_group_members == ''){
-				    $('#add_app_group_members_help').text('没有选中的应用名称，请选择');
-				    return false
-                }
                 var app_group_name =$.trim($('.title_app_group_name').text());
 //				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
 				$.ajax({
@@ -266,7 +261,7 @@
 //						        把错误信息插入到对应的错误help位子
                                 $('#add_'+k+'_help').text(v[0].message);
                             });
-                            console.log(JSON.stringify(result.result));
+                            // console.log(JSON.stringify(result.result));
                         }
 					}
 				});
@@ -999,8 +994,8 @@
 
                                 <div class="col-sm-1" style="padding: 0 10px 0 10px;">
                                     <div style="margin-top: 30px;">
-                                        <button type="button" class="btn btn-xs btn-info disabled" id="add_select_app_name_btn">&gt;&gt;</button>
-                                        <button type="button" class="btn btn-xs btn-info disabled" style="margin-top: 1px;" id="add_delete_app_name_btn">&lt;&lt;</button>
+                                        <button type="button" class="btn btn-xs btn-info " id="add_select_app_name_btn" disabled="true">&gt;&gt;</button>
+                                        <button type="button" class="btn btn-xs btn-info " style="margin-top: 1px;" id="add_delete_app_name_btn" disabled="true">&lt;&lt;</button>
                                     </div>
                                 </div>
 
@@ -1030,7 +1025,7 @@
 				<button type="button" class="btn btn-default" data-dismiss="modal">取消
 				</button>
                 <button type="button" class="btn btn-primary" id="add_app_group_member_submit">
-					确认添加
+					确认提交
 				</button>
 			</div>
 		</div><!-- /.modal-content -->

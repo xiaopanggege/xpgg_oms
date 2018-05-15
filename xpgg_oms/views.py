@@ -3597,10 +3597,10 @@ def app_auth(request):
                     app_auth_data = AppAuth.objects.filter(username__contains=search_content)
                     data_list = getPage(request, app_auth_data, 12)
                 elif search_field == 'search_app_name':
-                    app_auth_data = AppGroup.objects.filter(app_perms__contains=search_content)
+                    app_auth_data = AppAuth.objects.filter(app_perms__contains=search_content)
                     data_list = getPage(request, app_auth_data, 12)
                 elif search_field == 'search_app_group_name':
-                    app_auth_data = AppGroup.objects.filter(app_group_perms__contains=search_content)
+                    app_auth_data = AppAuth.objects.filter(app_group_perms__contains=search_content)
                     data_list = getPage(request, app_auth_data, 12)
                 else:
                     data_list = ""
@@ -3618,45 +3618,54 @@ def app_auth_ajax(request):
     try:
         if request.is_ajax():
             # 在ajax提交时候多一个字段作为标识，来区分多个ajax提交哈，厉害！
-            if request.POST.get('app_group_tag_key') == 'app_group_add':
-                obj = AppGroupAddForm(request.POST)
+            if request.POST.get('app_auth_tag_key') == 'app_auth_username_update':
+                obj = AppAuthUpdateForm(request.POST)
                 if obj.is_valid():
-                    AppGroup.objects.create(app_group_name=obj.cleaned_data["app_group_name"], description=obj.cleaned_data["description"])
+                    AppAuth.objects.create(app_group_name=obj.cleaned_data["app_group_name"], description=obj.cleaned_data["description"])
                     result['result'] = '成功'
                     result['status'] = True
                 else:
                     error_str = obj.errors.as_json()
                     result['result'] = json.loads(error_str)
                 return JsonResponse(result)
-            elif request.GET.get('app_group_tag_key') == 'modal_search_app_name':
-
+            elif request.GET.get('app_auth_tag_key') == 'modal_search_app_name':
                 app_name = request.GET.get('app_name')
                 app_name_list = AppRelease.objects.filter(app_name__contains=app_name).order_by(
                     'create_time').values_list('app_name', flat=True)
                 result['result'] = list(app_name_list)
                 result['status'] = True
                 return JsonResponse(result)
-            elif request.POST.get('app_group_tag_key') == 'app_group_update':
-                obj = AppGroupUpdateForm(request.POST)
+            elif request.GET.get('app_auth_tag_key') == 'modal_search_app_group':
+                app_group_name = request.GET.get('app_group_name')
+                app_group_list = AppGroup.objects.filter(app_group_name__contains=app_group_name).order_by(
+                    'id').values_list('app_group_name', flat=True)
+                result['result'] = list(app_group_list)
+                result['status'] = True
+                return JsonResponse(result)
+            elif request.POST.get('app_auth_tag_key') == 'app_auth_update':
+                obj = AppAuthUpdateForm(request.POST)
                 if obj.is_valid():
-                    AppGroup.objects.filter(app_group_name=obj.cleaned_data["app_group_name"]).update(
-                        description=obj.cleaned_data["description"])
+                    AppAuth.objects.filter(my_user_id=obj.cleaned_data['my_user_id'],
+                                           username=obj.cleaned_data["username"]).update(
+                        app_perms=obj.cleaned_data["app_perms"], app_group_perms=obj.cleaned_data["app_group_perms"])
                     result['result'] = '成功'
                     result['status'] = True
                 else:
                     error_str = obj.errors.as_json()
                     result['result'] = json.loads(error_str)
                 return JsonResponse(result)
-            elif request.POST.get('app_group_tag_key') == 'app_group_delete':
-                app_group_name = request.POST.get('app_group_name')
-                try:
-                    AppGroup.objects.filter(app_group_name=app_group_name).delete()
+            elif request.POST.get('app_auth_tag_key') == 'app_auth_description_update':
+                obj = AppAuthUpdateForm(request.POST)
+                if obj.is_valid():
+                    AppAuth.objects.filter(my_user_id=obj.cleaned_data['my_user_id'],
+                                           username=obj.cleaned_data["username"]).update(description=obj.cleaned_data["description"])
                     result['result'] = '成功'
                     result['status'] = True
-                except Exception as e:
-                    result['result'] = str(e)
+                else:
+                    error_str = obj.errors.as_json()
+                    result['result'] = json.loads(error_str)
                 return JsonResponse(result)
-            elif request.POST.get('app_group_tag_key') == 'app_group_member_add':
+            elif request.POST.get('app_auth_tag_key') == 'app_group_member_add':
                 obj = AppGroupUpdateForm(request.POST)
                 if obj.is_valid():
                     AppGroup.objects.filter(app_group_name=obj.cleaned_data["app_group_name"]).update(
@@ -3668,7 +3677,7 @@ def app_auth_ajax(request):
                 result['result'] = '成功'
                 result['status'] = True
                 return JsonResponse(result)
-            elif request.POST.get('app_group_tag_key') == 'app_group_member_delete':
+            elif request.POST.get('app_auth_tag_key') == 'app_group_member_delete':
                 app_name = request.POST.get('app_name')
                 app_group_name = request.POST.get('app_group_name')
                 try:

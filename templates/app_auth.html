@@ -115,58 +115,75 @@
             });
 
 //            权限管理模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
-            $('#app_group_member_add_modal').on('shown.bs.modal', function () {
-                $("#add_search_app_name").focus();
+            $('#app_auth_fast_channel_modal').on('shown.bs.modal', function () {
+                $("#edit_search_app_name").focus();
             });
 
-//           权限管理模态框 隐藏时数据清除,
-            $("#app_group_member_add_modal").on("hidden.bs.modal", function() {
+//           快速权限管理模态框 隐藏时数据清除,
+            $("#app_auth_fast_channel_modal").on("hidden.bs.modal", function() {
                 $(this).removeData("bs.modal");
 //                select恢复原状挺麻烦的，我这用最蠢的清空掉2个select然后重新添加。。
-                $('#add_search_app_name').val('');
-				$('#add_select_app_name').empty();
-				$('#add_selected_app_name').empty();
-				$('#add_app_group_members_help').text('　');
+                $('#edit_search_app_name').val('');
+                $('#edit_search_app_group').val('');
+				$('#edit_select_app_name').empty();
+				$('#edit_selected_app_name').empty();
+				$('#edit_select_app_group').empty();
+				$('#edit_selected_app_group').empty();
+				$('#edit_app_perms_help').text('　');
+				$('#edit_app_group_perms_help').text('　');
+				$('.fast_channel_username').html("");
             });
 
-//           权限管理按钮触发内容填充模态框
-            $('.app_group_member_add_button').click(function () {
-//                之所以加一层if是因为minion_id由于minion表id删除会出现None的情况在minion_id全为空的时候，如果出现None我们就不需要做下面的填充内容操作，不然会填充None过去
-                if($.trim($('.app_group_members_data').val()).length != 0) {
-                    var app_name = $('.app_group_members_data').val().split(',');
-                    for (var i = 0; i < app_name.length; i++) {
-//                        我这里做的是把已经是成员的添加到选中那边，但是用hidden隐藏了，避免别人去操作这些已经存在的成员，至于删除我单独写，没毛病
-                        $("<option class='hidden' value='" + app_name[i] + "'>" + app_name[i] + "</option>").appendTo("#add_selected_app_name");
-                    }
+//           快速权限管理按钮触发内容填充模态框
+            $('.app_auth_fast_channel_btn').click(function () {
+                var fast_channel_username = $(this).parent().siblings('.data_username').html();
+                $('.fast_channel_username').html(fast_channel_username);
+                var fast_channel_user_id = $(this).parent().siblings('.data_user_id').html();
+                $('.fast_channel_user_id').html(fast_channel_user_id);
+                var app_name_data = $.trim($(this).parent().siblings('.data_app_perms').attr('title'));
+                var app_group_data = $.trim($(this).parent().siblings('.data_app_group_perms').attr('title'));
+                if(app_name_data.length != 0) {
+                    var app_name_list = app_name_data.split(',');
+                    $.each(app_name_list,function (index,content) {
+                         // 我这里做的是把已经是成员的添加到选中那边
+                        $("<option  value='" + content + "'>" + content + "</option>").appendTo("#edit_selected_app_name");
+                    })
+                }
+                if(app_group_data.length != 0) {
+                    var app_group_list = app_group_data.split(',');
+                    $.each(app_group_list,function (index,content) {
+                         // 我这里做的是把已经是成员的添加到选中那边
+                        $("<option  value='" + content + "'>" + content + "</option>").appendTo("#edit_selected_app_group");
+                    })
                 }
             });
 
-//            权限管理模态框，查找app_name
-             $('.add_search_app_name_btn').click(function(){
-                 $('#add_select_app_name').empty();
-                 var app_name=$.trim($('#add_search_app_name').val());
-                 var selected_app_name=$('#add_selected_app_name option');
+//            快速权限管理模态框，查找app_name,这里复用了应用组的ajax处理，不然还要再写一遍
+             $('.edit_search_app_name_btn').click(function(){
+                 $('#edit_select_app_name').empty();
+                 var app_name=$.trim($('#edit_search_app_name').val());
+                 var selected_app_name=$('#edit_selected_app_name option');
 //				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
 				$.ajax({
-					url:"{% url 'app_group_ajax' %}",
+					url:"{% url 'app_auth_ajax' %}",
 					type:'GET',
 					dataType:'json',
                     //如果数据是列表即数组的话要加下面这个traditional不然传不过去
 					traditional:true,
 					data:{
                         'app_name':app_name,
-                        'app_group_tag_key':'modal_search_app_name'
+                        'app_auth_tag_key':'modal_search_app_name'
 					},
 					success:function(result){
 						if(result.status){
-						    for(var i = 0; i < result.result.length; i++){
-						       $("<option value='"+result.result[i]+"'>"+result.result[i]+"</option>").appendTo("#add_select_app_name");
+						    $.each(result.result,function (index,content) {
+                                $("<option value='"+content+"'>"+content+"</option>").appendTo("#edit_select_app_name");
                                selected_app_name.each(function () {
-                                    if($(this).val()==result.result[i]){
-                                        $("#add_select_app_name option[value='" +result.result[i]+ "']").remove();
+                                    if($(this).val()==content){
+                                        $("#edit_select_app_name option[value='" +content+ "']").remove();
                                     }
                                 });
-						    }
+                            })
 						}else {
 						    toastr.error(result.result,'error',{timeOut: 1500});
                         }
@@ -174,95 +191,171 @@
 				});
 			});
 
-//           权限管理模态框 app_name选中 操作触发中间的》按钮可用
-            $("#add_select_app_name").click(function () {
-                var app_name_list=$('#add_select_app_name option:selected').map(function(){return $(this).val();}).get().join(",");
+//           快速权限管理模态框 app_name选中 操作触发中间的》按钮可用
+            $("#edit_select_app_name").click(function () {
+                var app_name_list=$('#edit_select_app_name option:selected').map(function(){return $(this).val();}).get().join(",");
                 if(app_name_list.length != 0) {
-                    $("#add_select_app_name_btn").removeClass("disabled");
+                    $("#edit_select_app_name_btn").attr("disabled",false);
                 }
             });
 
-//           权限管理模态框 app_name选中 操作触发中间的《按钮可用
-            $("#add_selected_app_name").click(function () {
-                var app_name_list=$('#add_selected_app_name option:selected').map(function(){return $(this).val();}).get().join(",");
+//           快速权限管理模态框 app_name选中 操作触发中间的《按钮可用
+            $("#edit_selected_app_name").click(function () {
+                var app_name_list=$('#edit_selected_app_name option:selected').map(function(){return $(this).val();}).get().join(",");
                 if(app_name_list.length != 0) {
-                    $("#add_delete_app_name_btn").removeClass("disabled");
+                    $("#add_delete_app_name_btn").attr("disabled",false);
                 }
             });
 
-//           权限管理模态框 app_name》按钮触发选中值移动到右边
-            $("#add_select_app_name_btn").click(function () {
+//           快速权限管理模态框 app_name》按钮触发选中值移动到右边
+            $("#edit_select_app_name_btn").click(function () {
 //                在这里触发清空如果没选择minion_id的错误提示,嘿嘿
                 $('#add_app_group_members_help').text('　');
-                $("#add_select_app_name option:selected").each(function () {
-                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#add_selected_app_name");
+                $("#edit_select_app_name option:selected").each(function () {
+                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#edit_selected_app_name");
                     $(this).remove();
-                    $("#add_select_app_name_btn").addClass("disabled");
+                    $("#edit_select_app_name_btn").attr("disabled",true);
                 })
             });
 
-//           权限管理模态框 app_name《按钮触发选中值移动到左边
+//           快速权限管理模态框 app_name《按钮触发选中值移动到左边
             $("#add_delete_app_name_btn").click(function () {
-                $("#add_selected_app_name option:selected").each(function () {
-                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#add_select_app_name");
+                $("#edit_selected_app_name option:selected").each(function () {
+                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#edit_select_app_name");
                     $(this).remove();
-                    $("#add_delete_app_name_btn").addClass("disabled");
+                    $("#add_delete_app_name_btn").attr("disabled",true);
                 })
             });
 
 
-
-
-
-
-                //新增应用组表单提交
-            $('#add_app_group_submit').click(function(){
-                var app_group_name=$.trim($('#add_app_group_name').val());
-				var description=$.trim($('#add_description').val());
-
+            
+//            快速权限管理模态框，查找app_group,这里复用了应用组的ajax处理，不然还要再写一遍
+             $('.edit_search_app_group_btn').click(function(){
+                 $('#edit_select_app_group').empty();
+                 var app_group=$.trim($('#edit_search_app_group').val());
+                 var selected_app_group=$('#edit_selected_app_group option');
 //				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
 				$.ajax({
-					url:"{% url 'app_group_ajax' %}",
+					url:"{% url 'app_auth_ajax' %}",
+					type:'GET',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+                        'app_group_name':app_group,
+                        'app_auth_tag_key':'modal_search_app_group'
+					},
+					success:function(result){
+						if(result.status){
+						    $.each(result.result,function (index,content) {
+                                $("<option value='"+content+"'>"+content+"</option>").appendTo("#edit_select_app_group");
+                               selected_app_group.each(function () {
+                                    if($(this).val()==content){
+                                        $("#edit_select_app_group option[value='" +content+ "']").remove();
+                                    }
+                                });
+                            })
+						}else {
+						    toastr.error(result.result,'error',{timeOut: 1500});
+                        }
+					}
+				});
+			});
+
+//           快速权限管理模态框 app_group选中 操作触发中间的》按钮可用
+            $("#edit_select_app_group").click(function () {
+                var app_group_list=$('#edit_select_app_group option:selected').map(function(){return $(this).val();}).get().join(",");
+                if(app_group_list.length != 0) {
+                    $("#edit_select_app_group_btn").attr("disabled",false);
+                }
+            });
+
+//           快速权限管理模态框 app_group选中 操作触发中间的《按钮可用
+            $("#edit_selected_app_group").click(function () {
+                var app_group_list=$('#edit_selected_app_group option:selected').map(function(){return $(this).val();}).get().join(",");
+                if(app_group_list.length != 0) {
+                    $("#edit_delete_app_group_btn").attr("disabled",false);
+                }
+            });
+
+//           快速权限管理模态框 app_group》按钮触发选中值移动到右边
+            $("#edit_select_app_group_btn").click(function () {
+//                在这里触发清空如果没选择minion_id的错误提示,嘿嘿
+                $('#add_app_group_members_help').text('　');
+                $("#edit_select_app_group option:selected").each(function () {
+                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#edit_selected_app_group");
+                    $(this).remove();
+                    $("#edit_select_app_group_btn").attr("disabled",true);
+                })
+            });
+
+//           快速权限管理模态框 app_group《按钮触发选中值移动到左边
+            $("#edit_delete_app_group_btn").click(function () {
+                $("#edit_selected_app_group option:selected").each(function () {
+                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#edit_select_app_group");
+                    $(this).remove();
+                    $("#edit_delete_app_group_btn").attr("disabled",true);
+                })
+            });
+
+
+//          快速权限管理 表单提交
+            $('#edit_fast_channel_submit').click(function(){
+				var app_perms=$('#edit_selected_app_name option').map(function(){return $(this).val();}).get().join(",");
+				var app_group_perms=$('#edit_selected_app_group option').map(function(){return $(this).val();}).get().join(",");
+                var app_auth_username =$.trim($('.fast_channel_username').text());
+                var app_auth_user_id =$.trim($('.fast_channel_user_id').text());
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'app_auth_ajax' %}",
 					type:'POST',
 					dataType:'json',
                     //如果数据是列表即数组的话要加下面这个traditional不然传不过去
 					traditional:true,
 					data:{
-						'app_group_name':app_group_name,
-                        'description':description,
-                        'app_group_tag_key':'app_group_add'
+						'app_perms':app_perms,
+                        'app_group_perms':app_group_perms,
+                        'username':app_auth_username,
+                        'my_user_id':app_auth_user_id,
+                        'app_auth_tag_key':'app_auth_update'
 
 					},
 					success:function(result){
 						if(result.status){
-                            $('#app_group_add_modal').modal('hide');
+                            $('#app_auth_fast_channel_modal').modal('toggle');
                             toastr.success(result.result,'Success',{timeOut: 1500});
                             setTimeout(function(){window.location.href=window.location.href}, 1000);
 						}else {
 //						    通过表单验证返回的错误是多层嵌套字典加列表，一层key是对应提交数据的key，二层有2个key一个是code一个是message，错误信息在message里
 						    $.each(result.result, function (k,v) {
 //						        把错误信息插入到对应的错误help位子
-                                $('#add_'+k+'_help').text(v[0].message);
-                            })
-//                            $('#project_add_help').text(JSON.stringify(result.result));
+                                $('#edit_'+k+'_help').text(v[0].message);
+                            });
+                            console.log(JSON.stringify(result.result));
                         }
 					}
 				});
 
 			});
 
+//            编辑备注态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
+            $('#edit_app_auth_description_modal').on('shown.bs.modal', function () {
+                $("#edit_description").focus();
+            });
 
 //            编辑备注按钮 数据填充
-            $('.edit_app_group').click(function () {
-                $('#edit_app_group_name').val($(this).parent().siblings('.data_app_group_name').html());
+            $('.edit_app_auth_description_btn').click(function () {
+                $('#edit_app_auth_user_id').val($(this).parent().siblings('.data_user_id').html());
+                $('#edit_app_auth_username').val($(this).parent().siblings('.data_username').html());
 				$('#edit_description').val($(this).parent().siblings('.data_description').html());
             });
 
 //           编辑备注模态框 隐藏时数据清除
-            $("#edit_app_group_modal").on("hidden.bs.modal", function() {
+            $("#edit_app_auth_description_modal").on("hidden.bs.modal", function() {
                 $(this).removeData("bs.modal");
 //                select恢复原状挺麻烦的，我这用最蠢的清空掉2个select然后重新添加。。
-                $('#edit_app_group_name').val('');
+                $('#edit_app_auth_user_id').val('');
+                $('#edit_app_auth_username').val('');
 				$('#edit_description').val('');
 
 				$('#edit_description_help').text('　');
@@ -274,25 +367,27 @@
 	    	});
 
 //           编辑确认提交按钮触发提交更新
-            $('#app_group_update_submit').click(function(){
-                var app_group_name=$('#edit_app_group_name').val();
-                var app_description=$('#edit_description').val();
+            $('#edit_app_auth_description_submit').click(function(){
+                var my_user_id=$('#edit_app_auth_user_id').val();
+                var username=$('#edit_app_auth_username').val();
+                var description=$('#edit_description').val();
 //				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
 				$.ajax({
-					url:"{% url 'app_group_ajax' %}",
+					url:"{% url 'app_auth_ajax' %}",
 					type:'POST',
 					dataType:'json',
                     //如果数据是列表即数组的话要加下面这个traditional不然传不过去
 					traditional:true,
 					data:{
-						'app_group_name':app_group_name,
-                        'description':app_description,
-                        'app_group_tag_key':'app_group_update'
+						'my_user_id':my_user_id,
+                        'username':username,
+                        'description':description,
+                        'app_auth_tag_key':'app_auth_description_update'
 
 					},
 					success:function(result){
 						if(result.status){
-                            $('#edit_app_group_modal').modal('hide');
+                            $('#edit_app_auth_description_modal').modal('hide');
                             toastr.success(result.result,'Success',{timeOut: 1500});
                             setTimeout(function(){window.location.href=window.location.href}, 1000);
 						}else {
@@ -308,41 +403,7 @@
 
 			});
 
-//            点击删除填充模态框
-            $('.delete_app_group').click(function () {
-                $('.hidden_app_group_name').val($(this).parent().siblings('.data_app_group_name').html());
-            });
 
-
-//            点击确定删除项目
-            $('#delete_app_group_button').click(function(){
-				var app_group_name=$.trim($('.hidden_app_group_name').val());
-				$('#delete_app_group_modal').modal('toggle');
-				$.ajax({
-					url:"{% url 'app_group_ajax' %}",
-					type:'POST',
-					dataType:'json',
-                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
-					traditional:true,
-//                    提交的数据要和后台form验证的变量一致，不过可以多出来，只要验证的有就行，比如这里就多了project_tag_key
-					data:{
-                        'app_group_name':app_group_name,
-                        'app_group_tag_key':'app_group_delete'
-
-					},
-					success:function(result){
-						if(result.status){
-                            $('.loading_modal').modal('toggle');
-                            toastr.success(result.result,'Success',{timeOut: 1500});
-                            setTimeout(function(){window.location.href=window.location.href}, 1000);
-//                            window.location.href=window.location.href;
-						}else {
-						    $('.loading_modal').modal('toggle');
-						    toastr.error(result.result,'Error',{timeOut: 1500});
-                        }
-					}
-				});
-			});
 
 		});
 
@@ -396,10 +457,10 @@
               <tr class="success">
                   <th width="5%"><input type="checkbox" id="checkAll" name="checkAll" /></th>
                   <th width="10%">用户名称</th>
-                  <th width="25%">应用权限</th>
-                  <th width="25%">应用组权限</th>
+                  <th width="20%">应用权限</th>
+                  <th width="20%">应用组权限</th>
                   <th width="10%">描述备注</th>
-                  <th width="25%">操作</th>
+                  <th width="35%">操作</th>
 
               </tr>
             </thead>
@@ -410,7 +471,7 @@
                     <td><input type="checkbox" name="checkItem" /></td>
                     <td class="data_username">{{ data.username }}</td>
                     {% if data.app_perms %}
-                    <td class="data_app_perms" title="{{data.data_app_perms}}">{{ data.app_perms | truncatechars:60 }}</td>
+                    <td class="data_app_perms" title="{{data.app_perms}}">{{ data.app_perms | truncatechars:60 }}</td>
                     {% else %}
                     <td class="data_app_perms"></td>
                     {% endif %}
@@ -424,11 +485,12 @@
                     {% else %}
                     <td class="data_description"></td>
                     {% endif %}
+                    <td class="data_user_id hidden">{{ data.my_user_id }}</td>
                     <td class="">
-                        <button type="button" class="btn btn-success app_group_member_add_button" data-toggle="modal" data-target="#app_group_member_add_modal" >管理权限</button>
-                        <button type="button" class="btn btn-info btn-sm edit_app_group" data-toggle="modal" data-target="#edit_app_group_modal">编辑备注</button>
-                        <button type="button" class="btn btn-danger btn-sm delete_app_group" data-toggle="modal" data-target="#delete_app_group_modal">删除</button>
-                        <a href="{% url 'app_group_members_manage' %}?app_group_name={{data.app_group_name}}"  class="btn btn-sm btn-primary" role="button">成员管理</a>
+                        <button type="button" class="btn btn-success btn-sm app_auth_fast_channel_btn" data-toggle="modal" data-target="#app_auth_fast_channel_modal" >快捷权限管理</button>
+                        <button type="button" class="btn btn-info btn-sm edit_app_auth_description_btn" data-toggle="modal" data-target="#edit_app_auth_description_modal">编辑备注</button>
+                        <a href="{% url 'app_group_members_manage' %}?app_group_name={{data.app_group_name}}"  class="btn btn-sm btn-primary" role="button">应用权限管理</a>
+                        <a href="{% url 'app_group_members_manage' %}?app_group_name={{data.app_group_name}}"  class="btn btn-sm btn-primary" role="button">应用组权限管理</a>
 
                     </td>
                 </tr>
@@ -468,15 +530,16 @@
 {% block another_content %}
 
 <!-- 管理权限模态框 -->
-<div class="modal fade juzhong" id="app_group_member_add_modal" tabindex="-1" role="dialog" aria-labelledby="app_group_member_add_lable" aria-hidden="true" data-backdrop="static" >
-	<div class="modal-dialog" style="width: 600px;">
+<div class="modal fade juzhong" id="app_auth_fast_channel_modal" tabindex="-1" role="dialog" aria-labelledby="app_auth_fast_channel_lable" aria-hidden="true" data-backdrop="static" >
+	<div class="modal-dialog" style="width: 720px;">
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
 					&times;
 				</button>
-				<h4 class="modal-title" id="app_group_member_add_lable">
-					添加成员 <span style="color: #0063DC">（已存在于组里的成员不会被查询到）</span>
+				<h4 class="modal-title" id="app_auth_fast_channel_lable">
+					快捷编辑用户 <span style="color: #0063DC" class="fast_channel_username"></span> 所有权限
+                    <span style="color: #0063DC" class="fast_channel_user_id hidden"></span>
 				</h4>
                 <!--<span id="xxxxxx" style="color: #FF0000;">　</span>-->
 
@@ -488,33 +551,33 @@
                         <div class="form-horizontal " role="form"  >
 
 							<div class="form-group ">
-										<label class="control-label col-sm-2 " >应用名称:</label>
+                                <label class="control-label col-sm-2 " >应用授权:</label>
                                 <div class="panel panel-default col-sm-4" style="padding: 0;margin-left: 15px;margin-bottom: 0;">
                                     <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
                                         <div class="input-group">
-                                        <input type="text" class="form-control input-sm" id="add_search_app_name" placeholder="查询应用名称">
+                                        <input type="text" class="form-control input-sm" id="edit_search_app_name" placeholder="查询应用名称">
                                           <span class="input-group-btn">
-                                            <button type="button" class="btn btn-primary add_search_app_name_btn btn-sm"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
+                                            <button type="button" class="btn btn-primary edit_search_app_name_btn btn-sm"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
                                           </span>
 
                                         </div>
                                     </div>
-                                    <select size=10  multiple class="form-control panel-body" id="add_select_app_name" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+                                    <select size=10  multiple class="form-control panel-body" id="edit_select_app_name" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
                                     </select>
                                 </div>
 
                                 <div class="col-sm-1" style="padding: 0 10px 0 10px;">
                                     <div style="margin-top: 30px;">
-                                        <button type="button" class="btn btn-xs btn-info disabled" id="add_select_app_name_btn">&gt;&gt;</button>
-                                        <button type="button" class="btn btn-xs btn-info disabled" style="margin-top: 1px;" id="add_delete_app_name_btn">&lt;&lt;</button>
+                                        <button type="button" class="btn btn-xs btn-info " id="edit_select_app_name_btn" disabled="true">&gt;&gt;</button>
+                                        <button type="button" class="btn btn-xs btn-info " style="margin-top: 1px;" id="add_delete_app_name_btn" disabled="true">&lt;&lt;</button>
                                     </div>
                                 </div>
 
                                 <div class="panel panel-info col-sm-4" style="padding: 0;margin-bottom: 0;">
                                     <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
-                                        <h3 class="panel-title " style="font-size: 12px;padding: 5px 10px;height: 30px;line-height: 1.5;">选中的应用名称</h3>
+                                        <h3 class="panel-title " style="font-size: 12px;padding: 5px 10px;height: 30px;line-height: 1.5;">已选应用名称</h3>
                                     </div>
-                                    <select size=10 multiple class="form-control panel-body" id="add_selected_app_name" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+                                    <select size=10 multiple class="form-control panel-body" id="edit_selected_app_name" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
 
                                     </select>
                                 </div>
@@ -522,7 +585,45 @@
                                 <label class="control-label  " style="color: #FF0000;" >*</label>
 
                                 <div class="col-sm-6 col-sm-offset-3">
-									    <span id="add_app_group_members_help" style="color: #FF0000;">　</span>
+									    <span id="edit_app_perms_help" style="color: #FF0000;">　</span>
+								</div>
+							</div>
+                            <div class="form-group ">
+                                <label class="control-label col-sm-2 " >应用组授权:</label>
+                                <div class="panel panel-default col-sm-4" style="padding: 0;margin-left: 15px;margin-bottom: 0;">
+                                    <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
+                                        <div class="input-group">
+                                        <input type="text" class="form-control input-sm" id="edit_search_app_group" placeholder="查询应用组名称">
+                                          <span class="input-group-btn">
+                                            <button type="button" class="btn btn-primary edit_search_app_group_btn btn-sm"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
+                                          </span>
+
+                                        </div>
+                                    </div>
+                                    <select size=10  multiple class="form-control panel-body" id="edit_select_app_group" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+                                    </select>
+                                </div>
+
+                                <div class="col-sm-1" style="padding: 0 10px 0 10px;">
+                                    <div style="margin-top: 30px;">
+                                        <button type="button" class="btn btn-xs btn-info " id="edit_select_app_group_btn" disabled="true">&gt;&gt;</button>
+                                        <button type="button" class="btn btn-xs btn-info " style="margin-top: 1px;" id="edit_delete_app_group_btn" disabled="true">&lt;&lt;</button>
+                                    </div>
+                                </div>
+
+                                <div class="panel panel-info col-sm-4" style="padding: 0;margin-bottom: 0;">
+                                    <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
+                                        <h3 class="panel-title " style="font-size: 12px;padding: 5px 10px;height: 30px;line-height: 1.5;">已选的应用组名称</h3>
+                                    </div>
+                                    <select size=10 multiple class="form-control panel-body" id="edit_selected_app_group" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+
+                                    </select>
+                                </div>
+
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+
+                                <div class="col-sm-6 col-sm-offset-3">
+									<span id="edit_app_group_perms_help" style="color: #FF0000;">　</span>
 								</div>
 							</div>
 
@@ -535,8 +636,8 @@
 			<div class="modal-footer">
 				<button type="button" class="btn btn-default" data-dismiss="modal">取消
 				</button>
-                <button type="button" class="btn btn-primary" id="add_app_group_member_submit">
-					确认添加
+                <button type="button" class="btn btn-primary" id="edit_fast_channel_submit">
+					确认提交
 				</button>
 			</div>
 		</div><!-- /.modal-content -->
@@ -544,26 +645,26 @@
 </div>
 
 <!-- 编辑备注模态框 -->
-<div class="modal fade juzhong" id="edit_app_group_modal" tabindex="-1" role="dialog" aria-labelledby="edit_app_group_lable" aria-hidden="true" >
+<div class="modal fade juzhong" id="edit_app_auth_description_modal" tabindex="-1" role="dialog" aria-labelledby="edit_app_auth_description_lable" aria-hidden="true" >
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
 					&times;
 				</button>
-				<h4 class="modal-title" id="edit_app_group_lable">
+				<h4 class="modal-title" id="edit_app_auth_description_lable">
 					编辑备注
 				</h4>
-                <span id="edit_process_help" style="color: #FF0000;">　</span>
 			</div>
 			<div class="modal-body">
 				<form class="form-horizontal" role="form"  >
 
                             <div class="form-group">
-										<label class="control-label col-sm-3 " for="edit_app_group_name">应用组名称:</label>
+                                <label class="control-label col-sm-3 " for="edit_app_auth_username">用户名称:</label>
                                 <div class="col-sm-6">
-										<input type="text" class="form-control" id="edit_app_group_name"
+										<input type="text" class="form-control" id="edit_app_auth_username"
 									    style="font-size: 14px;"  readonly="readonly">
+                                    <input type="text" class="hidden" id="edit_app_auth_user_id">
 								</div>
 							</div>
 
@@ -583,7 +684,7 @@
 			<div class="modal-footer">
 				<button type="button" class="btn btn-default" data-dismiss="modal">取消
 				</button>
-                <button type="button" class="btn btn-primary" id="app_group_update_submit">
+                <button type="button" class="btn btn-primary" id="edit_app_auth_description_submit">
 					确认提交
 				</button>
 			</div>

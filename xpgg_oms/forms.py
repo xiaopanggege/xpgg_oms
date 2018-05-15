@@ -83,16 +83,33 @@ def app_group_name_exist_validate(value):
         raise ValidationError('应用组名称不存在，请检查')
 
 
-# 发布系统 应用组 更新表单验证 验证应用名称是否存在
+# 发布系统 应用组和应用授权 更新表单验证 验证应用名称是否存在
 def app_group_members_validate(value):
     for app_name in value.split(','):
         is_app_name_exist = AppRelease.objects.filter(app_name=app_name).exists()
         if not is_app_name_exist:
-            raise ValidationError('应用发布列表中中没有应用名称：%s 的记录' % app_name)
+            raise ValidationError('应用发布列表中没有应用名称：%s 的记录' % app_name)
 
 
 # 发布系统 应用组  更新应用组表单添加成员验证 主
 class AppGroupUpdateForm(forms.Form):
     app_group_name = forms.CharField(max_length=50, error_messages={'required': '应用组名称不能为空', 'max_length': '最多50位'}, validators=[app_group_name_exist_validate])
     app_group_members = forms.CharField(widget=forms.Textarea, validators=[app_group_members_validate], required=False)
+    description = forms.CharField(required=False, max_length=200, error_messages={'max_length': '最多200位'})
+
+
+# 发布系统 应用授权 更新表单验证 验证应用组名称是否存在
+def app_group_validate(value):
+    for app_group in value.split(','):
+        is_app_group_exist = AppGroup.objects.filter(app_group_name=app_group).exists()
+        if not is_app_group_exist:
+            raise ValidationError('应用发布组列表中没有应用组名称：%s 的记录' % app_name)
+
+
+# 发布系统 应用授权  更新应用授权表单添加权限验证 主
+class AppAuthUpdateForm(forms.Form):
+    my_user_id = forms.IntegerField(error_messages={'required': '用户ID不能为空'})
+    username = forms.CharField(max_length=50, error_messages={'required': '用户名称不能为空', 'max_length': '最多50位'})
+    app_perms = forms.CharField(widget=forms.Textarea, validators=[app_group_members_validate], required=False)
+    app_group_perms = forms.CharField(widget=forms.Textarea, validators=[app_group_validate], required=False)
     description = forms.CharField(required=False, max_length=200, error_messages={'max_length': '最多200位'})
