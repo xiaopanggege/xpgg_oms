@@ -56,129 +56,6 @@
                  data: {csrfmiddlewaretoken: '{{ csrf_token }}' }
             });
 
-            // 表单提交
-			$('#minion_client_install_sumbit').click(function(){
-				// 匹配192.168.1.1的正则
-				var reg1 = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/
-				// 判断主机IP是否为空
-				if($.trim($('#server_ip').val())==""){
-					$('#server_ip_help').text('*IP不能为空');
-					$('#server_ip')[0].focus();
-                    //清空输入框内容，因为有时候人家是输入很多空格
-                    $('#server_ip').val("");
-					return false;
-				}
-//				判断IP是否合规
-                if($.trim($('#server_ip').val()).match(reg1)==null){
-					$('#server_ip_help').text('*IP不合法');
-					$('#server_ip')[0].focus();
-					return false;
-                }
-				// 判断用户名是否为空
-				if($.trim($('#server_username').val())==""){
-					$('#server_username_help').text('*用户名不能为空');
-					$('#server_username')[0].focus();
-                    //清空输入框内容，因为有时候人家是输入很多空格
-                    $('#server_username').val("");
-					return false;
-				}
-				// 判断密码是否为空
-				if($.trim($('#server_password').val())==""){
-					$('#server_password_help').text('*密码不能为空');
-					$('#server_password')[0].focus();
-                    //清空输入框内容，因为有时候人家是输入很多空格
-                    $('#server_password').val("");
-					return false;
-				}
-
-				var minion_id = '';
-				// 判断Minion_id是否为空
-				if($.trim($('#minion_id').val())){
-					minion_id = $.trim($('#minion_id').val())
-				}
-
-				var master = '';
-				// 判断master是否为空
-				if($.trim($('#master').val())){
-					master = $.trim($('#master').val())
-				}
-
-				var reg2 =/^([0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-5]{2}[0-3][0-5])$/;
-				var server_port = '22';
-//				判断端口是否为空，如果不为空还要判断端口是否符合格式
-                if($.trim($('#server_port').val())){
-                    if($.trim($('#server_port').val()).match(reg2)==null){
-					$('#server_port_help').text('端口不合法');
-					$('#server_port')[0].focus();
-					return false;
-                    }else {
-                        server_port = $.trim($('#server_port').val());
-                    }
-				}
-
-				var server_ip=$.trim($('#server_ip').val());
-				var server_username=$.trim($('#server_username').val());
-				var server_password=$.trim($('#server_password').val());
-				var $btn = $(this).button('loading');
-                $('#result1').html('正在执行，请稍后....');
-				// 上面如果都过了就开始提交了下面用ajax提交
-				$.ajax({
-					url:"{% url 'minion_client_install' %}",
-					type:'POST',
-					dataType:'json',
-                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
-					traditional:true,
-					data:{
-						'server_ip':server_ip,
-						'server_username':server_username,
-						'server_password':server_password,
-						'minion_id':minion_id,
-                        'master':master,
-                        'server_port': server_port
-					},
-					success:function(result){
-						if(result.status){
-							$('#result1').html('');
-//							for(var i = 0; i < result.result.length; i++){
-//								var insert_data=$('#result1').html()+'<i>'+result.result[i]+'</i>';
-//								$('#result1').html(insert_data);
-							for(var i = 0; i < result.result.length; i++){
-
-								if(result.result[i].indexOf("Result: False")>-1){
-									$('#result1').append("<p style='color: #A00000;'>"+result.result[i]+"</p>");
-								}else if(result.result[i].indexOf("ChangesIs")>-1){
-									$('#result1').append("<p style='color: #00A0A0;'>"+result.result[i]+"</p>");
-								}else if(result.result[i].indexOf("Failed:")>-1){
-//									对汇总的第一行数据中成功失败还有改变做字体颜色区分，即修改颜色
-									var reg1=/Failed:([^\r\n]+)/g;
-									var str1=result.result[i].match(reg1);
-									var reg2=/Succeeded:([^\r\n]+)/g;
-									var str2=result.result[i].match(reg2);
-									var rep_r=result.result[i].replace(reg1,"<span style='color: #A00000;'>"+str1+"</span>");
-									rep_r=rep_r.replace(reg2,"<span style='color: #00B600;'>"+str2+"</span>");
-									$('#result1').append("<p style='color: #00A0A0;'>"+rep_r+"</p>");
-								}else{
-									$('#result1').append("<p style='color: #00B600;'>"+result.result[i]+"</p>");
-								}
-
-							}
-//							$('#result1').val(result.result);
-                            $btn.button('reset');
-						}else {
-							$('#result1').html('');
-                            $('#result1').html(result.result);
-                            $btn.button('reset');
-                        }
-					},
-					error: function(xhr){
-						$('#result1').html('');
-						$('#result1').append("错误提示"+xhr.status+" "+xhr.statusText);
-//						$('#ipscan_help').text('');
-						$btn.button('reset');
-                    }
-				});
-
-			});
 
 			// 执行对象选择触发输入框的隐藏显示
 			$('input[name="select_tgt"]').click(function () {
@@ -273,6 +150,20 @@
                 })
             });
 
+//          client下拉框触发文本框提示内容改变
+	        $('#client_select').change(function(){
+	         	if($(this).val()=='local'){
+	         		$('.client_help').text('提示：等同命令行salt命令');
+	         		$('.exe_div').removeClass('hidden');
+	         	}else if($(this).val()=='local_async'){
+	         	    $('.client_help').text('提示：等同命令行salt --async异步命令');
+	         	    $('.exe_div').removeClass('hidden');
+	         	}else if($(this).val()=='runner'){
+	         		$('.client_help').text('提示：等同命令行salt-run命令,salt-run不需要执行对象参数');
+	         		$('.exe_div').addClass('hidden');
+	         	}
+			});
+
 		});
 
     </script>
@@ -286,7 +177,7 @@
     <div class="col-xs-6 overflow_set">
         <div class="he10"></div>
         <div class="form-horizontal " role="form"  >
-            <div class="form-group " style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" id='modulcheck'>
+            <div class="form-group exe_div" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" >
 				<label class="label label-info " style="font-size: 17px;">执行对象选择</label>
 				<div class="he10"></div>
 				<div class="container-fluid">
@@ -373,6 +264,17 @@
                 </div>
 			</div>
 
+            <div class="form-group">
+                <label class="control-label col-sm-2 " for="client_select">Client:</label>
+                <div class="col-sm-4">
+                    <select class="form-control" id="client_select">
+                        <option value="local">local</option>
+                        <option value="local_async">local_async</option>
+                        <option value="runner">runner</option>
+                    </select>
+                </div>
+                <label class="control-label client_help" style="font-weight: normal;color: #3FB8AF;" >提示：等同命令行salt命令</label>
+            </div>
 
             <div class="form-group add_app_path_owner_div">
                         <label class="control-label col-sm-2 " for="add_app_path_owner">目录属主:</label>
