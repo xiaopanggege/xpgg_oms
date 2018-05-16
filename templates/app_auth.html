@@ -114,12 +114,12 @@
                  data: {csrfmiddlewaretoken: '{{ csrf_token }}' }
             });
 
-//            权限管理模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
+//            快捷权限管理模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
             $('#app_auth_fast_channel_modal').on('shown.bs.modal', function () {
                 $("#edit_search_app_name").focus();
             });
 
-//           快速权限管理模态框 隐藏时数据清除,
+//           快捷权限管理模态框 隐藏时数据清除,
             $("#app_auth_fast_channel_modal").on("hidden.bs.modal", function() {
                 $(this).removeData("bs.modal");
 //                select恢复原状挺麻烦的，我这用最蠢的清空掉2个select然后重新添加。。
@@ -134,7 +134,7 @@
 				$('.fast_channel_username').html("");
             });
 
-//           快速权限管理按钮触发内容填充模态框
+//           快捷权限管理按钮触发内容填充模态框
             $('.app_auth_fast_channel_btn').click(function () {
                 var fast_channel_username = $(this).parent().siblings('.data_username').html();
                 $('.fast_channel_username').html(fast_channel_username);
@@ -158,7 +158,7 @@
                 }
             });
 
-//            快速权限管理模态框，查找app_name,这里复用了应用组的ajax处理，不然还要再写一遍
+//            快捷权限管理模态框，查找app_name,这里复用了应用组的ajax处理，不然还要再写一遍
              $('.edit_search_app_name_btn').click(function(){
                  $('#edit_select_app_name').empty();
                  var app_name=$.trim($('#edit_search_app_name').val());
@@ -191,7 +191,7 @@
 				});
 			});
 
-//           快速权限管理模态框 app_name选中 操作触发中间的》按钮可用
+//           快捷权限管理模态框 app_name选中 操作触发中间的》按钮可用
             $("#edit_select_app_name").click(function () {
                 var app_name_list=$('#edit_select_app_name option:selected').map(function(){return $(this).val();}).get().join(",");
                 if(app_name_list.length != 0) {
@@ -199,7 +199,7 @@
                 }
             });
 
-//           快速权限管理模态框 app_name选中 操作触发中间的《按钮可用
+//           快捷权限管理模态框 app_name选中 操作触发中间的《按钮可用
             $("#edit_selected_app_name").click(function () {
                 var app_name_list=$('#edit_selected_app_name option:selected').map(function(){return $(this).val();}).get().join(",");
                 if(app_name_list.length != 0) {
@@ -207,7 +207,7 @@
                 }
             });
 
-//           快速权限管理模态框 app_name》按钮触发选中值移动到右边
+//           快捷权限管理模态框 app_name》按钮触发选中值移动到右边
             $("#edit_select_app_name_btn").click(function () {
 //                在这里触发清空如果没选择minion_id的错误提示,嘿嘿
                 $('#add_app_group_members_help').text('　');
@@ -218,7 +218,7 @@
                 })
             });
 
-//           快速权限管理模态框 app_name《按钮触发选中值移动到左边
+//           快捷权限管理模态框 app_name《按钮触发选中值移动到左边
             $("#add_delete_app_name_btn").click(function () {
                 $("#edit_selected_app_name option:selected").each(function () {
                     $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#edit_select_app_name");
@@ -229,7 +229,7 @@
 
 
             
-//            快速权限管理模态框，查找app_group,这里复用了应用组的ajax处理，不然还要再写一遍
+//            快捷权限管理模态框，查找app_group,这里复用了应用组的ajax处理，不然还要再写一遍
              $('.edit_search_app_group_btn').click(function(){
                  $('#edit_select_app_group').empty();
                  var app_group=$.trim($('#edit_search_app_group').val());
@@ -262,7 +262,7 @@
 				});
 			});
 
-//           快速权限管理模态框 app_group选中 操作触发中间的》按钮可用
+//           快捷权限管理模态框 app_group选中 操作触发中间的》按钮可用
             $("#edit_select_app_group").click(function () {
                 var app_group_list=$('#edit_select_app_group option:selected').map(function(){return $(this).val();}).get().join(",");
                 if(app_group_list.length != 0) {
@@ -270,7 +270,7 @@
                 }
             });
 
-//           快速权限管理模态框 app_group选中 操作触发中间的《按钮可用
+//           快捷权限管理模态框 app_group选中 操作触发中间的《按钮可用
             $("#edit_selected_app_group").click(function () {
                 var app_group_list=$('#edit_selected_app_group option:selected').map(function(){return $(this).val();}).get().join(",");
                 if(app_group_list.length != 0) {
@@ -278,7 +278,7 @@
                 }
             });
 
-//           快速权限管理模态框 app_group》按钮触发选中值移动到右边
+//           快捷权限管理模态框 app_group》按钮触发选中值移动到右边
             $("#edit_select_app_group_btn").click(function () {
 //                在这里触发清空如果没选择minion_id的错误提示,嘿嘿
                 $('#add_app_group_members_help').text('　');
@@ -289,7 +289,7 @@
                 })
             });
 
-//           快速权限管理模态框 app_group《按钮触发选中值移动到左边
+//           快捷权限管理模态框 app_group《按钮触发选中值移动到左边
             $("#edit_delete_app_group_btn").click(function () {
                 $("#edit_selected_app_group option:selected").each(function () {
                     $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#edit_select_app_group");
@@ -299,7 +299,7 @@
             });
 
 
-//          快速权限管理 表单提交
+//          快捷权限管理 表单提交
             $('#edit_fast_channel_submit').click(function(){
 				var app_perms=$('#edit_selected_app_name option').map(function(){return $(this).val();}).get().join(",");
 				var app_group_perms=$('#edit_selected_app_group option').map(function(){return $(this).val();}).get().join(",");
@@ -331,7 +331,7 @@
 //						        把错误信息插入到对应的错误help位子
                                 $('#edit_'+k+'_help').text(v[0].message);
                             });
-                            console.log(JSON.stringify(result.result));
+                            // console.log(JSON.stringify(result.result));
                         }
 					}
 				});
@@ -489,7 +489,7 @@
                     <td class="">
                         <button type="button" class="btn btn-success btn-sm app_auth_fast_channel_btn" data-toggle="modal" data-target="#app_auth_fast_channel_modal" >快捷权限管理</button>
                         <button type="button" class="btn btn-info btn-sm edit_app_auth_description_btn" data-toggle="modal" data-target="#edit_app_auth_description_modal">编辑备注</button>
-                        <a href="{% url 'app_group_members_manage' %}?app_group_name={{data.app_group_name}}"  class="btn btn-sm btn-primary" role="button">应用权限管理</a>
+                        <a href="{% url 'app_auth_app_manage' %}?my_user_id={{data.my_user_id}}&username={{data.username}}"  class="btn btn-sm btn-primary" role="button">应用权限管理</a>
                         <a href="{% url 'app_group_members_manage' %}?app_group_name={{data.app_group_name}}"  class="btn btn-sm btn-primary" role="button">应用组权限管理</a>
 
                     </td>

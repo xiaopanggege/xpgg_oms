@@ -936,7 +936,7 @@ def minion_client_install(request):
                                 'arg': ["minion", "pillar={'minion_id':'%s','master':'%s'}" % (minion_id, master)]
                                 }
                         try:
-                            minion_post = requests.post('http://192.168.68.50:8080/run', json=minion_data)
+                            minion_post = requests.post('%s/run' % settings.SITE_SALT_API_URL, json=minion_data)
                             minion_post.raise_for_status()
                         except Exception as e:
                             minion_response = '主机%s部署minion客户端失败请联系管理员：' % server_ip
@@ -2426,8 +2426,8 @@ def app_release_ajax(request):
                 sys_type = app_data.sys_type
                 app_path_owner = app_data.app_path_owner
                 try:
-                    # 由于用的salt来做发布所以如果minion离线或不存在删除了就无法执行，所以要判断，另外还有一个原因是项目管理表关联minion表
-                    # 设置的是如果minion如果删除不存在了则设置为空，如果出现这个现象会触发try的except
+                    # 由于用的salt来做发布所以如果minion离线或不存在删除了就无法执行，所以要判断，另外还有一个原因是minion管理表如果
+                    # 删除了某个minion会触发try的except
                     try:
                         minion_id_list = app_data.minion_id.split(',')
                         for minion_id in minion_id_list:
@@ -2456,7 +2456,7 @@ def app_release_ajax(request):
                                         result['result'] = app_log
                                         return JsonResponse(result)
                                     else:
-                                        # 判断是否有项目svn版本号，如果有说明已经检出过，那就使用更新up，如果没有就用检出co
+                                        # 判断是否有应用svn版本号，如果有说明已经检出过，那就使用更新up，如果没有就用检出co
                                         if app_svn_version:
                                             cmd_data = 'svn up -r %s %s --no-auth-cache --non-interactive  --username=%s --password=%s' % (
                                                 release_svn_version, app_svn_co_path, app_svn_user, app_svn_password)
@@ -3611,13 +3611,49 @@ def app_auth(request):
         return render(request, 'app_auth.html')
 
 
+# 发布系统 应用授权 应用权限管理页
+def app_auth_app_manage(request):
+    try:
+        if request.method == 'GET':
+            my_user_id = request.GET.get('my_user_id')
+            username = request.GET.get('username')
+            app_perms_data = AppAuth.objects.get(username=username).app_perms
+            app_data = []
+            if app_perms_data:
+                app_data_list = AppRelease.objects.filter(app_name__in=app_perms_data.split(',')).order_by('app_name')
+            else:
+                app_data_list = []
+            # 默认如果没有get到的话值为None，这里我需要为空''，所以下面修改默认值为''
+            search_field = request.GET.get('search_field', '')
+            search_content = request.GET.get('search_content', '')
+            if search_content is '':
+                data_list = getPage(request, app_data_list, 12)
+            else:
+                if search_field == 'search_app_name':
+                    app_data_list = app_data_list.filter(app_name__contains=search_content)
+                    data_list = getPage(request, app_data_list, 12)
+                elif search_field == 'search_minion_id':
+                    for app in app_data:
+                        if search_content in app.minion_id:
+                            pass
+                        else:
+                            app_data_list.remove(app)
+                    data_list = getPage(request, app_data_list, 12)
+                else:
+                    data_list = ""
+            return render(request, 'app_auth_app_manage.html', {'data_list': data_list, 'search_field': search_field,
+                                                                'search_content': search_content, 'username': username,
+                                                                'app_perms_data': app_perms_data, 'my_user_id': my_user_id})
+    except Exception as e:
+        logger.error('应用授权应用权限管理页面有问题', e)
+        return render(request, 'app_auth_app_manage.html')
+
+
 # 发布系统 应用授权 ajax提交处理
 def app_auth_ajax(request):
     result = {'result': None, 'status': False}
-    app_log = []
     try:
         if request.is_ajax():
-            # 在ajax提交时候多一个字段作为标识，来区分多个ajax提交哈，厉害！
             if request.POST.get('app_auth_tag_key') == 'app_auth_username_update':
                 obj = AppAuthUpdateForm(request.POST)
                 if obj.is_valid():
@@ -3664,6 +3700,32 @@ def app_auth_ajax(request):
                 else:
                     error_str = obj.errors.as_json()
                     result['result'] = json.loads(error_str)
+                return JsonResponse(result)
+            elif request.POST.get('app_auth_tag_key') == 'app_auth_app_update':
+                obj = AppAuthUpdateForm(request.POST)
+                if obj.is_valid():
+                    AppAuth.objects.filter(my_user_id=obj.cleaned_data['my_user_id'],
+                                           username=obj.cleaned_data["username"]).update(
+                        app_perms=obj.cleaned_data["app_perms"])
+                    result['result'] = '成功'
+                    result['status'] = True
+                else:
+                    error_str = obj.errors.as_json()
+                    result['result'] = json.loads(error_str)
+                return JsonResponse(result)
+            elif request.POST.get('app_auth_tag_key') == 'app_auth_app_delete':
+                app_name = request.POST.get('app_name')
+                app_group_name = request.POST.get('app_group_name')
+                try:
+                    app_group_members = AppGroup.objects.get(app_group_name=app_group_name).app_group_members
+                    app_group_members_list = app_group_members.split(',')
+                    app_group_members_list.remove(app_name)
+                    app_group_members = ','.join(app_group_members_list)
+                    AppGroup.objects.filter(app_group_name=app_group_name).update(app_group_members=app_group_members)
+                    result['result'] = '成功'
+                    result['status'] = True
+                except Exception as e:
+                    result['result'] = str(e)
                 return JsonResponse(result)
             elif request.POST.get('app_auth_tag_key') == 'app_group_member_add':
                 obj = AppGroupUpdateForm(request.POST)

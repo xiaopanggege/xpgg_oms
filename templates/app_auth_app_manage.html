@@ -65,8 +65,8 @@
     		$(window).resize();
 
 //    	    由于这个页面不是侧边栏的导航项目而是应用发布组跳转后的页面，所以需要手动给应用发布组添加选中的class
-            $('.app_release_group_li').children().addClass('active-ditia');
-            $('.app_release_group_li').parents('.collapse').addClass('in');
+            $('.app_auth_li').children().addClass('active-ditia');
+            $('.app_auth_li').parents('.collapse').addClass('in');
             $('.release_system_li').addClass('active');
             $('.release_system_li').find("span.gl-change").removeClass("glyphicon-menu-left").addClass("glyphicon-menu-down");
 
@@ -117,8 +117,9 @@
 
 //            分页页面跳转
             $('.page_go').click(function () {
-                var app_group_name =$.trim($('.title_app_group_name').text());
-                window.location.href = window.location.href.split("?")[0]+'?app_group_name='+app_group_name+'&search_field='+'{{ search_field }}'+'&search_content='+'{{ search_content }}'+'&page='+$("#page_index").val();
+                var username =$.trim($('.title_app_auth_username').text());
+                var my_user_id =$.trim($('.title_my_user_id').text());
+                window.location.href = window.location.href.split("?")[0]+'?my_user_id='+my_user_id+'&username='+username+'&search_field='+'{{ search_field }}'+'&search_content='+'{{ search_content }}'+'&page='+$("#page_index").val();
             });
 
 //            搜索框回车触发查询按钮事件
@@ -132,43 +133,42 @@
             $('.search_btn').click(function () {
                var search_field = $('#search_field').val();
                var search_content = $('#search_content').val();
-               var app_group_name =$.trim($('.title_app_group_name').text());
-               window.location.href=window.location.href.split("?")[0]+'?app_group_name='+app_group_name+'&search_field='+search_field+'&search_content='+search_content;
+               var username =$.trim($('.title_app_auth_username').text());
+               window.location.href=window.location.href.split("?")[0]+'?username='+username+'&search_field='+search_field+'&search_content='+search_content;
             });
 
-//            编辑成员模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
-            $('#app_group_member_add_modal').on('shown.bs.modal', function () {
-                $("#add_search_app_name").focus();
+//            编辑应用权限模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
+            $('#edit_app_perms_modal').on('shown.bs.modal', function () {
+                $("#edit_search_app_name").focus();
             });
 
-//           编辑成员模态框 隐藏时数据清除,
-            $("#app_group_member_add_modal").on("hidden.bs.modal", function() {
+//           编辑应用权限模态框 隐藏时数据清除,
+            $("#edit_app_perms_modal").on("hidden.bs.modal", function() {
                 $(this).removeData("bs.modal");
 //                select恢复原状挺麻烦的，我这用最蠢的清空掉2个select然后重新添加。。
-                $('#add_search_app_name').val('');
-				$('#add_select_app_name').empty();
-				$('#add_selected_app_name').empty();
-				$('#add_app_group_members_help').text('　');
+                $('#edit_search_app_name').val('');
+				$('#edit_select_app_name').empty();
+				$('#edit_selected_app_name').empty();
+				$('#edit_app_perms_help').text('　');
             });
 
-//           编辑成员按钮触发内容填充模态框
-            $('.app_group_member_add_button').click(function () {
+//           编辑应用权限按钮触发内容填充模态框
+            $('.edit_app_perms_btn').click(function () {
 //                之所以加一层if是因为minion_id由于minion表id删除会出现None的情况在minion_id全为空的时候，如果出现None我们就不需要做下面的填充内容操作，不然会填充None过去
-                if($.trim($('.app_group_members_data').val()).length != 0) {
-                    var app_name = $('.app_group_members_data').val().split(',');
-                    for (var i = 0; i < app_name.length; i++) {
-//                        我这里做的是把已经是成员的添加到选中那边
-                        $("<option  value='" + app_name[i] + "'>" + app_name[i] + "</option>").appendTo("#add_selected_app_name");
-                    }
+                if($.trim($('.app_perms_data').val()).length != 0) {
+                    var app_name = $('.app_perms_data').val().split(',');
+                    $.each(app_name,function (index,content) {
+                        $("<option  value='" + content + "'>" + content + "</option>").appendTo("#edit_selected_app_name");
+                    });
                 }
-                $("#add_delete_app_name_btn").attr("disabled",true);
+                $("#edit_delete_app_name_btn").attr("disabled",true);
             });
 
-//            编辑成员模态框，查找app_name
-             $('.add_search_app_name_btn').click(function(){
-                 $('#add_select_app_name').empty();
-                 var app_name=$.trim($('#add_search_app_name').val());
-                 var selected_app_name=$('#add_selected_app_name option');
+//            编辑应用权限模态框，查找app_name
+             $('.edit_search_app_name_btn').click(function(){
+                 $('#edit_select_app_name').empty();
+                 var app_name=$.trim($('#edit_search_app_name').val());
+                 var selected_app_name=$('#edit_selected_app_name option');
 //				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
 				$.ajax({
 					url:"{% url 'app_group_ajax' %}",
@@ -182,14 +182,15 @@
 					},
 					success:function(result){
 						if(result.status){
-						    for(var i = 0; i < result.result.length; i++){
-						       $("<option value='"+result.result[i]+"'>"+result.result[i]+"</option>").appendTo("#add_select_app_name");
+						    $.each(result.result,function (index,content) {
+                                $("<option value='"+content+"'>"+content+"</option>").appendTo("#edit_select_app_name");
                                selected_app_name.each(function () {
-                                    if($(this).val()==result.result[i]){
-                                        $("#add_select_app_name option[value='" +result.result[i]+ "']").remove();
+                                    if($(this).val()==content){
+                                        $("#edit_select_app_name option[value='" +content+ "']").remove();
                                     }
                                 });
-						    }
+                            });
+
 						}else {
 						    toastr.error(result.result,'error',{timeOut: 1500});
                         }
@@ -197,69 +198,71 @@
 				});
 			});
 
-//           编辑成员模态框 app_name选中 操作触发中间的》按钮可用
-            $("#add_select_app_name").click(function () {
-                var app_name_list=$('#add_select_app_name option:selected').map(function(){return $(this).val();}).get().join(",");
+//           编辑应用权限模态框 app_name选中 操作触发中间的》按钮可用
+            $("#edit_select_app_name").click(function () {
+                var app_name_list=$('#edit_select_app_name option:selected').map(function(){return $(this).val();}).get().join(",");
                 if(app_name_list.length != 0) {
-                    $("#add_select_app_name_btn").attr("disabled",false);
+                    $("#edit_select_app_name_btn").attr("disabled",false);
                 }
             });
 
-//           编辑成员模态框 app_name选中 操作触发中间的《按钮可用
-            $("#add_selected_app_name").click(function () {
-                var app_name_list=$('#add_selected_app_name option:selected').map(function(){return $(this).val();}).get().join(",");
+//           编辑应用权限模态框 app_name选中 操作触发中间的《按钮可用
+            $("#edit_selected_app_name").click(function () {
+                var app_name_list=$('#edit_selected_app_name option:selected').map(function(){return $(this).val();}).get().join(",");
                 if(app_name_list.length != 0) {
-                    $("#add_delete_app_name_btn").attr("disabled",false);
+                    $("#edit_delete_app_name_btn").attr("disabled",false);
                 }
             });
 
-//           编辑成员模态框 app_name》按钮触发选中值移动到右边
-            $("#add_select_app_name_btn").click(function () {
+//           编辑应用权限模态框 app_name》按钮触发选中值移动到右边
+            $("#edit_select_app_name_btn").click(function () {
 //                在这里触发清空如果没选择minion_id的错误提示,嘿嘿
-                $('#add_app_group_members_help').text('　');
-                $("#add_select_app_name option:selected").each(function () {
-                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#add_selected_app_name");
+                $('#edit_app_perms_help').text('　');
+                $("#edit_select_app_name option:selected").each(function () {
+                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#edit_selected_app_name");
                     $(this).remove();
-                    $("#add_select_app_name_btn").attr("disabled",true);
+                    $("#edit_select_app_name_btn").attr("disabled",true);
                 })
             });
 
-//           编辑成员模态框 app_name《按钮触发选中值移动到左边
-            $("#add_delete_app_name_btn").click(function () {
-                $("#add_selected_app_name option:selected").each(function () {
-                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#add_select_app_name");
+//           编辑应用权限模态框 app_name《按钮触发选中值移动到左边
+            $("#edit_delete_app_name_btn").click(function () {
+                $("#edit_selected_app_name option:selected").each(function () {
+                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#edit_select_app_name");
                     $(this).remove();
-                    $("#add_delete_app_name_btn").attr("disabled",true);
+                    $("#edit_delete_app_name_btn").attr("disabled",true);
                 })
             });
 
-//          编辑成员表单提交
-            $('#add_app_group_member_submit').click(function(){
-				var app_group_members=$('#add_selected_app_name option').map(function(){return $(this).val();}).get().join(",");
-                var app_group_name =$.trim($('.title_app_group_name').text());
+//          编辑应用权限表单提交
+            $('#edit_app_perms_submit').click(function(){
+				var app_perms=$('#edit_selected_app_name option').map(function(){return $(this).val();}).get().join(",");
+                var username =$.trim($('.title_app_auth_username').text());
+                var my_user_id =$.trim($('.title_my_user_id').text());
 //				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
 				$.ajax({
-					url:"{% url 'app_group_ajax' %}",
+					url:"{% url 'app_auth_ajax' %}",
 					type:'POST',
 					dataType:'json',
                     //如果数据是列表即数组的话要加下面这个traditional不然传不过去
 					traditional:true,
 					data:{
-						'app_group_members':app_group_members,
-                        'app_group_name':app_group_name,
-                        'app_group_tag_key':'app_group_member_add'
+						'app_perms':app_perms,
+                        'username':username,
+                        'my_user_id':my_user_id,
+                        'app_auth_tag_key':'app_auth_app_update'
 
 					},
 					success:function(result){
 						if(result.status){
-                            $('#app_group_member_add_modal').modal('toggle');
+                            $('#edit_app_perms_modal').modal('toggle');
                             toastr.success(result.result,'Success',{timeOut: 1500});
                             setTimeout(function(){window.location.href=window.location.href}, 1000);
 						}else {
 //						    通过表单验证返回的错误是多层嵌套字典加列表，一层key是对应提交数据的key，二层有2个key一个是code一个是message，错误信息在message里
 						    $.each(result.result, function (k,v) {
 //						        把错误信息插入到对应的错误help位子
-                                $('#add_'+k+'_help').text(v[0].message);
+                                $('#edit_'+k+'_help').text(v[0].message);
                             });
                             // console.log(JSON.stringify(result.result));
                         }
@@ -277,7 +280,7 @@
 
 //            点击 移除成员 确定按钮移除成员
             $('#delete_app_group_member_button').click(function(){
-                var app_group_name =$.trim($('.title_app_group_name').text());
+                var username =$.trim($('.title_app_auth_username').text());
 				var app_name=$.trim($('.hidden_app_name').val());
 				$('#delete_app_group_member_modal').modal('toggle');
 				$.ajax({
@@ -288,7 +291,7 @@
 					traditional:true,
 //                    提交的数据要和后台form验证的变量一致，不过可以多出来，只要验证的有就行，比如这里就多了project_tag_key
 					data:{
-					    'app_group_name':app_group_name,
+					    'username':username,
                         'app_name':app_name,
                         'app_group_tag_key':'app_group_member_delete'
 
@@ -324,455 +327,13 @@
                 $('#view_operation_arguments').val($.trim($(this).parent().siblings('.data_operation_arguments').html()));
                 $('#view_app_backup_path').val($.trim($(this).parent().siblings('.data_app_backup_path').html()));
                 $('#view_create_time').val($.trim($(this).parent().siblings('.data_create_time').html()));
-                $('#view_app_group_name').val('{{ app_group_name}}');
+                $('#view_username').val($.trim($(this).parent().siblings('.data_username').html()));
                 $('#view_description').val($.trim($(this).parent().siblings('.data_description').html()));
                 $('#view_sys_type').val($.trim($(this).parent().siblings('.data_sys_type').html()));
 
             });
 
-
-//            检查svn版本
-            $('.check_svn').click(function () {
-                var app_name = $.trim($(this).parent().siblings('.data_app_name').html());
-                var server_svn_version = $(this).siblings('.data_server_svn_version');
-                server_svn_version.css('color','royalblue');
-                server_svn_version.html('查询..');
-                var re_button = $(this);
-//                改变按钮的样子变成正在执行。。。，原来用下面这个bootstrap自带的，发现有一个问题最后$btn.button("reset")会影响到我disabled
-//                掉按钮的操作，死活都无法添加disabled属性到button里，没办法下面改成手动写一个正在执行....
-//                var $btn = $(this).button('loading');
-                re_button.html("检查..");
-                re_button.attr("disabled",true);
-
-                $.ajax({
-					url:"{% url 'app_release_ajax' %}",
-					type:'GET',
-					dataType:'json',
-                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
-					traditional:true,
-					data:{
-						'app_name':app_name,
-                        'app_tag_key':'check_svn'
-
-					},
-					success:function(result){
-						if(result.status){
-//						    console.log(JSON.stringify(result.result));
-                            server_svn_version.css('color','royalblue');
-                            server_svn_version.html(result.result);
-                            re_button.html("检查");
-                            re_button.attr("disabled",false);
-						}else {
-						    server_svn_version.css('color','#CC5522');
-                            server_svn_version.html('查询失败');
-                            re_button.html("检查");
-                            re_button.attr("disabled",false);
-                        }
-					}
-				});
-            });
-
-//            点击 发布 按钮跳出svn版本输入模态框等操作
-            $('.release_app').click(function () {
-                $('#release_svn_version_modal').modal('toggle');
-//                清空模态框内容
-                $('#release_svn_version').val('');
-                $('#trSeq').val('');
-                $('#release_style').val('');
-                $('#release_style').val('single');
-//                获取行号，发布函数通过行号来定位发布的位子哈哈
-                var trSeq = $(this).parent().parent().parent().find("tr").index($(this).parent().parent()[0]);
-                $('#trSeq').val(trSeq);
-            });
-
-//            批量发布 按钮点击事件
-            $('.app_batch_release_button').click(function () {
-                $('#release_svn_version_modal').modal('toggle');
-//                清空模态框内容
-                $('#release_svn_version').val('');
-                $('#trSeq').val('');
-                $('#release_style').val('');
-//                利用给release_style赋值的关键字作为判断是批量还是单台发布
-                $('#release_style').val('batch');
-            });
-
-//            svn版本输入模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
-            $('#release_svn_version_modal').on('shown.bs.modal', function () {
-                $("#release_svn_version").focus();
-            });
-
-//            点击svn版本输入模态框 确认 按钮执行发布操作
-            $('#release_app_button').click(function () {
-                var release_svn_version = $('#release_svn_version').val();
-                var release_style = $('#release_style').val();
-                var tr_list = [];
-                if(release_style == 'single'){
-                    tr_list.push($('#trSeq').val());
-                }else if(release_style == 'batch'){
-                    if($('input[name="checkItem"]:checked').length<1){
-                        toastr.error('没有选中的应用','Error',{timeOut: 1500});
-                        return false
-                    }
-                    $('input[name="checkItem"]:checked').each(function () {
-                       tr_list.push($(this).parent().parent().parent().find("tr").index($(this).parent().parent()[0]));
-                    });
-                }
-
-                release_app(release_svn_version,tr_list);
-                $('#release_svn_version_modal').modal('toggle');
-            });
-
-//            应用发布 函数
-            var release_app = function (release_svn_version,tr_list) {
-                var tr_list = tr_list;
-                $.each(tr_list,function () {
-                    var app_name = $.trim($('.trSeq').eq(this).find('.data_app_name').html());
-                    var svn_version = '';
-                    var release_status = $('.trSeq').eq(this).children('.release_status');
-                    release_status.css('color','royalblue');
-                    release_status.html('发布中..');
-                    var re_button = $('.trSeq').eq(this).find('.release_app');
-                    var backup_button = $('.trSeq').eq(this).find('.backup_app');
-                    // backup_button.attr("disabled",true);
-                    backup_button.attr("disabled",true);
-                    var restore_button = $('.trSeq').eq(this).find('.restore_app');
-                    restore_button.attr("disabled",true);
-    //                改变按钮的样子变成正在执行。。。，原来用下面这个bootstrap自带的，发现有一个问题最后$btn.button("reset")会影响到我disabled
-    //                掉按钮的操作，死活都无法添加disabled属性到button里，没办法下面改成手动写一个正在执行....
-    //                var $btn = $(this).button('loading');
-                    re_button.html("发布中...");
-                    re_button.attr("disabled",true);
-
-                    if(release_svn_version){
-                        svn_version = release_svn_version;
-                    }else{
-                        svn_version = 'HEAD';
-                    }
-
-                    $.ajax({
-                        url:"{% url 'app_release_ajax' %}",
-                        type:'POST',
-                        dataType:'json',
-                        //如果数据是列表即数组的话要加下面这个traditional不然传不过去
-                        traditional:true,
-                        timeout: 180000,
-                        data:{
-                            'app_name':app_name,
-                            'release_svn_version':svn_version,
-                            'app_tag_key':'release_app'
-
-
-                        },
-                        success:function(result){
-                            if(result.status){
-                                release_status.css('color','green');
-                                release_status.html('发布成功');
-                                re_button.html("发布");
-                                re_button.attr("disabled",false);
-                                backup_button.attr("disabled",false);
-                                restore_button.attr("disabled",false);
-                            }else {
-                                release_status.css('color','red');
-                                release_status.html('发布失败');
-                                re_button.html("发布");
-                                re_button.attr("disabled",false);
-                                backup_button.attr("disabled",false);
-                                restore_button.attr("disabled",false);
-                            }
-                        },
-                        error:function (xhr) {
-                            release_status.css('color','#337ab7');
-                            release_status.html('发布时间较长，请稍后查看日志');
-                            re_button.html("发布");
-                            re_button.attr("disabled",false);
-                            backup_button.attr("disabled",false);
-                            restore_button.attr("disabled",false);
-                        }
-                    });
-                });
-
-            };
-
-
-//            单项操作 弹出提示框
-            $('.app_single_release_btn').click(function () {
-                var single_cmd = $.trim($(this).text());
-                $('.single_release_svn_version').val('');
-                if(single_cmd == 'SVN更新'){
-                    $('.single_release_svn_version').removeClass('hidden');
-                }else{
-                    $('.single_release_svn_version').addClass('hidden');
-                }
-                var app_name = $.trim($(this).parent().siblings('.data_app_name').html());
-                $('.single_operation_app_name').text(app_name);
-                $('.single_cmd').text(single_cmd);
-                var trSeq = $(this).parent().parent().parent().find("tr").index($(this).parent().parent()[0]);
-                $('.single_release_trSeq').val(trSeq);
-                $('#single_operation_app_modal').modal('toggle');
-            });
-
-//            单项操作 svn版本输入模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
-            $('#single_operation_app_modal').on('shown.bs.modal', function () {
-                $('.single_release_svn_version')[0].focus()
-            });
-
-//            单项操作 点击确认执行发布单项操作
-            $('#single_operation_app_button').click(function () {
-                var svn_version='';
-                var app_name = $.trim($('.single_operation_app_name').text());
-                var single_cmd = $.trim($('.single_cmd').text());
-                var single_release_svn_version = $('.single_release_svn_version').val();
-                var trSeq = $('.single_release_trSeq').val();
-                var release_status = $('.trSeq').eq(trSeq).children('.release_status');
-                release_status.css('color','royalblue');
-                release_status.html('执行中..');
-//                禁用掉发布和还原按钮，然后改变备份按钮成备份中状态
-                var release_button = $('.trSeq').eq(trSeq).find('.release_app');
-                release_button.attr("disabled",true);
-                var restore_button = $('.trSeq').eq(trSeq).find('.restore_app');
-                restore_button.attr("disabled",true);
-                var backup_button = $('.trSeq').eq(trSeq).find('.backup_app');
-                backup_button.attr("disabled",true);
-                if(single_release_svn_version){
-                    svn_version = single_release_svn_version;
-                }else{
-                    svn_version = 'HEAD';
-                }
-//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
-				$.ajax({
-					url:"{% url 'app_release_ajax' %}",
-					type:'POST',
-					dataType:'json',
-                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
-					traditional:true,
-					data:{
-						'app_name':app_name,
-                        'release_svn_version':svn_version,
-                        'single_cmd':single_cmd,
-                        'app_tag_key':'release_app'
-
-					},
-					success:function(result){
-						if(result.status){
-                            release_status.css('color','green');
-                            release_status.html('执行成功');
-                            backup_button.attr("disabled",false);
-                            release_button.attr("disabled",false);
-                            restore_button.attr("disabled",false);
-                        }else {
-                            release_status.css('color','red');
-                            release_status.html('执行失败');
-                            backup_button.attr("disabled",false);
-                            release_button.attr("disabled",false);
-                            restore_button.attr("disabled",false);
-                        }
-					}
-				});
-
-            });
-
-//            查询日志函数封装
-            var search_log_object = function (page) {
-                var app_name=$.trim($('.log_app_name').html());
-				var page = page||1;
-				$.ajax({
-					url:"{% url 'app_release_ajax' %}",
-					type:'GET',
-					dataType:'json',
-                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
-					traditional:true,
-//                    提交的数据要和后台form验证的变量一致，不过可以多出来，只要验证的有就行，比如这里就多了project_tag_key
-					data:{
-                        'app_name':app_name,
-                        'page':page,
-                        'app_tag_key':'search_app_log'
-
-					},
-					success:function(result){
-					    if(result.status) {
-                            $('.log_pager').empty();
-                            if (result.has_previous) {
-                                $('<li><a href="javascript:void(0);" class="app_log_btn" onclick="search_log_object(' + result.previous_page_number + ')">上一页</a></li>').appendTo('.log_pager');
-                            } else {
-                                $('<li class="disabled"><a href="javascript:void(0);">上一页</a></li>').appendTo('.log_pager');
-                            }
-
-                            $('<li class="current"> 页数 ' + result.number + ' / ' + result.num_pages + '</li>').appendTo('.log_pager');
-
-                            if (result.has_next) {
-                                $('<li><a href="javascript:void(0);" class="app_log_btn" onclick="search_log_object(' + result.next_page_number + ')">下一页</a></li>').appendTo('.log_pager');
-                            } else {
-                                $('<li class="disabled"><a href="javascript:void(0);">下一页</a></li>').appendTo('.log_pager');
-                            }
-                            $('<li>&nbsp;&nbsp;<input type="text"  style="width: 30px;border-radius: 30%;" id="log_page_index">/' + result.num_pages + '页<button type="button" class="btn btn-sm btn-success log_page_go"  >跳转</button></li>').appendTo('.log_pager');
-
-
-                            $('#modal_app_log').empty();
-                            $.each(result.log_content,function (index,content) {
-                                $('#modal_app_log').text($('#modal_app_log').text()+content)
-                            });
-                            $('.log_create_time').html(result.create_time);
-                            $('.log_release_result').html(result.release_result);
-                            $('.log_app_username').html(result.log_app_username);
-                        }else {
-					        $('.log_pager').empty();
-						    $('#modal_app_log').empty();
-						    $('.log_create_time').html('');
-                            $('.log_release_result').html('');
-                            $('.log_app_username').html('');
-                            $('#modal_app_log').html('查询出错了，不好意思');
-                        }
-					}
-				});
-            };
-//            因为上一页下一页是用的onclick事件，而onclick只能调用windows作为上下文基点的函数所以需要加下面这个
-            window.search_log_object = search_log_object;
-
-//            日志查询按钮
-            $('.search_log').click(function () {
-//                代入参数和清空一些东西
-                $('#modal_app_log').html('');
-
-                var app_name = $(this).parent().siblings('.data_app_name').html();
-                $(".log_app_name").html(app_name);
-                search_log_object();
-            });
-
-//            日志页面 跳转按钮事件,由于按钮是动态生成的无法直接调用click实现必须用delegate，注意父元素一定要存在不是未来的
-            $('.log_pager').delegate(".log_page_go","click",function () {
-               var page_num = $('#log_page_index').val();
-               search_log_object(page_num);
-            });
-
-
-//            点击日志里的刷新，刷新日志
-            $('.app_log_btn').click(function(){
-				search_log_object();
-			});
-
-//            点击备份按钮 打开确认备份页
-            $('.backup_app').click(function () {
-                var data_app_backup_path = $(this).parent().siblings('.data_app_backup_path').html();
-                var app_name = $(this).parent().siblings('.data_app_name').html();
-                if(data_app_backup_path){
-                    var trSeq = $(this).parent().parent().parent().find("tr").index($(this).parent().parent()[0]);
-                    $('.backup_trSeq').val(trSeq);
-                    $('.backup_app_name').val(app_name);
-                    $('#backup_app_modal').modal('toggle');
-                }else{
-                    toastr.error('没有备份目录，请编辑应用增加备份目录','Error',{timeOut: 2000});
-                }
-            });
-
-//            点击备份确认页的 确认按钮，确认备份
-            $('#backup_app_button').click(function () {
-                var app_name = $('.backup_app_name').val();
-                var trSeq = $('.backup_trSeq').val();
-                var release_status = $('.trSeq').eq(trSeq).children('.release_status');
-                release_status.css('color','royalblue');
-                release_status.html('备份中..');
-//                禁用掉发布和还原按钮，然后改变备份按钮成备份中状态
-                var release_button = $('.trSeq').eq(trSeq).find('.release_app');
-                release_button.attr("disabled",true);
-                var restore_button = $('.trSeq').eq(trSeq).find('.restore_app');
-                restore_button.attr("disabled",true);
-                var backup_button = $('.trSeq').eq(trSeq).find('.backup_app');
-                backup_button.html("备份中...");
-                backup_button.attr("disabled",true);
-
-//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
-				$.ajax({
-					url:"{% url 'app_release_ajax' %}",
-					type:'POST',
-					dataType:'json',
-                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
-					traditional:true,
-					data:{
-						'app_name':app_name,
-                        'app_tag_key':'app_backup'
-
-					},
-					success:function(result){
-						if(result.status){
-                            release_status.css('color','green');
-                            release_status.html('备份成功');
-                            backup_button.html("备份");
-                            backup_button.attr("disabled",false);
-                            release_button.attr("disabled",false);
-                            restore_button.attr("disabled",false);
-                        }else {
-                            release_status.css('color','red');
-                            release_status.html('备份失败');
-                            backup_button.html("备份");
-                            backup_button.attr("disabled",false);
-                            release_button.attr("disabled",false);
-                            restore_button.attr("disabled",false);
-                        }
-					}
-				});
-            });
-
-//            点击还原按钮 执行还原
-            $('.restore_app').click(function () {
-                var data_app_backup_path = $(this).parent().siblings('.data_app_backup_path').html();
-                var app_name = $(this).parent().siblings('.data_app_name').html();
-                if(data_app_backup_path){
-                    var trSeq = $(this).parent().parent().parent().find("tr").index($(this).parent().parent()[0]);
-                    $('.restore_trSeq').val(trSeq);
-                    $('.restore_app_name').val(app_name);
-                    $('#restore_app_modal').modal('toggle');
-                }else{
-                    toastr.error('没有备份目录，请编辑应用增加备份目录','Error',{timeOut: 2000});
-                }
-            });
-
-//            点击还原确认页的 确认按钮，确认备份
-            $('#restore_app_button').click(function () {
-                var app_name = $('.restore_app_name').val();
-                var trSeq = $('.restore_trSeq').val();
-                var release_status = $('.trSeq').eq(trSeq).children('.release_status');
-                release_status.css('color','royalblue');
-                release_status.html('还原中..');
-//                禁用掉发布和还原按钮，然后改变备份按钮成备份中状态
-                var release_button = $('.trSeq').eq(trSeq).find('.release_app');
-                release_button.attr("disabled",true);
-                var backup_button = $('.trSeq').eq(trSeq).find('.backup_app');
-                backup_button.attr("disabled",true);
-                var restore_button = $('.trSeq').eq(trSeq).find('.restore_app');
-                restore_button.html("还原中..");
-                restore_button.attr("disabled",true);
-
-//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
-				$.ajax({
-					url:"{% url 'app_release_ajax' %}",
-					type:'POST',
-					dataType:'json',
-                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
-					traditional:true,
-					data:{
-						'app_name':app_name,
-                        'app_tag_key':'app_restore'
-
-					},
-					success:function(result){
-						if(result.status){
-                            release_status.css('color','green');
-                            release_status.html('还原成功');
-                            restore_button.html("还原");
-                            backup_button.attr("disabled",false);
-                            release_button.attr("disabled",false);
-                            restore_button.attr("disabled",false);
-                        }else {
-                            release_status.css('color','red');
-                            release_status.html('还原失败');
-                            restore_button.html("还原");
-                            backup_button.attr("disabled",false);
-                            release_button.attr("disabled",false);
-                            restore_button.attr("disabled",false);
-                        }
-					}
-				});
-            });
+            
 		});
 
 </script>
@@ -782,10 +343,10 @@
 {% block panel-title_content %}
 <!--<a href="{% url 'nginx_manage'%}">Nginx管理 》</a>-->
 <!--下面这个是返回上一页的数据不刷新，还有一个history.back()也是上一页并刷新页面-->
-<a href="{% url 'app_group' %}"  class="title_content">应用发布组</a>
+<a href="{% url 'app_auth' %}"  class="title_content">应用授权</a>
 <span> >></span>
 <!--下面这个是刷新当前页面-->
-<a href="javascript:location.reload()"  class="title_content">"<span class="title_app_group_name">{{ app_group_name }}</span>"成员管理</a>
+<a href="javascript:location.reload()"  class="title_content">用户"<span class="hidden title_my_user_id">{{ my_user_id }}</span><span class="title_app_auth_username">{{ username }}</span>"应用授权管理</a>
 {% endblock %}
 
 {% block panel_body_content %}
@@ -797,13 +358,13 @@
             <!--下面这里本来是用form的样式的，后来改成div是因为用form默认带了回车会提交表单的功能，所以改成div不过class还是form的哈哈-->
             <div class="form-inline" role="form">
                 <div class="form-group">
-                    <button type="button" class="btn btn-success app_group_member_add_button" data-toggle="modal" data-target="#app_group_member_add_modal" >编辑成员</button>
+                    <button type="button" class="btn btn-success edit_app_perms_btn" data-toggle="modal" data-target="#edit_app_perms_modal" >编辑应用权限</button>
                     <!--<button type="button" class="btn btn-success app_add_button" data-toggle="modal" data-target="#app_add_modal">新增应用</button>-->
-                    <button type="button" class="btn btn-primary app_batch_release_button" >批量发布</button>
-                    {% if app_group_members_data %}
-                    <input type="text" class="app_group_members_data hidden" value={{app_group_members_data}}>
+                    <button type="button" class="btn btn-primary batch_remove_app_btn" >批量移除</button>
+                    {% if app_perms_data %}
+                    <input type="text" class="app_perms_data hidden" value={{app_perms_data}}>
                     {%else%}
-                    <input type="text" class="app_group_members_data hidden" value=''>
+                    <input type="text" class="app_perms_data hidden" value=''>
                     {% endif %}
                 </div>
 
@@ -838,11 +399,7 @@
                   <th width="40px"><input type="checkbox" id="checkAll" name="checkAll" /></th>
                   <th width="10%">应用名称</th>
                   <th width="120px">Minion_ID</th>
-                  <th width="17%">操作步骤</th>
                   <th  width="120px" >成员操作</th>
-                  <th width="220px" style="text-align: left;">SVN版本比对</th>
-                  <th width="220px" style="">发布操作</th>
-                  <th width="6%">发布状态</th>
 
               </tr>
             </thead>
@@ -852,38 +409,13 @@
                     <td><input type="checkbox" name="checkItem" /></td>
                     <td class="data_app_name">{{ data.app_name }}</td>
                     <td class="data_minion_id">{{ data.minion_id }}</td>
-                    <td class="data_operation_content ">
-                        {% for argument in data.operation_content|my_split:','%}{% if forloop.last %}<a  class="app_single_release_btn" style="cursor: pointer;text-decoration: none;">{{ argument }}</a>{% else %}<a  class="app_single_release_btn" style="cursor: pointer;text-decoration: none;">{{ argument }}</a>>>{% endif %}{% endfor %}
-                    </td>
-                    <td class="data_update_time hidden">{{ data.update_time }}</td>
                     <td class="data_operation" style="padding: 0;">
                         <button type="button" class="btn btn-info btn-sm view_detail" data-toggle="modal" data-target="#view_app_modal">查看</button>
                         <!--<button type="button" class="btn btn-info btn-sm edit_detail " data-toggle="modal" data-target="#app_add_modal">编辑</button>-->
                         <!--<button type="button" class="btn btn-danger btn-sm delete_app" data-toggle="modal" data-target="#delete_app_modal">删除</button>-->
-                        <button type="button" class="btn btn-info btn-sm delete_app_group_member" data-toggle="tooltip" title="只是从组中移除，不删除应用">移除成员</button>
+                        <button type="button" class="btn btn-info btn-sm delete_app_group_member" data-toggle="tooltip" title="只是从授权中移除，不删除应用">移除成员</button>
                     </td>
-                    <td  style="padding: 0 0 0 3px;text-align: left;">应用:
-                        {% if data.app_svn_version %}
-                        <span class="data_app_svn_version" style="color: royalblue;">{{ data.app_svn_version }}</span>
-                        {% else %}
-                        <span class="data_app_svn_version" style="color: #CC5522">未检出</span>
-                        {% endif %}
-                        　库:<span class="data_server_svn_version" style="color: #CC5522">未检查</span>
-                        　{% if data.app_svn_version %}
-                        <button type="button" class="btn btn-info btn-sm check_svn " style="">检查</button>
-                        {% else%}
-                        <button type="button" class="btn btn-info btn-sm check_svn" disabled="disabled">检查</button>
-                        {% endif %}</td>
 
-                    <td class="data_release_operation" style="padding: 0;">
-                        <button type="button" class="btn btn-primary btn-sm release_app" >发布</button>
-                        <!--<button type="button" class="btn btn-primary btn-sm search_log" data-toggle="modal" data-target="#search_app_log">回滚</button>-->
-                        <button type="button" class="btn btn-info btn-sm backup_app" data-toggle="tooltip" title="如没有指定备份目录，请在应用操作编辑的应用备份目录中添加">备份</button>
-                        <button type="button" class="btn btn-info btn-sm restore_app" data-toggle="tooltip" title="仅还原应用文件不执行其他操作">还原</button>
-                        <button type="button" class="btn btn-info btn-sm search_log" data-toggle="modal" data-target="#search_app_log">日志</button>
-
-                    </td>
-                    <td class="release_status "></td>
 
                     {% for key,value in data.operation_arguments|my_eval %}
                     {% if key == "停止命令" or key == "映像名称和命令行" or key == "任务计划停止" or key == "停止服务名" or key == "supervisor_stop" %}
@@ -904,6 +436,9 @@
                     {% endif %}
                     {% endfor %}
 
+                    <td class="data_operation_content hidden">{{ data.operation_content }}</td>
+                    <td class="data_update_time hidden">{{ data.update_time }}</td>
+                    <td class="data_app_svn_version hidden">{{ data.app_svn_version }}</td>
                     <td class="data_sys_type hidden">{{ data.sys_type }}</td>
                     <td class="data_app_path hidden">{{ data.app_path }}</td>
                     <td class="data_app_path_owner hidden">{{ data.app_path_owner }}</td>
@@ -927,7 +462,7 @@
                 <ul class="pager">
                      {% if data_list.has_previous %}
                     <!--注意如果url中已经有参数了比如http://192.168.68.50:8000/saltkey_manage/?status=denied那么需要把这个status加上，不然跳转错了哈哈-->
-                        <li><a href="?app_group_name={{ app_group_name }}&search_field={{ search_field }}&search_content={{ search_content }}&page={{ data_list.previous_page_number }}">上一页</a></li>
+                        <li><a href="?username={{ username }}&search_field={{ search_field }}&search_content={{ search_content }}&page={{ data_list.previous_page_number }}">上一页</a></li>
                     {% else %}
                         <li class="disabled"><a href="">上一页</a></li>
                     {% endif %}
@@ -937,7 +472,7 @@
                     </li>
 
                     {% if data_list.has_next %}
-                        <li><a href="?app_group_name={{ app_group_name }}&search_field={{ search_field }}&search_content={{ search_content }}&page={{ data_list.next_page_number }}">下一页</a></li>
+                        <li><a href="?username={{ username }}&search_field={{ search_field }}&search_content={{ search_content }}&page={{ data_list.next_page_number }}">下一页</a></li>
                     {% else %}
                         <li class="disabled"><a href="">下一页</a></li>
                     {% endif %}
@@ -955,8 +490,8 @@
 
 {% block another_content %}
 
-<!-- 编辑成员模态框 -->
-<div class="modal fade juzhong" id="app_group_member_add_modal" tabindex="-1" role="dialog" aria-labelledby="app_group_member_add_lable" aria-hidden="true" data-backdrop="static" >
+<!-- 编辑应用权限模态框 -->
+<div class="modal fade juzhong" id="edit_app_perms_modal" tabindex="-1" role="dialog" aria-labelledby="app_group_member_add_lable" aria-hidden="true" data-backdrop="static" >
 	<div class="modal-dialog" style="width: 600px;">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -964,7 +499,7 @@
 					&times;
 				</button>
 				<h4 class="modal-title" id="app_group_member_add_lable">
-					编辑成员
+					编辑应用授权
 				</h4>
                 <!--<span id="xxxxxx" style="color: #FF0000;">　</span>-->
 
@@ -980,21 +515,21 @@
                                 <div class="panel panel-default col-sm-4" style="padding: 0;margin-left: 15px;margin-bottom: 0;">
                                     <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
                                         <div class="input-group">
-                                        <input type="text" class="form-control input-sm" id="add_search_app_name" placeholder="查询应用名称">
+                                        <input type="text" class="form-control input-sm" id="edit_search_app_name" placeholder="查询应用名称">
                                           <span class="input-group-btn">
-                                            <button type="button" class="btn btn-primary add_search_app_name_btn btn-sm"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
+                                            <button type="button" class="btn btn-primary edit_search_app_name_btn btn-sm"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
                                           </span>
 
                                         </div>
                                     </div>
-                                    <select size=10  multiple class="form-control panel-body" id="add_select_app_name" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+                                    <select size=10  multiple class="form-control panel-body" id="edit_select_app_name" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
                                     </select>
                                 </div>
 
                                 <div class="col-sm-1" style="padding: 0 10px 0 10px;">
                                     <div style="margin-top: 30px;">
-                                        <button type="button" class="btn btn-xs btn-info " id="add_select_app_name_btn" disabled="true">&gt;&gt;</button>
-                                        <button type="button" class="btn btn-xs btn-info " style="margin-top: 1px;" id="add_delete_app_name_btn" disabled="true">&lt;&lt;</button>
+                                        <button type="button" class="btn btn-xs btn-info " id="edit_select_app_name_btn" disabled="true">&gt;&gt;</button>
+                                        <button type="button" class="btn btn-xs btn-info " style="margin-top: 1px;" id="edit_delete_app_name_btn" disabled="true">&lt;&lt;</button>
                                     </div>
                                 </div>
 
@@ -1002,7 +537,7 @@
                                     <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
                                         <h3 class="panel-title " style="font-size: 12px;padding: 5px 10px;height: 30px;line-height: 1.5;">选中的应用名称</h3>
                                     </div>
-                                    <select size=10 multiple class="form-control panel-body" id="add_selected_app_name" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+                                    <select size=10 multiple class="form-control panel-body" id="edit_selected_app_name" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
 
                                     </select>
                                 </div>
@@ -1010,7 +545,7 @@
                                 <label class="control-label  " style="color: #FF0000;" >*</label>
 
                                 <div class="col-sm-6 col-sm-offset-3">
-									    <span id="add_app_group_members_help" style="color: #FF0000;">　</span>
+									    <span id="edit_app_perms_help" style="color: #FF0000;">　</span>
 								</div>
 							</div>
 
@@ -1023,7 +558,7 @@
 			<div class="modal-footer">
 				<button type="button" class="btn btn-default" data-dismiss="modal">取消
 				</button>
-                <button type="button" class="btn btn-primary" id="add_app_group_member_submit">
+                <button type="button" class="btn btn-primary" id="edit_app_perms_submit">
 					确认提交
 				</button>
 			</div>
@@ -1203,13 +738,6 @@
 								</div>
 							</div>
 
-                            <div class="form-group">
-										<label class="control-label col-sm-3 " for="view_app_group_name">所属应用组:</label>
-                                <div class="col-sm-8">
-										<input type="text" class="form-control" id="view_app_group_name"
-									   style="font-size: 14px;" readonly="readonly">
-								</div>
-							</div>
 
                             <div class="form-group">
 										<label class="control-label col-sm-3 " for="view_description">描述备注:</label>
