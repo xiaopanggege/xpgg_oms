@@ -99,7 +99,7 @@
 //           点击确认执行删除操作,注意下面的salt_key_delete按钮是在基类saltkey_base.html里的模态框所以和其他几个公用，之前出了一个denied删除问题
 //            因为删除denied调用的不是url:"{% url 'salt_key_delete' %}"而是url:"{% url 'salt_key_denied_delete' %}",而其他几个
 //            删除都是调用url:"{% url 'salt_key_delete' %}"没有问题，导致在denied删除的时候我重新又写了一个确认删除的js，变成2个都运行
-//            变成又删除了denied的minion又删除了公用方法下的minion导致如果在其他状态比如accepted下有同样的minion都会被删除因为js同样被调用了
+//            又删除了denied的minion又删除了公用方法下的minion导致如果在其他状态比如accepted下有同样的minion都会被删除因为js同样被调用了
 //            所以后来我对denied的确认删除模态框单独写了下就行了
             $(".salt_key_delete").click(function () {
                 var minion_id =  $('.hidden_minion_id').val();

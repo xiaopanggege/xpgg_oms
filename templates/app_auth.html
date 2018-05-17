@@ -158,7 +158,7 @@
                 }
             });
 
-//            快捷权限管理模态框，查找app_name,这里复用了应用组的ajax处理，不然还要再写一遍
+//            快捷权限管理模态框，查找app_name
              $('.edit_search_app_name_btn').click(function(){
                  $('#edit_select_app_name').empty();
                  var app_name=$.trim($('#edit_search_app_name').val());
@@ -229,7 +229,7 @@
 
 
             
-//            快捷权限管理模态框，查找app_group,这里复用了应用组的ajax处理，不然还要再写一遍
+//            快捷权限管理模态框，查找app_group
              $('.edit_search_app_group_btn').click(function(){
                  $('#edit_select_app_group').empty();
                  var app_group=$.trim($('#edit_search_app_group').val());
@@ -411,7 +411,7 @@
 
 {% endblock %}
 
-{% block panel-title_content %}应用授权{% endblock %}
+{% block panel-title_content %}发布授权{% endblock %}
 
 {% block panel_body_content %}
 
@@ -490,7 +490,7 @@
                         <button type="button" class="btn btn-success btn-sm app_auth_fast_channel_btn" data-toggle="modal" data-target="#app_auth_fast_channel_modal" >快捷权限管理</button>
                         <button type="button" class="btn btn-info btn-sm edit_app_auth_description_btn" data-toggle="modal" data-target="#edit_app_auth_description_modal">编辑备注</button>
                         <a href="{% url 'app_auth_app_manage' %}?my_user_id={{data.my_user_id}}&username={{data.username}}"  class="btn btn-sm btn-primary" role="button">应用权限管理</a>
-                        <a href="{% url 'app_group_members_manage' %}?app_group_name={{data.app_group_name}}"  class="btn btn-sm btn-primary" role="button">应用组权限管理</a>
+                        <a href="{% url 'app_auth_app_group_manage' %}?my_user_id={{data.my_user_id}}&username={{data.username}}"  class="btn btn-sm btn-primary" role="button">应用组权限管理</a>
 
                     </td>
                 </tr>

@@ -154,13 +154,13 @@
 	        $('#client_select').change(function(){
 	         	if($(this).val()=='local'){
 	         		$('.client_help').text('提示：等同命令行salt命令');
-	         		$('.exe_div').removeClass('hidden');
+	         		$('.tgt_div').removeClass('hidden');
 	         	}else if($(this).val()=='local_async'){
 	         	    $('.client_help').text('提示：等同命令行salt --async异步命令');
-	         	    $('.exe_div').removeClass('hidden');
+	         	    $('.tgt_div').removeClass('hidden');
 	         	}else if($(this).val()=='runner'){
 	         		$('.client_help').text('提示：等同命令行salt-run命令,salt-run不需要执行对象参数');
-	         		$('.exe_div').addClass('hidden');
+	         		$('.tgt_div').addClass('hidden');
 	         	}
 			});
 
@@ -177,7 +177,7 @@
     <div class="col-xs-6 overflow_set">
         <div class="he10"></div>
         <div class="form-horizontal " role="form"  >
-            <div class="form-group exe_div" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" >
+            <div class="form-group tgt_div" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" >
 				<label class="label label-info " style="font-size: 17px;">执行对象选择</label>
 				<div class="he10"></div>
 				<div class="container-fluid">
@@ -278,8 +278,8 @@
 
             <div class="form-group ">
                 <label class="control-label col-sm-2 " for="modul_select">Module:</label>
-                <div class="col-sm-4">
-                    <input type="text" id="txt_ide" list="modul_select" />
+                <div class="col-sm-3">
+                    <input type="text" class="form-control" id="txt_ide" list="modul_select" />
                     <datalist id="modul_select">
                         <option value="Brackets" />
                         <option value="Coda" />
@@ -298,7 +298,7 @@
                         <option value="XCode" />
                     </datalist>
                 </div>
-                <label class="control-label  " style="color: #FF0000;" >选择模块</label>
+                <label class="control-label  " style="font-weight: normal;color: #3FB8AF;" >选择模块</label>
             </div>
 
             <div class="form-group">

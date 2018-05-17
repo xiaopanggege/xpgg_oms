@@ -34,6 +34,7 @@ urlpatterns = [
     url(r'^app_group_ajax/$', views.app_group_ajax, name='app_group_ajax'),
     url(r'^app_auth/$', views.app_auth, name='app_auth'),
     url(r'^app_auth/app_auth_app_manage/$', views.app_auth_app_manage, name='app_auth_app_manage'),
+    url(r'^app_auth/app_auth_app_group_manage/$', views.app_auth_app_group_manage, name='app_auth_app_group_manage'),
     url(r'^app_auth_ajax/$', views.app_auth_ajax, name='app_auth_ajax'),
     url(r'^h5_issue/$', views.h5_issue, name='h5_issue'),
     url(r'^h5_svn_co/$', views.h5_svn_co, name='h5_svn_co'),

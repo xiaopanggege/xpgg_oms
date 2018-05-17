@@ -3618,7 +3618,6 @@ def app_auth_app_manage(request):
             my_user_id = request.GET.get('my_user_id')
             username = request.GET.get('username')
             app_perms_data = AppAuth.objects.get(username=username).app_perms
-            app_data = []
             if app_perms_data:
                 app_data_list = AppRelease.objects.filter(app_name__in=app_perms_data.split(',')).order_by('app_name')
             else:
@@ -3633,11 +3632,7 @@ def app_auth_app_manage(request):
                     app_data_list = app_data_list.filter(app_name__contains=search_content)
                     data_list = getPage(request, app_data_list, 12)
                 elif search_field == 'search_minion_id':
-                    for app in app_data:
-                        if search_content in app.minion_id:
-                            pass
-                        else:
-                            app_data_list.remove(app)
+                    app_data_list = app_data_list.filter(minion_id__contains=search_content)
                     data_list = getPage(request, app_data_list, 12)
                 else:
                     data_list = ""
@@ -3647,6 +3642,42 @@ def app_auth_app_manage(request):
     except Exception as e:
         logger.error('应用授权应用权限管理页面有问题', e)
         return render(request, 'app_auth_app_manage.html')
+
+
+# 发布系统 应用授权 应用组权限管理页
+def app_auth_app_group_manage(request):
+    try:
+        if request.method == 'GET':
+            my_user_id = request.GET.get('my_user_id')
+            username = request.GET.get('username')
+            app_group_perms_data = AppAuth.objects.get(username=username).app_group_perms
+            if app_group_perms_data:
+                app_data_list = AppGroup.objects.filter(app_group_name__in=app_group_perms_data.split(',')).order_by('id')
+            else:
+                app_data_list = []
+            # 默认如果没有get到的话值为None，这里我需要为空''，所以下面修改默认值为''
+            search_field = request.GET.get('search_field', '')
+            search_content = request.GET.get('search_content', '')
+            if search_content is '':
+                data_list = getPage(request, app_data_list, 12)
+            else:
+                if search_field == 'search_app_group_name':
+                    app_data_list = app_data_list.filter(app_group_name__contains=search_content).order_by('id')
+                    data_list = getPage(request, app_data_list, 12)
+                elif search_field == 'search_app_group_members':
+                    app_data_list = app_data_list.filter(app_group_members__contains=search_content).order_by('id')
+                    data_list = getPage(request, app_data_list, 12)
+                else:
+                    data_list = ""
+            return render(request, 'app_auth_app_group_manage.html', {'data_list': data_list,
+                                                                      'search_field': search_field,
+                                                                      'search_content': search_content,
+                                                                      'username': username,
+                                                                      'app_group_perms_data': app_group_perms_data,
+                                                                      'my_user_id': my_user_id})
+    except Exception as e:
+        logger.error('应用授权应用组权限管理页面有问题', e)
+        return render(request, 'app_auth_app_group_manage.html')
 
 
 # 发布系统 应用授权 ajax提交处理
@@ -3714,14 +3745,48 @@ def app_auth_ajax(request):
                     result['result'] = json.loads(error_str)
                 return JsonResponse(result)
             elif request.POST.get('app_auth_tag_key') == 'app_auth_app_delete':
+                username = request.POST.get('username')
+                my_user_id = request.POST.get('my_user_id')
                 app_name = request.POST.get('app_name')
+                try:
+                    app_perms = AppAuth.objects.get(my_user_id=my_user_id, username=username).app_perms
+                    app_perms_list = app_perms.split(',')
+                    # 为了结合单个移除和批量移除，对传过来的app_name做列表化因为批量删除就是逗号隔开的字符串，然后移除操作
+                    logger.error(app_name)
+                    for data in app_name.split(','):
+                        app_perms_list.remove(data) if data in app_perms_list else app_perms_list
+                    logger.error(app_perms_list)
+                    app_perms = ','.join(app_perms_list)
+                    AppAuth.objects.filter(my_user_id=my_user_id, username=username).update(app_perms=app_perms)
+                    result['result'] = '成功'
+                    result['status'] = True
+                except Exception as e:
+                    result['result'] = str(e)
+                return JsonResponse(result)
+            elif request.POST.get('app_auth_tag_key') == 'app_auth_app_group_update':
+                obj = AppAuthUpdateForm(request.POST)
+                if obj.is_valid():
+                    AppAuth.objects.filter(my_user_id=obj.cleaned_data['my_user_id'],
+                                           username=obj.cleaned_data["username"]).update(
+                        app_group_perms=obj.cleaned_data["app_group_perms"])
+                    result['result'] = '成功'
+                    result['status'] = True
+                else:
+                    error_str = obj.errors.as_json()
+                    result['result'] = json.loads(error_str)
+                return JsonResponse(result)
+            elif request.POST.get('app_auth_tag_key') == 'app_auth_app_group_delete':
+                username = request.POST.get('username')
+                my_user_id = request.POST.get('my_user_id')
                 app_group_name = request.POST.get('app_group_name')
                 try:
-                    app_group_members = AppGroup.objects.get(app_group_name=app_group_name).app_group_members
-                    app_group_members_list = app_group_members.split(',')
-                    app_group_members_list.remove(app_name)
-                    app_group_members = ','.join(app_group_members_list)
-                    AppGroup.objects.filter(app_group_name=app_group_name).update(app_group_members=app_group_members)
+                    app_group_perms = AppAuth.objects.get(my_user_id=my_user_id, username=username).app_group_perms
+                    app_group_perms_list = app_group_perms.split(',')
+                    # 为了结合单个移除和批量移除，对传过来的app_name做列表化因为批量删除就是逗号隔开的字符串，然后移除操作
+                    for data in app_group_name.split(','):
+                        app_group_perms_list.remove(data) if data in app_group_perms_list else app_group_perms_list
+                    app_group_perms = ','.join(app_group_perms_list)
+                    AppAuth.objects.filter(my_user_id=my_user_id, username=username).update(app_group_perms=app_group_perms)
                     result['result'] = '成功'
                     result['status'] = True
                 except Exception as e:

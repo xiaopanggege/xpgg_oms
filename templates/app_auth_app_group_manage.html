@@ -1,0 +1,567 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% load custom_filter %}
+{% block title %}发布系统{% endblock %}
+{% block custom_css %}
+<style type="text/css">
+    /*设置表格的宽度固定，不会因为内容过长而出现换行*/
+    table{
+        table-layout:fixed;
+    }
+    /*设置表格内容过长出现滚动条*/
+    /*td{*/
+        /*overflow:auto;*/
+        /*text-overflow:clip;white-space:nowrap;*/
+    /*}*/
+
+
+
+    tbody tr:hover{
+    background-color:#9b9b9b !important;
+        color: #000;
+    }
+    /*让列表内的信息上下居中,默认是换行的，但是词内默认没换行要设置word-break实现词内换行*/
+    td{
+        vertical-align:middle !important;
+        text-align: center;
+        word-break:break-all;
+    }
+
+    th{
+        text-align: center;
+    }
+
+    /*pre标签不会自动换行第二个是换行，第一个是滚动条*/
+    #modal_app_log{
+        overflow-y: auto;
+        white-space: pre-wrap;
+    }
+
+    /*添加表单滚动*/
+    .overflow_set{
+        overflow: auto;
+    }
+
+    .title_content:hover{
+        color:yellow !important;
+        text-decoration: none;
+    }
+
+</style>
+
+{% endblock %}
+
+{% block custom_js %}
+<script>
+    	$(function(){
+
+    	    // 响应式调整页面高度
+    		$(window).resize(function() {
+
+                // 表单的大小自适应窗口，不能设置100%，因为除了表单以外其他东西也会占用高度
+                $('.overflow_set').css(
+                    "height", $('.hall').height() * 0.9);
+            });
+    		$(window).resize();
+
+//    	    由于这个页面不是侧边栏的导航项目而是应用发布组跳转后的页面，所以需要手动给应用发布组添加选中的class
+            $('.app_auth_li').children().addClass('active-ditia');
+            $('.app_auth_li').parents('.collapse').addClass('in');
+            $('.release_system_li').addClass('active');
+            $('.release_system_li').find("span.gl-change").removeClass("glyphicon-menu-left").addClass("glyphicon-menu-down");
+
+
+
+//    	    复选框选中操作
+                /*“全选/反选”复选框*/
+                $('#checkAll').click(function(event){
+                    /*将所有行的选中状态设成全选框的选中状态*/
+                    $('input[name="checkItem"]').prop('checked',$(this).prop('checked'));
+                    /*并调整所有选中行的CSS样式*/
+                    if ($(this).prop('checked')) {
+                        $('input[name="checkItem"]').parent().parent().addClass('warning');
+                    } else{
+                        $('input[name="checkItem"]').parent().parent().removeClass('warning');
+                    }
+                    /*阻止向上冒泡，以防再次触发点击操作*/
+                    event.stopPropagation();
+                });
+                /*点击全选框所在单元格时也触发全选框的点击操作*/
+                var $checkAllTh = $('#checkAll').parent();
+                $checkAllTh.click(function(){
+                    $('#checkAll').click();
+                });
+
+                /*点击每一行的选中复选框时*/
+                var $tbr = $('table tbody tr');
+                $('input[name="checkItem"]').click(function(event){
+                    /*调整选中行的CSS样式*/
+                    $(this).parent().parent().toggleClass('warning');
+                    /*如果已经被选中行的行数等于表格的数据行数，将全选框设为选中状态，否则设为未选中状态*/
+                    $('#checkAll').prop('checked',$('input[name="checkItem"]:checked').length == $tbr.length ? true : false);
+                    /*阻止向上冒泡，以防再次触发点击操作*/
+                    event.stopPropagation();
+                });
+                /*点击复选框的父框也触发选中*/
+                $('input[name="checkItem"]').parent().click(function(){
+                    $(this).find('input').click();
+                });
+
+//           bootstrap的提示工具jq
+            $("[data-toggle='tooltip']").tooltip();
+
+//          // {#  django 跨站验证需要下面的 ajaxSetup   #}
+            $.ajaxSetup({
+                 data: {csrfmiddlewaretoken: '{{ csrf_token }}' }
+            });
+
+//            分页页面跳转
+            $('.page_go').click(function () {
+                var username =$.trim($('.title_app_auth_username').text());
+                var my_user_id =$.trim($('.title_my_user_id').text());
+                window.location.href = window.location.href.split("?")[0]+'?my_user_id='+my_user_id+'&username='+username+'&search_field='+'{{ search_field }}'+'&search_content='+'{{ search_content }}'+'&page='+$("#page_index").val();
+            });
+
+//            搜索框回车触发查询按钮事件
+            $("#search_content").keydown(function (e) {
+                if (e.keyCode == 13) {
+                    $('.search_btn').click();
+                }
+            });
+
+//            查询按钮事件
+            $('.search_btn').click(function () {
+               var search_field = $('#search_field').val();
+               var search_content = $('#search_content').val();
+               var username =$.trim($('.title_app_auth_username').text());
+               var my_user_id =$.trim($('.title_my_user_id').text());
+               window.location.href=window.location.href.split("?")[0]+'?my_user_id='+my_user_id+'&username='+username+'&search_field='+search_field+'&search_content='+search_content;
+            });
+
+//            编辑应用组权限模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
+            $('#edit_app_group_perms_modal').on('shown.bs.modal', function () {
+                $("#edit_search_app_group").focus();
+            });
+
+//           编辑应用组权限模态框 隐藏时数据清除,
+            $("#edit_app_group_perms_modal").on("hidden.bs.modal", function() {
+                $(this).removeData("bs.modal");
+//                select恢复原状挺麻烦的，我这用最蠢的清空掉2个select然后重新添加。。
+                $('#edit_search_app_group').val('');
+				$('#edit_select_app_group').empty();
+				$('#edit_selected_app_group').empty();
+				$('#edit_app_group_perms_help').text('　');
+            });
+
+//           编辑应用组权限按钮触发内容填充模态框
+            $('.edit_app_group_perms_btn').click(function () {
+//                之所以加一层if是因为minion_id由于minion表id删除会出现None的情况在minion_id全为空的时候，如果出现None我们就不需要做下面的填充内容操作，不然会填充None过去
+                if($.trim($('.app_group_perms_data').val()).length != 0) {
+                    var app_group = $('.app_group_perms_data').val().split(',');
+                    $.each(app_group,function (index,content) {
+                        $("<option  value='" + content + "'>" + content + "</option>").appendTo("#edit_selected_app_group");
+                    });
+                }
+                $("#edit_delete_app_group_btn").attr("disabled",true);
+            });
+
+//            编辑应用组权限模态框，查找app_group
+             $('.edit_search_app_group_btn').click(function(){
+                 $('#edit_select_app_group').empty();
+                 var app_group_name=$.trim($('#edit_search_app_group').val());
+                 var selected_app_group=$('#edit_selected_app_group option');
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'app_auth_ajax' %}",
+					type:'GET',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+                        'app_group_name':app_group_name,
+                        'app_auth_tag_key':'modal_search_app_group'
+					},
+					success:function(result){
+						if(result.status){
+						    $.each(result.result,function (index,content) {
+                                $("<option value='"+content+"'>"+content+"</option>").appendTo("#edit_select_app_group");
+                               selected_app_group.each(function () {
+                                    if($(this).val()==content){
+                                        $("#edit_select_app_group option[value='" +content+ "']").remove();
+                                    }
+                                });
+                            });
+
+						}else {
+						    toastr.error(result.result,'error',{timeOut: 1500});
+						    console.log(JSON.stringify(result.result));
+                        }
+					}
+				});
+			});
+
+//           编辑应用组权限模态框 app_group选中 操作触发中间的》按钮可用
+            $("#edit_select_app_group").click(function () {
+                var app_group_list=$('#edit_select_app_group option:selected').map(function(){return $(this).val();}).get().join(",");
+                if(app_group_list.length != 0) {
+                    $("#edit_select_app_group_btn").attr("disabled",false);
+                }
+            });
+
+//           编辑应用组权限模态框 app_group选中 操作触发中间的《按钮可用
+            $("#edit_selected_app_group").click(function () {
+                var app_group_list=$('#edit_selected_app_group option:selected').map(function(){return $(this).val();}).get().join(",");
+                if(app_group_list.length != 0) {
+                    $("#edit_delete_app_group_btn").attr("disabled",false);
+                }
+            });
+
+//           编辑应用组权限模态框 app_group》按钮触发选中值移动到右边
+            $("#edit_select_app_group_btn").click(function () {
+//                在这里触发清空如果没选择minion_id的错误提示,嘿嘿
+                $('#edit_app_group_perms_help').text('　');
+                $("#edit_select_app_group option:selected").each(function () {
+                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#edit_selected_app_group");
+                    $(this).remove();
+                    $("#edit_select_app_group_btn").attr("disabled",true);
+                })
+            });
+
+//           编辑应用组权限模态框 app_group《按钮触发选中值移动到左边
+            $("#edit_delete_app_group_btn").click(function () {
+                $("#edit_selected_app_group option:selected").each(function () {
+                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#edit_select_app_group");
+                    $(this).remove();
+                    $("#edit_delete_app_group_btn").attr("disabled",true);
+                })
+            });
+
+//          编辑应用组权限表单提交
+            $('#edit_app_group_perms_submit').click(function(){
+				var app_group_perms=$('#edit_selected_app_group option').map(function(){return $(this).val();}).get().join(",");
+                var username =$.trim($('.title_app_auth_username').text());
+                var my_user_id =$.trim($('.title_my_user_id').text());
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'app_auth_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'app_group_perms':app_group_perms,
+                        'username':username,
+                        'my_user_id':my_user_id,
+                        'app_auth_tag_key':'app_auth_app_group_update'
+
+					},
+					success:function(result){
+						if(result.status){
+                            $('#edit_app_group_perms_modal').modal('toggle');
+                            toastr.success(result.result,'Success',{timeOut: 1500});
+                            setTimeout(function(){window.location.href=window.location.href}, 1000);
+						}else {
+//						    通过表单验证返回的错误是多层嵌套字典加列表，一层key是对应提交数据的key，二层有2个key一个是code一个是message，错误信息在message里
+						    $.each(result.result, function (k,v) {
+//						        把错误信息插入到对应的错误help位子
+                                $('#edit_'+k+'_help').text(v[0].message);
+                            });
+                            console.log(JSON.stringify(result.result));
+                        }
+					}
+				});
+
+			});
+
+
+//            点击 移除权限 填充模态框
+            $('.deldet_app_group_perms_btn').click(function () {
+                $('#delete_app_group_perms_modal').modal('toggle');
+                $('.hidden_app_group_name').val($(this).parent().siblings('.data_app_group_name').html());
+            });
+
+
+            // 点击批量删除 填充模态框
+            $('.batch_remove_app_group_btn').click(function () {
+                if($('input[name="checkItem"]:checked').length<1){
+                        toastr.error('没有选中的应用组','Error',{timeOut: 1500});
+                        return false
+                    }
+                $('#delete_app_group_perms_modal').modal('toggle');
+                var app_group = $('input[name="checkItem"]:checked').map(function(){return $(this).parent().siblings('.data_app_group_name').html();}).get().join(",");
+                // $('input[name="checkItem"]:checked').each(function () {
+                //    tr_list.push($(this).parent().siblings('.data_app_group_name').html());
+                // });
+                $('.hidden_app_group_name').val(app_group);
+            });
+
+
+//            点击 移除权限 确定按钮移除权限
+            $('#delete_app_group_perms_submit').click(function(){
+                var username =$.trim($('.title_app_auth_username').text());
+                var my_user_id =$.trim($('.title_my_user_id').text());
+				var app_group_name=$.trim($('.hidden_app_group_name').val());
+				$('#delete_app_group_perms_modal').modal('toggle');
+				$.ajax({
+					url:"{% url 'app_auth_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+//                    提交的数据要和后台form验证的变量一致，不过可以多出来，只要验证的有就行，比如这里就多了project_tag_key
+					data:{
+					    'username':username,
+                        'my_user_id':my_user_id,
+                        'app_group_name':app_group_name,
+                        'app_auth_tag_key':'app_auth_app_group_delete'
+
+					},
+					success:function(result){
+						if(result.status){
+                            $('.loading_modal').modal('toggle');
+                            toastr.success(result.result,'Success',{timeOut: 1500});
+                            setTimeout(function(){window.location.href=window.location.href}, 1000);
+						}else {
+						    $('.loading_modal').modal('toggle');
+						    toastr.error(result.result,'Error',{timeOut: 1500});
+                        }
+					}
+				});
+			});
+            
+
+
+		});
+
+</script>
+
+{% endblock %}
+
+{% block panel-title_content %}
+<!--<a href="{% url 'nginx_manage'%}">Nginx管理 》</a>-->
+<!--下面这个是返回上一页的数据不刷新，还有一个history.back()也是上一页并刷新页面-->
+<a href="{% url 'app_auth' %}"  class="title_content">发布授权</a>
+<span> >></span>
+<!--下面这个是刷新当前页面-->
+<a href="javascript:location.reload()"  class="title_content">用户"<span class="hidden title_my_user_id">{{ my_user_id }}</span><span class="title_app_auth_username">{{ username }}</span>"应用组授权管理</a>
+{% endblock %}
+
+{% block panel_body_content %}
+
+
+<div class="row-fluid ">
+    <div class="col-xs-12 overflow_set"  >
+        <div style="margin-bottom: 5px;">
+            <!--下面这里本来是用form的样式的，后来改成div是因为用form默认带了回车会提交表单的功能，所以改成div不过class还是form的哈哈-->
+            <div class="form-inline" role="form">
+                <div class="form-group">
+                    <button type="button" class="btn btn-success edit_app_group_perms_btn" data-toggle="modal" data-target="#edit_app_group_perms_modal" >编辑应用组权限</button>
+                    <!--<button type="button" class="btn btn-success app_add_button" data-toggle="modal" data-target="#app_add_modal">新增应用</button>-->
+                    <button type="button" class="btn btn-primary batch_remove_app_group_btn" >批量移除</button>
+                    {% if app_group_perms_data %}
+                    <input type="text" class="app_group_perms_data hidden" value={{app_group_perms_data}}>
+                    {%else%}
+                    <input type="text" class="app_group_perms_data hidden" value=''>
+                    {% endif %}
+                </div>
+
+
+                  <div class="form-group pull-right">
+                        <label for="search_field">查询字段</label>
+                        <select class="form-control" id="search_field">
+                            <option value="search_app_group_name">应用组名称</option>
+                            {% if search_field == "search_app_group_members" %}
+                            <option value="search_app_group_members" selected>应用组成员</option>
+                            {% else %}
+                            <option value="search_app_group_members">应用组成员</option>
+                            {% endif %}
+
+                        </select>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="search_content" placeholder="请输入查询条件" value="{{ search_content }}">
+                              <span class="input-group-btn">
+                                <button type="submit" class="btn btn-primary search_btn"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
+                              </span>
+                        </div>
+                        </div>
+
+
+                </div>
+
+        </div>
+        <table class="table table-hover  table-bordered table-striped  table-condensed" >
+            <!--<caption>主机列表</caption>-->
+            <thead>
+            <!--给下面tr加个success是bootstrap的一个类颜色会改变下呵呵-->
+              <tr class="success" >
+                  <th width="40px"><input type="checkbox" id="checkAll" name="checkAll" /></th>
+                  <th width="10%">应用组名称</th>
+                  <th width="30%">应用组成员</th>
+                  <th width="20%">备注</th>
+                  <th  width="120px" >操作</th>
+
+              </tr>
+            </thead>
+            <tbody>
+                {% for data in data_list%}
+                <tr class="trSeq">
+                    <td><input type="checkbox" name="checkItem" /></td>
+                    <td class="data_app_group_name">{{ data.app_group_name }}</td>
+                    {% if data.app_group_members %}
+                    <td class="data_app_group_members" title="{{data.app_group_members}}">{{ data.app_group_members | truncatechars:60 }}</td>
+                    {% else %}
+                    <td class="data_app_group_members"></td>
+                    {% endif %}
+                    <td class="data_description">{{ data.description }}</td>
+                    <td class="data_operation" style="padding: 0;">
+                        <button type="button" class="btn btn-danger btn-sm deldet_app_group_perms_btn" >移除</button>
+                    </td>
+
+
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div>
+                <ul class="pager">
+                     {% if data_list.has_previous %}
+                    <!--注意如果url中已经有参数了比如http://192.168.68.50:8000/saltkey_manage/?status=denied那么需要把这个status加上，不然跳转错了哈哈-->
+                        <li><a href="?username={{ username }}&search_field={{ search_field }}&search_content={{ search_content }}&page={{ data_list.previous_page_number }}">上一页</a></li>
+                    {% else %}
+                        <li class="disabled"><a href="">上一页</a></li>
+                    {% endif %}
+
+                    <li class="current">
+                        页数 {{ data_list.number }} / {{ data_list.paginator.num_pages }}
+                    </li>
+
+                    {% if data_list.has_next %}
+                        <li><a href="?username={{ username }}&search_field={{ search_field }}&search_content={{ search_content }}&page={{ data_list.next_page_number }}">下一页</a></li>
+                    {% else %}
+                        <li class="disabled"><a href="">下一页</a></li>
+                    {% endif %}
+                    <li>
+                        &nbsp;&nbsp;<input type="text"  style="width: 30px;border-radius: 30%;" id="page_index">/{{ data_list.paginator.num_pages }}页
+                        <button type="button" class="btn btn-sm btn-success page_go" >跳转</button>
+                    </li>
+                </ul>
+            </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block another_content %}
+
+<!-- 编辑应用组权限模态框 -->
+<div class="modal fade juzhong" id="edit_app_group_perms_modal" tabindex="-1" role="dialog" aria-labelledby="edit_app_group_perms_lable" aria-hidden="true" data-backdrop="static" >
+	<div class="modal-dialog" style="width: 600px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+				<h4 class="modal-title" id="edit_app_group_perms_lable">
+					编辑应用组授权
+				</h4>
+                <!--<span id="xxxxxx" style="color: #FF0000;">　</span>-->
+
+			</div>
+			<div class="modal-body">
+
+                <div class="row" >
+                    <div class="col-sm-12">
+                        <div class="form-horizontal " role="form"  >
+                            <div class="form-group ">
+                                <label class="control-label col-sm-2 " >应用组授权:</label>
+                                <div class="panel panel-default col-sm-4" style="padding: 0;margin-left: 15px;margin-bottom: 0;">
+                                    <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
+                                        <div class="input-group">
+                                        <input type="text" class="form-control input-sm" id="edit_search_app_group" placeholder="查询应用组名称">
+                                          <span class="input-group-btn">
+                                            <button type="button" class="btn btn-primary edit_search_app_group_btn btn-sm"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
+                                          </span>
+
+                                        </div>
+                                    </div>
+                                    <select size=10  multiple class="form-control panel-body" id="edit_select_app_group" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+                                    </select>
+                                </div>
+
+                                <div class="col-sm-1" style="padding: 0 10px 0 10px;">
+                                    <div style="margin-top: 30px;">
+                                        <button type="button" class="btn btn-xs btn-info " id="edit_select_app_group_btn" disabled="true">&gt;&gt;</button>
+                                        <button type="button" class="btn btn-xs btn-info " style="margin-top: 1px;" id="edit_delete_app_group_btn" disabled="true">&lt;&lt;</button>
+                                    </div>
+                                </div>
+
+                                <div class="panel panel-info col-sm-4" style="padding: 0;margin-bottom: 0;">
+                                    <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
+                                        <h3 class="panel-title " style="font-size: 12px;padding: 5px 10px;height: 30px;line-height: 1.5;">已选的应用组名称</h3>
+                                    </div>
+                                    <select size=10 multiple class="form-control panel-body" id="edit_selected_app_group" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+
+                                    </select>
+                                </div>
+
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+
+                                <div class="col-sm-6 col-sm-offset-3">
+									<span id="edit_app_group_perms_help" style="color: #FF0000;">　</span>
+								</div>
+							</div>
+
+
+                    </div>
+                    </div>
+                </div>
+
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">取消
+				</button>
+                <button type="button" class="btn btn-primary" id="edit_app_group_perms_submit">
+					确认提交
+				</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+
+<!--移除应用组提示框模态框-->
+<div class="modal fade juzhong " id="delete_app_group_perms_modal" tabindex="-1" role="dialog" aria-labelledby="delete_app_group_perms_lable" aria-hidden="true" data-backdrop="static">
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:50%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">操作提醒</h4>
+            </div>
+            <div class="modal-body">
+                <!--隐藏属性，用来获取触发模态框的那条记录的相关数据-->
+                <input type="hidden" class="hidden_app_group_name"/>
+                <p style="color: #0063DC;">确认是否移除？</p>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="delete_app_group_perms_submit" data-dismiss="modal" data-toggle="modal" data-target=".loading_modal"> 确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- loading模态框 -->
+<div class="modal fade juzhong loading_modal " data-backdrop="static"  tabindex="-1" role="dialog"  aria-hidden="true" >
+	<div class="modal-dialog" style="width:100px;">
+		<div class="modal-content" style="background-color: rgba(255,255,255,0.5);">
+				<img src="{% static 'images/loading.gif' %}"  alt="未加载" >
+		</div>
+	</div>
+</div>
+
+
+{% endblock %}
+
