@@ -1475,9 +1475,7 @@ def salt_exe_ajax(request):
             elif request.GET.get('salt_exe_tag_key') == 'search_salt_cmd_doc':
                 salt_cmd = request.GET.get('salt_cmd')
                 salt_cmd_type = request.GET.get('salt_cmd_type')
-                salt_cmd_module = request.GET.get('salt_cmd_module')
-                salt_cmd_data = SaltCmdInfo.objects.filter(salt_cmd=salt_cmd, salt_cmd_type=salt_cmd_type,
-                                                           salt_cmd_module=salt_cmd_module).first()
+                salt_cmd_data = SaltCmdInfo.objects.filter(salt_cmd=salt_cmd, salt_cmd_type=salt_cmd_type).first()
                 result['result'] = salt_cmd_data.salt_cmd_doc if salt_cmd_data else '查询结果为空，请确认模块和命令是否填写正确'
                 result['status'] = True
                 return JsonResponse(result)
@@ -1486,13 +1484,16 @@ def salt_exe_ajax(request):
                 tgt = request.POST.get('tgt')
                 tgt_type = request.POST.get('tgt_type')
                 fun = request.POST.get('fun')
-                arg = request.POST.get('arg', None)
-                if len(arg) == 0:
+                arg = request.POST.getlist('arg')
+                # 这是判断arg是否传输值过来，如果没有前端会传个['']过来，这是由于我前端设置了的
+                if arg == ['']:
                     arg = None
+                if tgt_type == 'list':
+                    tgt = [tgt]
+                if client != 'runner':
+                    data = {'client': client, 'tgt': tgt, 'tgt_type': tgt_type, 'fun': fun, 'arg': arg}
                 else:
-                    logger.error(len(arg))
-                logger.error(arg)
-                data = {'client': client, 'tgt': tgt, 'tgt_type': tgt_type, 'fun': fun, 'arg': arg}
+                    data = {'client': client, 'fun': fun, 'arg': arg}
                 with requests.Session() as s:
                     saltapi = SaltAPI(session=s)
                     if saltapi.get_token() is False:
