@@ -118,7 +118,6 @@
 //            新增发布模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
             $('#app_add_modal').on('shown.bs.modal', function () {
                 $("#add_app_name").focus();
-                $("input[name='add_sys_type']").eq(0).click();
             });
 
 
@@ -136,7 +135,6 @@
 				$('#add_app_svn_url').val('');
 				$('#add_app_svn_user').val('');
 				$('#add_app_svn_password').val('');
-				$('#add_app_svn_password').prop('type', 'text');
 				$("input[name='add_execution_style']").eq(0).click();
 				$("#add_select_operation").empty();
                 $("#add_selected_operation").empty();
@@ -626,6 +624,8 @@
 				var app_backup_path = $.trim($('#add_app_backup_path').val());
 				var description = $.trim($('#add_description').val());
 
+                //提交之前清空密码框防止提示保存密码
+                $('#add_app_svn_password').val("");
 
 //				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
 				$.ajax({
@@ -664,6 +664,8 @@
 //						        把错误信息插入到对应的错误help位子
                                 $('#add_'+k+'_help').text(v[0].message);
                             });
+						    // 如果提交失败要把提交前清空的密码框填充回去
+						    $('#add_app_svn_password').val(app_svn_password);
 //                            console.log(JSON.stringify(result.result));
                         }
 					}
@@ -702,8 +704,7 @@
                 $("#add_app_submit").addClass("hidden");
                 $("#update_app_submit").removeClass("hidden");
                 $("#clone_app_submit").removeClass("hidden");
-                // 把密码框改成password
-                $('#add_app_svn_password').prop('type','password');
+
                 // 模态框标题修改
                 $('#app_add_lable').html('编辑应用发布');
 
@@ -712,6 +713,8 @@
                 var view_sys_data = $(this).parent().siblings('.data_sys_type').html();
                 if(view_sys_data=='windows'){
                     $("input[name='add_sys_type']").eq(1).click();
+                }else{
+                    $("input[name='add_sys_type']").eq(0).click();
                 }
 //                之所以加一层if是因为minion_id由于minion表id删除会出现None的情况在minion_id全为空的时候，如果出现None我们就不需要做下面的填充内容操作，不然会填充None过去
                 if($(this).parent().siblings('.data_minion_id').html()){
@@ -730,6 +733,8 @@
                 var data_execution_style = $(this).parent().siblings('.data_execution_style').html();
                 if(data_execution_style=='parallel'){
                     $("input[name='add_execution_style']").eq(1).click();
+                }else{
+                    $("input[name='add_execution_style']").eq(0).click();
                 }
 
                 var content_data = $(this).parent().siblings('.data_operation_content').text().split('>>');
@@ -963,7 +968,8 @@
 				var app_backup_path = $.trim($('#add_app_backup_path').val());
 				var description = $.trim($('#add_description').val());
 
-
+                // 把密码框改成清空
+                $('#add_app_svn_password').val("");
 
 //				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
 				$.ajax({
@@ -1001,7 +1007,9 @@
 //						        把错误信息插入到对应的错误help位子
                                 $('#add_'+k+'_help').text(v[0].message);
                             });
-//                            console.log(JSON.stringify(result.result));
+						    // 如果ajax失败了则要记得把提交前清空的密码框再填充回去
+						    $('#add_app_svn_password').val(app_svn_password);
+                           console.log(JSON.stringify(result.result));
                         }
 					}
 				});

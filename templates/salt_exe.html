@@ -61,30 +61,38 @@
 			$('input[name="select_tgt"]').click(function () {
                if($.trim($(this).val())=="any"){
                    $('.select_tgt_list').addClass('hidden');
+               }else if($.trim($(this).val())=="custom_group"){
+                   $('.select_tgt_list').addClass('hidden');
+                   $('.select_tgt_custom_group_class').removeClass('hidden');
+                   $('#tgt_custom_group').focus();
                }
                else if($.trim($(this).val())=="minion_list"){
                    $('.select_tgt_list').addClass('hidden');
-                   $('.select_tgt_minion_list').removeClass('hidden');
-                   $('#add_search_minion_id').focus();
+                   $('.select_tgt_minion_list_class').removeClass('hidden');
+                   $('#search_minion_id').focus();
                }
                else if($.trim($(this).val())=="grain"){
                    $('.select_tgt_list').addClass('hidden');
-                   $('.select_tgt_grain').removeClass('hidden');
-                   $('#select_minion_grain').focus();
+                   $('.tgt_grain_class').removeClass('hidden');
+                   $('#tgt_grain').focus();
                }
-               else if($.trim($(this).val())=="映像名称和命令行"){
-                   $('.add_server_stop_cmd').attr('placeholder',"格式:映像名称 | 命令行 忽略windows命令行中的冒号");
+               else if($.trim($(this).val())=="ip_address"){
+                   $('.select_tgt_list').addClass('hidden');
+                   $('.tgt_ip_address_class').removeClass('hidden');
+                   $('#tgt_ip_address').focus();
                }
-               else if($.trim($(this).val())=="supervisor_stop"){
-                   $('.add_server_stop_cmd').attr('placeholder',"填写supervisor守护程序名");
+               else if($.trim($(this).val())=="regular"){
+                   $('.select_tgt_list').addClass('hidden');
+                   $('.tgt_regular_class').removeClass('hidden');
+                   $('#tgt_regular').focus();
                }
             });
 
 //          查找minion_id 后期要准备些一个公共的view方法存这个经常用到查询minion的调用，不然每次都要在views.py写一遍
-            $('.add_search_minion_id_btn').click(function(){
-                 $('#add_select_minion_id').empty();
-                 var minion_id=$.trim($('#add_search_minion_id').val());
-                 var selected_minion_id=$('#add_selected_minion_id option');
+            $('.search_minion_id_btn').click(function(){
+                 $('#search_select_minion_id').empty();
+                 var minion_id=$.trim($('#search_minion_id').val());
+                 var selected_minion_id=$('#search_selected_minion_id option');
 
 //				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
 				$.ajax({
@@ -100,10 +108,10 @@
 					success:function(result){
 						if(result.status){
 						    $.each(result.result,function (index,content) {
-						        $("<option value='"+content+"'>"+content+"</option>").appendTo("#add_select_minion_id");
+						        $("<option value='"+content+"'>"+content+"</option>").appendTo("#search_select_minion_id");
                                 selected_minion_id.each(function () {
                                     if($(this).val()==content){
-                                        $("#add_select_minion_id option[value='" +content+ "']").remove();
+                                        $("#search_select_minion_id option[value='" +content+ "']").remove();
                                     }
                                 });
                             })
@@ -115,36 +123,36 @@
 			});
 
 //          minion_id选中 操作触发中间的》按钮可用
-            $("#add_select_minion_id").click(function () {
-                var minion_id_list=$('#add_select_minion_id option:selected').map(function(){return $(this).val();}).get().join(",");
+            $("#search_select_minion_id").click(function () {
+                var minion_id_list=$('#search_select_minion_id option:selected').map(function(){return $(this).val();}).get().join(",");
                 if(minion_id_list.length != 0){
-                    $("#add_select_minion_id_btn").attr("disabled",false);
+                    $("#search_select_minion_id_btn").attr("disabled",false);
                 }
             });
 
 //          minion_id选中 操作触发中间的《按钮可用
-            $("#add_selected_minion_id").click(function () {
-                var minion_id_list=$('#add_selected_minion_id option:selected').map(function(){return $(this).val();}).get().join(",");
+            $("#search_selected_minion_id").click(function () {
+                var minion_id_list=$('#search_selected_minion_id option:selected').map(function(){return $(this).val();}).get().join(",");
                 if(minion_id_list.length != 0) {
                     $("#add_delete_minion_id_btn").attr("disabled",false);
                 }
             });
 
 //          minion_id》按钮触发选中值移动到右边
-            $("#add_select_minion_id_btn").click(function () {
+            $("#search_select_minion_id_btn").click(function () {
 //                在这里触发清空如果没选择minion_id的错误提示,嘿嘿
                 $('#add_minion_id_help').text('　');
-                $("#add_select_minion_id option:selected").each(function () {
-                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#add_selected_minion_id");
+                $("#search_select_minion_id option:selected").each(function () {
+                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#search_selected_minion_id");
                     $(this).remove();
-                    $("#add_select_minion_id_btn").attr("disabled",true);
+                    $("#search_select_minion_id_btn").attr("disabled",true);
                 })
             });
 
 //          minion_id《按钮触发选中值移动到左边
             $("#add_delete_minion_id_btn").click(function () {
-                $("#add_selected_minion_id option:selected").each(function () {
-                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#add_select_minion_id");
+                $("#search_selected_minion_id option:selected").each(function () {
+                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#search_select_minion_id");
                     $(this).remove();
                     $("#add_delete_minion_id_btn").attr("disabled",true);
                 })
@@ -197,6 +205,86 @@
 				});
             });
 
+         //   使用帮助点击事件
+            $('#salt_cmd_doc').click(function () {
+                var client = $('#client_select').val();
+                if(client == 'local' || client == 'local_async'){
+                    var salt_cmd_type = 'module';
+                }else if(client == 'runner'){
+                    var salt_cmd_type = 'runner';
+                }
+                var salt_cmd_module =  $("#module_select").val();
+                var salt_cmd = $('#cmd_select').val();
+                $.ajax({
+					url:"{% url 'salt_exe_ajax' %}",
+					type:'GET',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+					    'salt_cmd':salt_cmd,
+                        'salt_cmd_type':salt_cmd_type,
+                        'salt_cmd_module':salt_cmd_module,
+                        'salt_exe_tag_key':'search_salt_cmd_doc'
+					},
+					success:function(result){
+						if(result.status){
+						    $("#salt_cmd_doc_info").text("");
+						    $('#salt_cmd_doc_modal').modal('toggle');
+                            $('#salt_cmd_doc_info').text(result.result);
+						}else {
+						    toastr.error(result.result,'error',{timeOut: 1500});
+                        }
+					}
+				});
+            });
+
+            $('#salt_exe_sumbit').click(function () {
+                var client = $('#client_select').val();
+                var fun = $('#cmd_select').val();
+                var arg = $('#arg_data').val();
+                var select_tgt = $("input[name='select_tgt']:checked").val();
+                var tgt_type = 'glob';
+                var tgt = '';
+                if(select_tgt == 'any'){
+                    tgt = '*';
+                    tgt_type = 'glob';
+                }
+                var $btn = $(this).button('loading');
+                $("#salt_exe_result").text("正在执行.....");
+                $.ajax({
+					url:"{% url 'salt_exe_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+					    'client':client,
+                        'tgt':tgt,
+                        'tgt_type':tgt_type,
+                        'fun':fun,
+                        'arg':arg,
+                        'salt_exe_tag_key':'salt_exe'
+					},
+					success:function(result){
+						if(result.status){
+						    $("#salt_exe_result").text("");
+						    $.each(result.result,function (k,v) {
+                                $('#salt_exe_result').append(k);
+                                $('#salt_exe_result').append(':\n ');
+                                $('#salt_exe_result').append(v);
+                                $('#salt_exe_result').append('\n');
+                            });
+                            console.log(JSON.stringify(result.result));
+                            $btn.button('reset');
+						}else {
+						    toastr.error(result.result,'error',{timeOut: 1500});
+						    $btn.button('reset');
+                        }
+					}
+				});
+            });
+
 		});
 
     </script>
@@ -213,7 +301,7 @@
             <div class="form-group tgt_div" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" >
 				<label class="label label-info " style="font-size: 17px;">执行对象选择</label>
 				<div class="he10"></div>
-				<div class="container-fluid">
+				<div class="container-fluid" style="font-size: 14px;">
 					<div class="row-fluid">
 						<div class="col-sm-2 col-md-2">
 							<label class="radio-inline" >
@@ -248,25 +336,25 @@
 					</div>
 				</div>
 				<div class="he10"></div>
-                <div class="select_tgt_list select_tgt_minion_list hidden">
+                <div class="select_tgt_list select_tgt_minion_list_class hidden">
                     <label class="control-label col-sm-2 " >Minion_ID:</label>
                     <div class="panel panel-default col-sm-4" style="padding: 0;margin-left: 15px;margin-bottom: 0;">
                         <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
                             <div class="input-group">
-                                <input type="text" class="form-control input-sm" id="add_search_minion_id" placeholder="查询Minion_ID">
+                                <input type="text" class="form-control input-sm" id="search_minion_id" placeholder="查询Minion_ID">
                                 <span class="input-group-btn">
-                                    <button type="button" class="btn btn-primary add_search_minion_id_btn btn-sm"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
+                                    <button type="button" class="btn btn-primary search_minion_id_btn btn-sm"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
                                 </span>
 
                             </div>
                         </div>
-                        <select size=5  multiple class="form-control panel-body" id="add_select_minion_id" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+                        <select size=5  multiple class="form-control panel-body" id="search_select_minion_id" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
                         </select>
                     </div>
 
                     <div class="col-sm-1" style="padding: 0 10px 0 10px;">
                         <div style="margin-top: 30px;">
-                            <button type="button" class="btn btn-xs btn-info " id="add_select_minion_id_btn" disabled="true">&gt;&gt;</button>
+                            <button type="button" class="btn btn-xs btn-info " id="search_select_minion_id_btn" disabled="true">&gt;&gt;</button>
                             <button type="button" class="btn btn-xs btn-info " style="margin-top: 1px;" id="add_delete_minion_id_btn" disabled="true">&lt;&lt;</button>
                         </div>
                     </div>
@@ -275,7 +363,7 @@
                         <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
                             <h3 class="panel-title " style="font-size: 12px;padding: 5px 10px;height: 30px;line-height: 1.5;">选中的Minion_ID 可多选</h3>
                         </div>
-                        <select size=5 multiple class="form-control panel-body" id="add_selected_minion_id" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+                        <select size=5 multiple class="form-control panel-body" id="search_selected_minion_id" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
 
                         </select>
                     </div>
@@ -286,12 +374,39 @@
                         <span id="add_minion_id_help" style="color: #FF0000;">　</span>
                 </div>
                 </div>
-                <div class="select_tgt_list select_tgt_grain hidden">
-                    <label class="control-label col-sm-2 " for="select_minion_grain">Grain:</label>
+                <div class="select_tgt_list select_tgt_custom_group_class hidden">
+                    <label class="control-label col-sm-2 " for="tgt_custom_group">Custom_group:</label>
                     <div class="col-sm-8">
-                        <input type="text" class="form-control" id="select_minion_grain"
+                        <input type="text" class="form-control" id="tgt_custom_group"
+                        style="font-size: 14px;"  required="required" value="自定义组功能开发中。。尽请等待">
+                        <span class="" id="tgt_custom_group_help" style="color: #FF0000;">　</span>
+                    </div>
+                    <label class="control-label  " style="color: #FF0000;" >*</label>
+                </div>
+                <div class="select_tgt_list tgt_grain_class hidden">
+                    <label class="control-label col-sm-2 " for="tgt_grain">Grain:</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" id="tgt_grain"
                         style="font-size: 14px;"  required="required" >
-                        <span class="" id="add_app_path_help" style="color: #FF0000;">　</span>
+                        <span class="" id="tgt_grain_help" style="color: #FF0000;">　</span>
+                    </div>
+                    <label class="control-label  " style="color: #FF0000;" >*</label>
+                </div>
+                <div class="select_tgt_list tgt_ip_address_class hidden">
+                    <label class="control-label col-sm-2 " for="tgt_ip_address">IP:</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" id="tgt_ip_address"
+                        style="font-size: 14px;"  required="required" >
+                        <span class="" id="tgt_ip_address_help" style="color: #FF0000;">　</span>
+                    </div>
+                    <label class="control-label  " style="color: #FF0000;" >*</label>
+                </div>
+                <div class="select_tgt_list tgt_regular_class hidden">
+                    <label class="control-label col-sm-2 " for="tgt_regular">Regular:</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" id="tgt_regular"
+                        style="font-size: 14px;"  required="required" >
+                        <span class="" id="tgt_regular_help" style="color: #FF0000;">　</span>
                     </div>
                     <label class="control-label  " style="color: #FF0000;" >*</label>
                 </div>
@@ -305,6 +420,7 @@
                         <option value="local_async">local_async</option>
                         <option value="runner">runner</option>
                     </select>
+                    <span class="" id="client_select_help" style="color: #FF0000;">　</span>
                 </div>
                 <label class="control-label client_help" style="font-weight: normal;color: #3FB8AF;" >提示：等同命令行salt命令</label>
             </div>
@@ -318,6 +434,7 @@
                         <option value='{{ data.salt_cmd_module }}'>{{ data.salt_cmd_module }}</option>
                         {% endfor %}
                     </datalist>
+                    <span class="" id="cmodule_select_help" style="color: #FF0000;">　</span>
                 </div>
                 <label class="control-label  " style="font-weight: normal;color: #3FB8AF;" >提示：选择模块</label>
             </div>
@@ -328,31 +445,26 @@
                     <input type="text" class="form-control" id="cmd_select" list="cmd_datalist" />
                     <datalist id="cmd_datalist">
                     </datalist>
+                    <span class="" id="cmd_select_help" style="color: #FF0000;">　</span>
                 </div>
-                <label class="control-label  " style="font-weight: normal;color: #3FB8AF;" >提示：选择要执行的命令</label>
+                <label class="control-label  " style="font-weight: normal;color: #3FB8AF;margin-right: 10px;" >提示：选择要执行的命令</label>
+                <button type="button" class="btn btn-info btn-sm" id="salt_cmd_doc" >使用帮助</button>
             </div>
 
             <div class="form-group">
-                <label class="control-label col-sm-2 " for="add_app_svn_user">SVN账户:</label>
-                <div class="col-sm-8">
-                    <input type="text" name="user_no" class="form-control" id="add_app_svn_user"
+                <label class="control-label col-sm-2 " for="arg_data">Arg:</label>
+                <div class="col-sm-7">
+                    <input type="text" name="user_no" class="form-control" id="arg_data"
                        style="font-size: 14px;" autocomplete="off" required="required" >
-                    <span class="" id="add_app_svn_user_help" style="color: #FF0000;">　</span>
+                    <span class="" id="arg_data_help" style="color: #FF0000;">　</span>
                 </div>
-                <label class="control-label  " style="color: #FF0000;" >*</label>
+                <label class="control-label  " style="font-weight: normal;color: #3FB8AF;" >提示：输入参数</label>
             </div>
 
-            <div class="form-group">
-                <label class="control-label col-sm-2 " for="add_app_svn_password">SVN密码:</label>
-                <div class="col-sm-8">
-                    <!--防止自动填充-->
-                    <input type="password" style="display:none;">
-                    <input type="text" onfocus="this.type='password'" name="pwd_no" class="form-control" id="add_app_svn_password"
-                       style="font-size: 14px;"  autocomplete="off"  required="required" >
-                    <span class="" id="add_app_svn_password_help" style="color: #FF0000;">　</span>
-                </div>
-                <label class="control-label  " style="color: #FF0000;" >*</label>
+            <div class="form-group col-sm-2">
+                <button type="button" class="btn btn-success " id="salt_exe_sumbit" data-loading-text="正在执行...">执行命令</button>
             </div>
+
         </div>
 
     </div>
@@ -363,7 +475,7 @@
         <!--注意如果使用标签textarea的字体一定要设置等宽字体，因为普通的字体在输出的时候无法和在linux下面一样，想要输出程序代码的
         原样，最好用等宽字体，不用你自己看下有多难看就知道这里用了font-family: monospace;自带的等宽字体-->
         <!--最后我发现可以直接用pre标签这个标签可以完美的输出后端代码的格式哈哈不过换行和滚动条还是要加在上面的style里-->
-        <pre class="form-control "  id="result1"  style="resize:none;font-weight: bold;line-height:100%;height: 100%;margin-top: 4px;background-color:#000;color:#00B600;"></pre>
+        <pre class="form-control "  id="salt_exe_result"  style="resize:none;font-weight: bold;line-height:100%;height: 100%;margin-top: 4px;background-color:#000;color:#4be036;"></pre>
     </div>
 </div>
 
@@ -371,26 +483,32 @@
 {% endblock %}
 
 {% block another_content %}
-<!-- 模态框 -->
-<div class="modal fade juzhong" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
+<!--使用帮助模态框-->
+<div class="modal fade juzhong" id="salt_cmd_doc_modal" tabindex="-1" role="dialog" aria-labelledby="salt_cmd_doc_lable" aria-hidden="true" >
+	<div class="modal-dialog" style="width: 780px;">
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
 					&times;
 				</button>
-				<h4 class="modal-title" id="myModalLabel">
-					IP：192.168.126.154
+				<h4 class="modal-title" id="salt_cmd_doc_lable">
+					<span class="salt_cmd_name"></span>使用帮助
 				</h4>
+
 			</div>
-			<div class="modal-body">
-				在这里添加一些文本
+			<div class="modal-body" style="padding-bottom:0;">
+                <div class="form-group" style="height:630px;">
+                    <pre class="form-control " id="salt_cmd_doc_info"   style="resize:none;font-weight: bold;line-height:100%;height: 100%;margin-top: 4px;background-color:#000;color:#00B600;"></pre>
+                </div>
+
 			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">关闭
+			<div class="modal-footer" style="padding: 5px 15px 5px 0;">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">
+					确认
 				</button>
 			</div>
 		</div><!-- /.modal-content -->
 	</div><!-- /.modal -->
 </div>
+
 {% endblock %}

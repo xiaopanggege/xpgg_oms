@@ -19,6 +19,11 @@
             overflow-y: auto;
             white-space: pre-wrap;
         }
+
+        /*解决谷歌自动填充把input框底色变成黄色问题*/
+        input:-webkit-autofill,textarea:-webkit-autofill,select:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0 1000px white inset !important;
+        }
     </style>
 
 {% endblock %}
@@ -205,15 +210,16 @@
                 <!-- <p class="text-danger  " style="color: #FF0000;">&nbsp;</p> -->
                 <div class="he20"></div>
                 <label for="server_username" >&nbsp;&nbsp;用户名:</label>
-                <input type="text" name="minion_user" autocomplete="off" style="display:none;">
-                <input type="text" class="form-control" id="server_username" name="minion_user"
+
+                <input type="text" name="minion_user" class="form-control" id="server_username"
                value="root"  style="font-size: 14px;"  size="22"  required="required">
+                <input type="text" name="minion_user" style="display:none;" >
                <span id="server_username_help"  style="color: #FF0000;font-size: 14px;">*</span>
                <div class="he20"></div>
                 <label for="server_password" >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;密码:</label>
-                <input type="password" name="minion_passwd" autocomplete="off" style="display:none;">
-                <input type="password" class="form-control" id="server_password" name="minion_passwd"
-               placeholder="请输入密码" style="font-size: 14px;"  size="22" autocomplete="new-password" required="required">
+                <input type="password" name="minion_passwd" style="display:none;" >
+                <input type="text" name="minion_passwd" class="form-control" id="server_password"
+               placeholder="请输入密码" style="font-size: 14px;"  size="22" autocomplete="new-password" required="required" onfocus="this.type='password'" >
                <span id="server_password_help"  style="color: #FF0000;font-size: 14px;">*</span>
                <div class="he20"></div>
                <label class="label label-info " style="font-size: 17px;">可选参数</label>

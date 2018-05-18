@@ -1452,6 +1452,7 @@ def salt_exe(request):
 # salt_exe_ajax执行salt命令ajax操作
 def salt_exe_ajax(request):
     result = {'result': None, 'status': False}
+    app_log = []
     try:
         if request.is_ajax():
             # 在ajax提交时候多一个字段作为标识，来区分多个ajax提交哈，厉害！
@@ -1471,17 +1472,50 @@ def salt_exe_ajax(request):
                 result['result'] = list(salt_cmd_list)
                 result['status'] = True
                 return JsonResponse(result)
-            elif request.POST.get('salt_cmd_tag_key') == 'salt_cmd_delete':
-                salt_cmd = request.POST.get('salt_cmd')
-                try:
-                    SaltCmdInfo.objects.filter(salt_cmd=salt_cmd).delete()
-                    result['result'] = '成功'
-                    result['status'] = True
-                except Exception as e:
-                    message = '修改失败', str(e)
-                    logger.error(message)
-                    result['result'] = message
+            elif request.GET.get('salt_exe_tag_key') == 'search_salt_cmd_doc':
+                salt_cmd = request.GET.get('salt_cmd')
+                salt_cmd_type = request.GET.get('salt_cmd_type')
+                salt_cmd_module = request.GET.get('salt_cmd_module')
+                salt_cmd_data = SaltCmdInfo.objects.filter(salt_cmd=salt_cmd, salt_cmd_type=salt_cmd_type,
+                                                           salt_cmd_module=salt_cmd_module).first()
+                result['result'] = salt_cmd_data.salt_cmd_doc if salt_cmd_data else '查询结果为空，请确认模块和命令是否填写正确'
+                result['status'] = True
                 return JsonResponse(result)
+            elif request.POST.get('salt_exe_tag_key') == 'salt_exe':
+                client = request.POST.get('client')
+                tgt = request.POST.get('tgt')
+                tgt_type = request.POST.get('tgt_type')
+                fun = request.POST.get('fun')
+                arg = request.POST.get('arg', None)
+                if len(arg) == 0:
+                    arg = None
+                else:
+                    logger.error(len(arg))
+                logger.error(arg)
+                data = {'client': client, 'tgt': tgt, 'tgt_type': tgt_type, 'fun': fun, 'arg': arg}
+                with requests.Session() as s:
+                    saltapi = SaltAPI(session=s)
+                    if saltapi.get_token() is False:
+                        app_log.append('\nsalt命令执行后台出错_error(0)，请联系管理员')
+                        result['result'] = app_log
+                        return JsonResponse(result)
+                    else:
+                        response_data = saltapi.public(data=data)
+                        # 当调用api失败的时候会返回false
+                        if response_data is False:
+                            app_log.append('\nsalt命令执行后台出错_error(1)，请联系管理员')
+                            result['result'] = app_log
+                            return JsonResponse(result)
+                        else:
+                            try:
+                                response_data = response_data['return'][0]
+                                result['status'] = True
+                                result['result'] = response_data
+                                return JsonResponse(result)
+                            except Exception as e:
+                                app_log.append('\n' + 'salt命令执行失败_error(2):' + str(response_data))
+                                result['result'] = app_log
+                                return JsonResponse(result)
     except Exception as e:
         logger.error('salt命令执行ajax提交处理有问题', e)
         result['result'] = 'salt命令执行ajax提交处理有问题'
