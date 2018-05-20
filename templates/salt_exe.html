@@ -15,7 +15,7 @@
         	overflow: auto;
         }
 		/*pre标签不会自动换行第二个是换行，第一个是滚动条*/
-		#result1 {
+		#salt_exe_result {
             overflow-y: auto;
             white-space: pre-wrap;
         }
@@ -50,12 +50,16 @@
 			$('#tgt_grain').keyup(function(){
 	    		$('#tgt_grain_help').text('　');
 	    	});
+			$('#tgt_grain_pcre').keyup(function(){
+	    		$('#tgt_grain_pcre_help').text('　');
+	    	});
 			$('#tgt_ip_address').keyup(function(){
 	    		$('#tgt_ip_address_help').text('　');
 	    	});
-	    	$('#tgt_regular').keyup(function(){
-	    		$('#tgt_regular_help').text('　');
+	    	$('#tgt_pcre').keyup(function(){
+	    		$('#tgt_pcre_help').text('　');
 	    	});
+
 
 			// 执行对象选择触发输入框的隐藏显示
 			$('input[name="select_tgt"]').click(function () {
@@ -71,21 +75,27 @@
                    $('.select_tgt_minion_list_class').removeClass('hidden');
                    $('#search_minion_id').focus();
                }
+               else if($.trim($(this).val())=="pcre"){
+                   $('.select_tgt_list').addClass('hidden');
+                   $('.tgt_pcre_class').removeClass('hidden');
+                   $('#tgt_pcre').focus();
+               }
                else if($.trim($(this).val())=="grain"){
                    $('.select_tgt_list').addClass('hidden');
                    $('.tgt_grain_class').removeClass('hidden');
                    $('#tgt_grain').focus();
+               }
+               else if($.trim($(this).val())=="grain_pcre"){
+                   $('.select_tgt_list').addClass('hidden');
+                   $('.tgt_grain_pcre_class').removeClass('hidden');
+                   $('#tgt_grain_pcre').focus();
                }
                else if($.trim($(this).val())=="ip_address"){
                    $('.select_tgt_list').addClass('hidden');
                    $('.tgt_ip_address_class').removeClass('hidden');
                    $('#tgt_ip_address').focus();
                }
-               else if($.trim($(this).val())=="regular"){
-                   $('.select_tgt_list').addClass('hidden');
-                   $('.tgt_regular_class').removeClass('hidden');
-                   $('#tgt_regular').focus();
-               }
+
             });
 
 //          查找minion_id 后期要准备些一个公共的view方法存这个经常用到查询minion的调用，不然每次都要在views.py写一遍
@@ -263,14 +273,32 @@
                     }
                     tgt_type = 'grain';
                 }
+                else if(select_tgt == 'grain_pcre'){
+                    tgt = $.trim($('#tgt_grain_pcre').val());
+                    if(tgt.length == 0){
+                        $('#tgt_grain_pcre_help').text('请输入grain正则条件');
+                        $('#tgt_grain_pcre').focus();
+                        return false
+                    }
+                    tgt_type = 'grain_pcre';
+                }
                 else if(select_tgt == 'ip_address'){
                     tgt = $.trim($('#tgt_ip_address').val());
                     if(tgt.length == 0){
-                        $('#tgt_ip_address_help').text('请输入IP');
+                        $('#tgt_ip_address_help').text('请输入IP或IP段');
                         $('#tgt_ip_address').focus();
                         return false
                     }
                     tgt_type = 'ipcidr';
+                }
+                else if(select_tgt == 'pcre'){
+                    tgt = $.trim($('#tgt_pcre').val());
+                    if(tgt.length == 0){
+                        $('#tgt_pcre_help').text('请输入minion id正则');
+                        $('#tgt_pcre').focus();
+                        return false
+                    }
+                    tgt_type = 'pcre';
                 }
                 var $btn = $(this).button('loading');
                 $("#salt_exe_result").text("正在执行.....");
@@ -291,11 +319,22 @@
 					success:function(result){
 						if(result.status){
 						    $("#salt_exe_result").empty();
-						    $.each(result.result,function (k,v) {
-                                $('#salt_exe_result').append("<p style='color: #3FB8AF;'>"+k+":</p>");
-                                $('#salt_exe_result').append("<p style='padding-left: 25px;'>"+v+"</p>");
+                            var data_count = 0;
+                            $.each(result.result,function (k,v) {
+                                if($.isPlainObject(v)){
+                                    $('#salt_exe_result').append("<p style='color: #45ddd4;font-weight: bold;'>"+k+":</p>");
+                                    result_fun(v,data_count+1);
+                                    $('#salt_exe_result').append('\n\n');
+                                }else if($.isArray(v)){
+                                    $('#salt_exe_result').append("<p style='color: #45ddd4;font-weight: bold;'>"+k+":</p>");
+                                    result_fun(v,data_count+1);
+                                    $('#salt_exe_result').append('\n\n');
+                                }else{
+                                    $('#salt_exe_result').append("<p style='color: #3FB8AF;font-weight: bold;'>"+k+":</p>");
+                                    $('#salt_exe_result').append("<p style='padding-left: 25px;'>"+v+"</p>");
+                                    $('#salt_exe_result').append('\n\n');
+                                }
                             });
-                            console.log(JSON.stringify(result.result));
                             $btn.button('reset');
 						}else {
 						    $("#salt_exe_result").empty();
@@ -305,6 +344,25 @@
 					}
 				});
             });
+
+
+            // 结果输出格式化 递归函数
+            var result_fun = function (data,data_count) {
+                if(!data) return;
+                $.each(data,function(k,v){
+                    if($.isPlainObject(v)){
+                        $('#salt_exe_result').append("<p style='color: #3FB8AF;padding-left: "+data_count*25+"px;'>"+k+":</p>");
+                        result_fun(v,data_count+1)
+                    }else if($.isArray(v)){
+                        $('#salt_exe_result').append("<p style='color: #3FB8AF;padding-left: "+data_count*25+"px;'>"+k+":</p>");
+                        result_fun(v,data_count+1)
+                    }else{
+                        $('#salt_exe_result').append("<p style='color: #3FB8AF;padding-left: "+data_count*25+"px;'>"+k+":</p>");
+                        $('#salt_exe_result').append("<p style='padding-left: "+(data_count+1)*25+"px;'>"+v+"</p>");
+                    }
+                });
+            };
+
 
 		});
 
@@ -324,36 +382,42 @@
 				<div class="he10"></div>
 				<div class="container-fluid" style="font-size: 14px;">
 					<div class="row-fluid">
-						<div class="col-sm-2 col-md-2">
+						<div class="col-sm-3 col-md-3">
 							<label class="radio-inline" >
-								<input type="radio" name="select_tgt" id="inlineCheckbox0" value="any" checked>所有
+								<input type="radio" name="select_tgt"  value="any" checked>所有
 							</label>
 						 </div>
-						<div class="col-sm-2 col-md-2">
+						<div class="col-sm-3 col-md-3">
 							<label class="radio-inline" >
-								<input type="radio" name="select_tgt" id="inlineCheckbox1" value="minion_list">Minion_ID
+								<input type="radio" name="select_tgt"  value="minion_list">Minion_ID
 							</label>
 						 </div>
-						<div class="col-sm-2 col-md-2">
+                        <div class="col-sm-3 col-md-3">
 							<label class="radio-inline" >
-								<input type="radio" name="select_tgt" id="inlineCheckbox2" value="custom_group">自定义组
+								<input type="radio" name="select_tgt"  value="pcre">Minion正则
 							</label>
 						</div>
-                        <div class="col-sm-2 col-md-2">
+						<div class="col-sm-3 col-md-3">
 							<label class="radio-inline" >
-								<input type="radio" name="select_tgt" id="inlineCheckbox3" value="grain">Grain
+								<input type="radio" name="select_tgt"  value="custom_group">自定义组
 							</label>
 						</div>
-                        <div class="col-sm-2 col-md-2">
+                        <div class="col-sm-3 col-md-3">
 							<label class="radio-inline" >
-								<input type="radio" name="select_tgt" id="inlineCheckbox4" value="ip_address">IP
+								<input type="radio" name="select_tgt"  value="grain">Grain
 							</label>
 						</div>
-						<div class="col-sm-2 col-md-2">
+                        <div class="col-sm-3 col-md-3">
 							<label class="radio-inline" >
-								<input type="radio" name="select_tgt" id="inlineCheckbox5" value="regular">正则
+								<input type="radio" name="select_tgt"  value="grain_pcre">Grain正则
 							</label>
 						</div>
+                        <div class="col-sm-3 col-md-3">
+							<label class="radio-inline" >
+								<input type="radio" name="select_tgt"  value="ip_address">IP
+							</label>
+						</div>
+						
 					</div>
 				</div>
 				<div class="he10"></div>
@@ -395,6 +459,15 @@
                         <span id="minion_list_help" style="color: #FF0000;">　</span>
                 </div>
                 </div>
+                <div class="select_tgt_list tgt_pcre_class hidden">
+                    <label class="control-label col-sm-2 " for="tgt_pcre">M正则:</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" id="tgt_pcre"
+                        style="font-size: 14px;"  required="required" placeholder="正则匹配minion id">
+                        <span class="" id="tgt_pcre_help" style="color: #FF0000;">　</span>
+                    </div>
+                    <label class="control-label  " style="color: #FF0000;" >*</label>
+                </div>
                 <div class="select_tgt_list select_tgt_custom_group_class hidden">
                     <label class="control-label col-sm-2 " for="tgt_custom_group">Custom_group:</label>
                     <div class="col-sm-8">
@@ -413,24 +486,25 @@
                     </div>
                     <label class="control-label  " style="color: #FF0000;" >*</label>
                 </div>
+                <div class="select_tgt_list tgt_grain_pcre_class hidden">
+                    <label class="control-label col-sm-2 " for="tgt_grain_pcre">Grain正则:</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" id="tgt_grain_pcre"
+                        style="font-size: 14px;"  required="required" >
+                        <span class="" id="tgt_grain_pcre_help" style="color: #FF0000;">　</span>
+                    </div>
+                    <label class="control-label  " style="color: #FF0000;" >*</label>
+                </div>
                 <div class="select_tgt_list tgt_ip_address_class hidden">
                     <label class="control-label col-sm-2 " for="tgt_ip_address">IP:</label>
                     <div class="col-sm-8">
                         <input type="text" class="form-control" id="tgt_ip_address"
-                        style="font-size: 14px;"  required="required" >
+                        style="font-size: 14px;"  required="required" placeholder="ip/ip段，例：192.168.1.1 or 192.168.1.0/24">
                         <span class="" id="tgt_ip_address_help" style="color: #FF0000;">　</span>
                     </div>
                     <label class="control-label  " style="color: #FF0000;" >*</label>
                 </div>
-                <div class="select_tgt_list tgt_regular_class hidden">
-                    <label class="control-label col-sm-2 " for="tgt_regular">Regular:</label>
-                    <div class="col-sm-8">
-                        <input type="text" class="form-control" id="tgt_regular"
-                        style="font-size: 14px;"  required="required" >
-                        <span class="" id="tgt_regular_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label  " style="color: #FF0000;" >*</label>
-                </div>
+
 			</div>
 
             <div class="form-group">
@@ -462,14 +536,16 @@
 
             <div class="form-group">
                 <label class="control-label col-sm-2 " for="cmd_select">Fun:</label>
-                <div class="col-sm-3">
+                <div class="col-sm-4">
                     <input type="text" class="form-control" id="cmd_select" list="cmd_datalist" />
                     <datalist id="cmd_datalist">
                     </datalist>
                     <span class="" id="cmd_select_help" style="color: #FF0000;">　</span>
                 </div>
                 <label class="control-label  " style="font-weight: normal;color: #3FB8AF;margin-right: 10px;" >提示：选择要执行的命令</label>
-                <button type="button" class="btn btn-info btn-sm" id="salt_cmd_doc" >使用帮助</button>
+                <button type="button" class="btn btn-info btn-sm" id="salt_cmd_doc" >命令帮助</button>
+                <!--命令备注是用来查询这个命令自定义备注的，不过后面想想先不加我下有介绍例子感觉，例子应该够了-->
+                <!--<button type="button" class="btn btn-info btn-sm" id="salt_cmd_description" >命令备注</button>-->
             </div>
 
             <div class="form-group">
@@ -498,7 +574,7 @@
         <!--注意如果使用标签textarea的字体一定要设置等宽字体，因为普通的字体在输出的时候无法和在linux下面一样，想要输出程序代码的
         原样，最好用等宽字体，不用你自己看下有多难看就知道这里用了font-family: monospace;自带的等宽字体-->
         <!--最后我发现可以直接用pre标签这个标签可以完美的输出后端代码的格式哈哈不过换行和滚动条还是要加在上面的style里-->
-        <pre class="form-control "  id="salt_exe_result"  style="resize:none;font-weight: bold;line-height:100%;height: 100%;margin-top: 4px;background-color:#000;color:#47c032;"></pre>
+        <pre class="form-control "  id="salt_exe_result"  style="font-size:15px;resize:none;line-height:100%;height: 100%;margin-top: 4px;background-color:#000;color:#47c032;"></pre>
     </div>
 </div>
 
