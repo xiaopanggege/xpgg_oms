@@ -260,7 +260,7 @@
                             <img src="{% static 'images/touxiang.png' %}" class="  img-rounded" alt="未加载" width="70" height="70" style="margin:10px 10px 0 10px;">
                             </div>
                             <div class="pull-left" style="margin:20px 10px 0 10px;width: 90px;">
-                                <h4 title={{ request.user.username}}  style="color: lightblue;">{{ request.user.username | truncatechars:16}}</h4>
+                                <h4 title="{{ request.user.username}}"  style="color: lightblue;">{{ request.user.username | truncatechars:16}}</h4>
                                 <h5  style="color: lightblue;">
                                     {% if request.user.is_superuser%}
                                     超级管理员
@@ -294,7 +294,6 @@
 								<li class="zicaidan"><a href="{% url 'minion_client_install' %}"><span aria-hidden="true" class="glyphicon glyphicon-hand-right"></span>　客户端部署</a></li>
 								<li class="zicaidan"><a href="{% url 'module_deploy' %}"><span aria-hidden="true" class="glyphicon glyphicon-hand-right"></span>　模块部署</a></li>
                                 <li class="zicaidan"><a href="#"><span aria-hidden="true" class="glyphicon glyphicon-hand-right"></span>　SSH模块部署</a></li>
-                                <li class="zicaidan"><a href="#"><span aria-hidden="true" class="glyphicon glyphicon-hand-right"></span>　远程维护</a></li>
 								<li class="zicaidan"><a href="{% url 'salt_cmd_manage' %}"><span aria-hidden="true" class="glyphicon glyphicon-hand-right"></span>　Salt命令集</a></li>
 								<li class="zicaidan"><a href="{% url 'salt_exe' %}"><span aria-hidden="true" class="glyphicon glyphicon-hand-right"></span>　Salt命令执行</a></li>
 							</ul>

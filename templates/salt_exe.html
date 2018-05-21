@@ -223,7 +223,7 @@
                 }else if(client == 'runner'){
                     var salt_cmd_type = 'runner';
                 }
-                var salt_cmd = $('#cmd_select').val();
+                var salt_cmd = $('#cmd_select').val()
                 $.ajax({
 					url:"{% url 'salt_exe_ajax' %}",
 					type:'GET',
@@ -250,7 +250,7 @@
             $('#salt_exe_sumbit').click(function () {
                 var client = $('#client_select').val();
                 var fun = $('#cmd_select').val();
-                var arg = $.trim($('#arg_data').val());
+                var arg = $.trim($('#arg_data').val()).split(',,');
                 var select_tgt = $("input[name='select_tgt']:checked").val();
                 var tgt_type = 'glob';
                 var tgt = '';
@@ -313,7 +313,7 @@
                         'tgt':tgt,
                         'tgt_type':tgt_type,
                         'fun':fun,
-                        'arg':[arg],
+                        'arg':arg,
                         'salt_exe_tag_key':'salt_exe'
 					},
 					success:function(result){
@@ -561,9 +561,23 @@
             <div class="form-group col-sm-2">
                 <button type="button" class="btn btn-success " id="salt_exe_sumbit" data-loading-text="正在执行...">执行命令</button>
             </div>
-            <div class="form-group col-sm-12 alert alert-info ">
-                <p>帮助：由于采用API调用方式，如执行对象不存在或断线则不会出现结果，返回结果为空</p>
+            <!--<div class="form-group col-sm-12 alert alert-info ">-->
+                <!--<p>帮助1：Module其实就是命令Fun中“.”前面的内容，选择正确的Module在Fun填写时可以给出友好的提示。</p>-->
+            <!--</div>-->
+            <div class="form-group col-sm-12 ">
+                <ul class="list-group">
+                    <li class="list-group-item ">帮助1：Arg参数如多个参数则以英文连续双逗号“,,”隔开，主要是为了后台能正确处理，其写法与CLI下有所不同；
+                        <br>&emsp;&emsp;&emsp;&nbsp;&nbsp;如 ps.proc_info 命令查看帮助可以看到命令行是这样的：
+                        <br>&emsp;&emsp;&emsp;&nbsp;&nbsp;salt '*' ps.proc_info 2322 attrs='["pid", "name"]'参数是：2322 attrs='["pid", "name"]'
+                        <br>&emsp;&emsp;&emsp;&nbsp;&nbsp;而在这里则需要写成：
+                        <br>&emsp;&emsp;&emsp;&nbsp;&nbsp;pid=11932,,attrs=["cmdline","pid","name"]</li>
+                    <li class="list-group-item">帮助2：Module其实就是命令Fun中“.”前面的内容，选择正确的Module在Fun填写时可以给出友好的提示。</li>
+                    <li class="list-group-item">帮助9：由于采用API调用方式，如执行对象不存在或断线则不会出现结果，返回结果为空。</li>
+                </ul>
             </div>
+            <!--<div class="form-group col-sm-12 alert alert-success ">-->
+                <!--<p>帮助9：由于采用API调用方式，如执行对象不存在或断线则不会出现结果，返回结果为空。</p>-->
+            <!--</div>-->
         </div>
 
     </div>

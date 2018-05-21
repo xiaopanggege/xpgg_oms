@@ -3468,23 +3468,26 @@ def app_auth(request):
             # 默认如果没有get到的话值为None，这里我需要为空''，所以下面修改默认值为''
             search_field = request.GET.get('search_field', '')
             search_content = request.GET.get('search_content', '')
+            username_list = list(AppAuth.objects.values('my_user_id', 'username'))
+            logger.error(username_list)
             if search_content is '':
-                app_auth_data = AppAuth.objects.all()
+                app_auth_data = AppAuth.objects.all().order_by('my_user_id')
                 data_list = getPage(request, app_auth_data, 12)
             else:
                 if search_field == 'search_myuser_username':
-                    app_auth_data = AppAuth.objects.filter(username__contains=search_content)
+                    app_auth_data = AppAuth.objects.filter(username__contains=search_content).order_by('my_user_id')
                     data_list = getPage(request, app_auth_data, 12)
                 elif search_field == 'search_app_name':
-                    app_auth_data = AppAuth.objects.filter(app_perms__contains=search_content)
+                    app_auth_data = AppAuth.objects.filter(app_perms__contains=search_content).order_by('my_user_id')
                     data_list = getPage(request, app_auth_data, 12)
                 elif search_field == 'search_app_group_name':
-                    app_auth_data = AppAuth.objects.filter(app_group_perms__contains=search_content)
+                    app_auth_data = AppAuth.objects.filter(app_group_perms__contains=search_content).order_by('my_user_id')
                     data_list = getPage(request, app_auth_data, 12)
                 else:
                     data_list = ""
             return render(request, 'app_auth.html',
-                          {'data_list': data_list, 'search_field': search_field, 'search_content': search_content})
+                          {'data_list': data_list, 'search_field': search_field, 'search_content': search_content,
+                           'username_list': username_list})
     except Exception as e:
         logger.error('应用授权页面有问题', e)
         return render(request, 'app_auth.html')
@@ -3564,15 +3567,26 @@ def app_auth_ajax(request):
     result = {'result': None, 'status': False}
     try:
         if request.is_ajax():
-            if request.POST.get('app_auth_tag_key') == 'app_auth_username_update':
-                obj = AppAuthUpdateForm(request.POST)
-                if obj.is_valid():
-                    AppAuth.objects.create(app_group_name=obj.cleaned_data["app_group_name"], description=obj.cleaned_data["description"])
-                    result['result'] = '成功'
-                    result['status'] = True
-                else:
-                    error_str = obj.errors.as_json()
-                    result['result'] = json.loads(error_str)
+            if request.POST.get('app_auth_tag_key') == 'app_auth_add':
+                username_list = request.POST.get('username_list').split(',')
+                for id_and_username in username_list:
+                    id_and_username = id_and_username.split(' ')
+                    data = {'my_user_id': id_and_username[0], 'username': id_and_username[1]}
+                    logger.error(data)
+                    obj = AppAuthCreateForm(data)
+                    if obj.is_valid():
+                        AppAuth.objects.create(my_user_id=obj.cleaned_data["my_user_id"], username=obj.cleaned_data["username"])
+                        result['result'] = '成功'
+                        result['status'] = True
+                    else:
+                        error_str = obj.errors.as_json()
+                        result['result'] = json.loads(error_str)
+                    return JsonResponse(result)
+            elif request.GET.get('app_auth_tag_key') == 'modal_search_username':
+                username = request.GET.get('username')
+                username_list = MyUser.objects.filter(username__contains=username).order_by('id').values('id', 'username')
+                result['result'] = list(username_list)
+                result['status'] = True
                 return JsonResponse(result)
             elif request.GET.get('app_auth_tag_key') == 'modal_search_app_name':
                 app_name = request.GET.get('app_name')
@@ -3671,27 +3685,10 @@ def app_auth_ajax(request):
                 except Exception as e:
                     result['result'] = str(e)
                 return JsonResponse(result)
-            elif request.POST.get('app_auth_tag_key') == 'app_group_member_add':
-                obj = AppGroupUpdateForm(request.POST)
-                if obj.is_valid():
-                    AppGroup.objects.filter(app_group_name=obj.cleaned_data["app_group_name"]).update(
-                        app_group_members=obj.cleaned_data["app_group_members"])
-                else:
-                    error_str = obj.errors.as_json()
-                    result['result'] = json.loads(error_str)
-                    return JsonResponse(result)
-                result['result'] = '成功'
-                result['status'] = True
-                return JsonResponse(result)
-            elif request.POST.get('app_auth_tag_key') == 'app_group_member_delete':
-                app_name = request.POST.get('app_name')
-                app_group_name = request.POST.get('app_group_name')
+            elif request.POST.get('app_auth_tag_key') == 'app_auth_delete':
+                my_user_id = request.POST.get('my_user_id')
                 try:
-                    app_group_members = AppGroup.objects.get(app_group_name=app_group_name).app_group_members
-                    app_group_members_list = app_group_members.split(',')
-                    app_group_members_list.remove(app_name)
-                    app_group_members = ','.join(app_group_members_list)
-                    AppGroup.objects.filter(app_group_name=app_group_name).update(app_group_members=app_group_members)
+                    AppAuth.objects.filter(my_user_id=my_user_id).delete()
                     result['result'] = '成功'
                     result['status'] = True
                 except Exception as e:

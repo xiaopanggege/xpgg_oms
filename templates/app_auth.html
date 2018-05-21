@@ -114,6 +114,136 @@
                  data: {csrfmiddlewaretoken: '{{ csrf_token }}' }
             });
 
+//           用户添加按钮触发内容填充模态框
+//             $('.edit_username_btn').click(function () {
+//                 var username_list = {{ username_list | safe}};
+//                 if(username_list.length != 0) {
+//                     $.each(username_list,function (index,content) {
+//                          // 我这里做的是把已经存在用户的添加到选中那边,这次要隐藏，因为这次只做添加操作不做删除，表操作麻烦所以单独做个删除操作
+//                         $("<option class='hidden'  value='"+ content.my_user_id +" "+ content.username + "'>" + content.my_user_id +" "+ content.username + "</option>").appendTo("#edit_selected_username");
+//                     })
+//                 }
+//             });
+
+//            用户添加模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
+            $('#edit_username_modal').on('shown.bs.modal', function () {
+                $("#edit_search_username").focus();
+            });
+
+//           用户添加模态框 隐藏时数据清除,
+            $("#edit_username_modal").on("hidden.bs.modal", function() {
+                $(this).removeData("bs.modal");
+//                select恢复原状挺麻烦的，我这用最蠢的清空掉2个select然后重新添加。。
+                $('#edit_search_username').val('');
+				$('#edit_select_username').empty();
+				$('#edit_selected_username').empty();
+				$('#edit_username_help').text('　');
+            });
+
+//            用户添加模态框，查找username
+             $('.edit_search_username_btn').click(function(){
+                 $('#edit_select_username').empty();
+                 var username=$.trim($('#edit_search_username').val());
+                 var exist_username={{ username_list | safe}};
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'app_auth_ajax' %}",
+					type:'GET',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+                        'username':username,
+                        'app_auth_tag_key':'modal_search_username'
+					},
+					success:function(result){
+						if(result.status){
+						    $.each(result.result,function (index,content) {
+                                $("<option value='"+content.id +" "+ content.username+"'>"+content.id +" "+ content.username+"</option>").appendTo("#edit_select_username");
+                                $.each(exist_username, function (index,data) {
+                                    if(data.my_user_id==content.id){
+                                        $("#edit_select_username option[value='" +content.id +" "+ content.username+ "']").remove();
+                                    }
+                                });
+                            })
+						}else {
+						    toastr.error(result.result,'error',{timeOut: 1500});
+                        }
+					}
+				});
+			});
+
+//           用户添加模态框 username选中 操作触发中间的》按钮可用
+            $("#edit_select_username").click(function () {
+                var username_list=$('#edit_select_username option:selected').map(function(){return $(this).val();}).get().join(",");
+                if(username_list.length != 0) {
+                    $("#edit_select_username_btn").attr("disabled",false);
+                }
+            });
+
+//           用户添加模态框 username选中 操作触发中间的《按钮可用
+            $("#edit_selected_username").click(function () {
+                var username_list=$('#edit_selected_username option:selected').map(function(){return $(this).val();}).get().join(",");
+                if(username_list.length != 0) {
+                    $("#edit_delete_username_btn").attr("disabled",false);
+                }
+            });
+
+//           用户添加模态框 username》按钮触发选中值移动到右边
+            $("#edit_select_username_btn").click(function () {
+//                在这里触发清空如果没选择username的错误提示,嘿嘿
+                $('#edit_username_help').text('　');
+                $("#edit_select_username option:selected").each(function () {
+                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#edit_selected_username");
+                    $(this).remove();
+                    $("#edit_select_username_btn").attr("disabled",true);
+                })
+            });
+
+//           用户添加模态框 username《按钮触发选中值移动到左边
+            $("#edit_delete_username_btn").click(function () {
+                $("#edit_selected_username option:selected").each(function () {
+                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#edit_select_username");
+                    $(this).remove();
+                    $("#edit_delete_username_btn").attr("disabled",true);
+                })
+            });
+
+//          用户添加 表单提交
+            $('#edit_username_submit').click(function(){
+				var username_list=$('#edit_selected_username option').map(function(){return $(this).val();}).get().join(",");
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'app_auth_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'username_list':username_list,
+                        'app_auth_tag_key':'app_auth_add'
+
+					},
+					success:function(result){
+						if(result.status){
+                            $('#edit_username_modal').modal('toggle');
+                            toastr.success(result.result,'Success',{timeOut: 1500});
+                            setTimeout(function(){window.location.href=window.location.href}, 1000);
+						}else {
+//						    通过表单验证返回的错误是多层嵌套字典加列表，一层key是对应提交数据的key，二层有2个key一个是code一个是message，错误信息在message里
+						    $.each(result.result, function (k,v) {
+//						        把错误信息插入到对应的错误help位子
+                                $('#edit_'+k+'_help').text(v[0].message);
+                            });
+                            // console.log(JSON.stringify(result.result));
+                        }
+					}
+				});
+
+			});
+
+
+            
 //            快捷权限管理模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
             $('#app_auth_fast_channel_modal').on('shown.bs.modal', function () {
                 $("#edit_search_app_name").focus();
@@ -138,7 +268,7 @@
             $('.app_auth_fast_channel_btn').click(function () {
                 var fast_channel_username = $(this).parent().siblings('.data_username').html();
                 $('.fast_channel_username').html(fast_channel_username);
-                var fast_channel_user_id = $(this).parent().siblings('.data_user_id').html();
+                var fast_channel_user_id = $(this).parent().siblings('.data_my_user_id').html();
                 $('.fast_channel_user_id').html(fast_channel_user_id);
                 var app_name_data = $.trim($(this).parent().siblings('.data_app_perms').attr('title'));
                 var app_group_data = $.trim($(this).parent().siblings('.data_app_group_perms').attr('title'));
@@ -345,7 +475,7 @@
 
 //            编辑备注按钮 数据填充
             $('.edit_app_auth_description_btn').click(function () {
-                $('#edit_app_auth_user_id').val($(this).parent().siblings('.data_user_id').html());
+                $('#edit_app_auth_user_id').val($(this).parent().siblings('.data_my_user_id').html());
                 $('#edit_app_auth_username').val($(this).parent().siblings('.data_username').html());
 				$('#edit_description').val($(this).parent().siblings('.data_description').html());
             });
@@ -403,7 +533,39 @@
 
 			});
 
+//            点击删除填充模态框
+            $('.delete_app_auth_btn').click(function () {
+                $('.hidden_my_user_id').val($(this).parent().siblings('.data_my_user_id').html());
+            });
 
+//            点击确定删除应用
+            $('#delete_app_auth_submit').click(function(){
+				var my_user_id=$.trim($('.hidden_my_user_id').val());
+				$('#delete_app_auth_modal').modal('toggle');
+				$.ajax({
+					url:"{% url 'app_auth_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+//                    提交的数据要和后台form验证的变量一致，不过可以多出来，只要验证的有就行，比如这里就多了project_tag_key
+					data:{
+                        'my_user_id':my_user_id,
+                        'app_auth_tag_key':'app_auth_delete'
+
+					},
+					success:function(result){
+						if(result.status){
+                            $('.loading_modal').modal('toggle');
+                            toastr.success(result.result,'Success',{timeOut: 1500});
+                            setTimeout(function(){window.location.href=window.location.href}, 1000);
+						}else {
+						    $('.loading_modal').modal('toggle');
+						    toastr.error(result.result,'Error',{timeOut: 1500});
+                        }
+					}
+				});
+			});
 
 		});
 
@@ -422,6 +584,9 @@
             <!--下面这里本来是用form的样式的，后来改成div是因为用form默认带了回车会提交表单的功能，所以改成div不过class还是form的哈哈-->
             <div class="form-inline" role="form">
                 <div class="form-group ">
+                    <button type="button" class="btn btn-success edit_username_btn " data-toggle="modal" data-target="#edit_username_modal">添加用户</button>
+                </div>
+                <div class="form-group pull-right">
                       <label for="search_field">查询字段</label>
                       <select class="form-control" id="search_field">
                           <option value="search_myuser_username">用户名称</option>
@@ -444,9 +609,6 @@
                               </span>
                         </div>
                   </div>
-                <div class="form-group pull-right">
-                    <button type="button" class="btn btn-success app_group_add_button " data-toggle="modal" data-target="#app_group_add_modal">刷新用户</button>
-                </div>
             </div>
 
         </div>
@@ -456,11 +618,12 @@
             <!--给下面tr加个success是bootstrap的一个类颜色会改变下呵呵-->
               <tr class="success">
                   <th width="5%"><input type="checkbox" id="checkAll" name="checkAll" /></th>
+                  <th width="5%">用户ID</th>
                   <th width="10%">用户名称</th>
-                  <th width="20%">应用权限</th>
-                  <th width="20%">应用组权限</th>
+                  <th width="15%">应用权限</th>
+                  <th width="15%">应用组权限</th>
                   <th width="10%">描述备注</th>
-                  <th width="35%">操作</th>
+                  <th width="40%">操作</th>
 
               </tr>
             </thead>
@@ -469,14 +632,15 @@
                 {% for data in data_list%}
                 <tr>
                     <td><input type="checkbox" name="checkItem" /></td>
+                    <td class="data_my_user_id">{{ data.my_user_id }}</td>
                     <td class="data_username">{{ data.username }}</td>
                     {% if data.app_perms %}
-                    <td class="data_app_perms" title="{{data.app_perms}}">{{ data.app_perms | truncatechars:60 }}</td>
+                    <td class="data_app_perms" title="{{data.app_perms}}">{{ data.app_perms | truncatechars:30 }}</td>
                     {% else %}
                     <td class="data_app_perms"></td>
                     {% endif %}
                     {% if data.app_group_perms %}
-                    <td class="data_app_group_perms" title="{{data.app_group_perms}}">{{ data.app_group_perms | truncatechars:60 }}</td>
+                    <td class="data_app_group_perms" title="{{data.app_group_perms}}">{{ data.app_group_perms | truncatechars:30 }}</td>
                     {% else %}
                     <td class="data_app_group_perms"></td>
                     {% endif %}
@@ -485,12 +649,12 @@
                     {% else %}
                     <td class="data_description"></td>
                     {% endif %}
-                    <td class="data_user_id hidden">{{ data.my_user_id }}</td>
                     <td class="">
                         <button type="button" class="btn btn-success btn-sm app_auth_fast_channel_btn" data-toggle="modal" data-target="#app_auth_fast_channel_modal" >快捷权限管理</button>
                         <button type="button" class="btn btn-info btn-sm edit_app_auth_description_btn" data-toggle="modal" data-target="#edit_app_auth_description_modal">编辑备注</button>
                         <a href="{% url 'app_auth_app_manage' %}?my_user_id={{data.my_user_id}}&username={{data.username}}"  class="btn btn-sm btn-primary" role="button">应用权限管理</a>
                         <a href="{% url 'app_auth_app_group_manage' %}?my_user_id={{data.my_user_id}}&username={{data.username}}"  class="btn btn-sm btn-primary" role="button">应用组权限管理</a>
+                        <button type="button" class="btn btn-danger btn-sm delete_app_auth_btn" data-toggle="modal" data-target="#delete_app_auth_modal">删除</button>
 
                     </td>
                 </tr>
@@ -528,6 +692,83 @@
 {% endblock %}
 
 {% block another_content %}
+<!-- 用户添加模态框 -->
+<div class="modal fade juzhong" id="edit_username_modal" tabindex="-1" role="dialog" aria-labelledby="edit_username_lable" aria-hidden="true" data-backdrop="static" >
+	<div class="modal-dialog" style="width: 720px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+				<h4 class="modal-title" id="edit_username_lable">
+					用户添加删除操作
+                    <span style="color: #0063DC" class="">已存在的表单中的用户ID不显示</span>
+				</h4>
+                <!--<span id="xxxxxx" style="color: #FF0000;">　</span>-->
+
+			</div>
+			<div class="modal-body">
+
+                <div class="row" >
+                    <div class="col-sm-12">
+                        <div class="form-horizontal " role="form"  >
+
+							<div class="form-group ">
+                                <label class="control-label col-sm-2 " >用户添加:</label>
+                                <div class="panel panel-default col-sm-4" style="padding: 0;margin-left: 15px;margin-bottom: 0;">
+                                    <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
+                                        <div class="input-group">
+                                        <input type="text" class="form-control input-sm" id="edit_search_username" placeholder="查询用户名称">
+                                          <span class="input-group-btn">
+                                            <button type="button" class="btn btn-primary edit_search_username_btn btn-sm"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
+                                          </span>
+
+                                        </div>
+                                    </div>
+                                    <select size=10  multiple class="form-control panel-body" id="edit_select_username" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+                                    </select>
+                                </div>
+
+                                <div class="col-sm-1" style="padding: 0 10px 0 10px;">
+                                    <div style="margin-top: 30px;">
+                                        <button type="button" class="btn btn-xs btn-info " id="edit_select_username_btn" disabled="true">&gt;&gt;</button>
+                                        <button type="button" class="btn btn-xs btn-info " style="margin-top: 1px;" id="edit_delete_username_btn" disabled="true">&lt;&lt;</button>
+                                    </div>
+                                </div>
+
+                                <div class="panel panel-info col-sm-4" style="padding: 0;margin-bottom: 0;">
+                                    <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
+                                        <h3 class="panel-title " style="font-size: 12px;padding: 5px 10px;height: 30px;line-height: 1.5;">已选用户名称</h3>
+                                    </div>
+                                    <select size=10 multiple class="form-control panel-body" id="edit_selected_username" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+
+                                    </select>
+                                </div>
+
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+
+                                <div class="col-sm-6 col-sm-offset-3">
+									<span id="edit_my_user_id_help" style="color: #FF0000;">　</span>
+                                    <span id="edit_username_help" style="color: #FF0000;">　</span>
+								</div>
+							</div>
+
+
+                    </div>
+                    </div>
+                </div>
+
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">取消
+				</button>
+                <button type="button" class="btn btn-primary" id="edit_username_submit">
+					确认提交
+				</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
 
 <!-- 管理权限模态框 -->
 <div class="modal fade juzhong" id="app_auth_fast_channel_modal" tabindex="-1" role="dialog" aria-labelledby="app_auth_fast_channel_lable" aria-hidden="true" data-backdrop="static" >
@@ -693,7 +934,7 @@
 </div>
 
 <!--删除提示框，也是用的模态框-->
-<div class="modal fade juzhong " id="delete_app_group_modal" tabindex="-1" role="dialog" aria-labelledby="delete_app_group__lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+<div class="modal fade juzhong " id="delete_app_auth_modal" tabindex="-1" role="dialog" aria-labelledby="delete_app_auth_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
     <div class="modal-dialog">
         <!--下面这个modal-content的div可以调整整个模态框的大小-->
         <div class="modal-content" style="width:50%;">
@@ -703,13 +944,13 @@
             </div>
             <div class="modal-body">
                 <!--隐藏属性，用来获取触发模态框的那条记录的相关数据-->
-                <input type="hidden" class="hidden_app_group_name"/>
+                <input type="hidden" class="hidden_my_user_id"/>
                 <p style="color: #FF000C;">确定要删除吗</p>
             </div>
             <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
             <div class="modal-footer" style="height:100%;">
                 <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-danger" id="delete_app_group_button" data-dismiss="modal" data-toggle="modal" data-target=".loading_modal"> 确定</button>
+                <button type="button" class="btn btn-danger" id="delete_app_auth_submit" data-dismiss="modal" data-toggle="modal" data-target=".loading_modal"> 确定</button>
             </div>
         </div>
     </div>

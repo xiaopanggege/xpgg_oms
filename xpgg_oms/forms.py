@@ -98,6 +98,26 @@ class AppGroupUpdateForm(forms.Form):
     description = forms.CharField(required=False, max_length=200, error_messages={'max_length': '最多200位'})
 
 
+# 发布系统 应用授权 表单验证 验证用户ID是否重复
+def my_user_id_exist_validate(value):
+    is_my_user_id_exist = AppAuth.objects.filter(my_user_id=value).exists()
+    if is_my_user_id_exist:
+        raise ValidationError('用户ID已存在，请检查')
+
+
+# 发布系统 应用授权 表单验证 验证用户名称是否重复
+def username_exist_validate(value):
+    is_username_exist = AppAuth.objects.filter(username=value).exists()
+    if is_username_exist:
+        raise ValidationError('用户名称已存在，请检查')
+
+
+# 发布系统 应用授权  创建用户 主
+class AppAuthCreateForm(forms.Form):
+    my_user_id = forms.IntegerField(error_messages={'required': '用户ID不能为空'}, validators=[my_user_id_exist_validate],)
+    username = forms.CharField(max_length=50, error_messages={'required': '用户名称不能为空', 'max_length': '最多50位'}, validators=[username_exist_validate],)
+
+
 # 发布系统 应用授权 更新表单验证 验证应用组名称是否存在
 def app_group_validate(value):
     for app_group in value.split(','):
