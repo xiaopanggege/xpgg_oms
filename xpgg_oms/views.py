@@ -1463,6 +1463,13 @@ def salt_exe_ajax(request):
                 result['result'] = list(minion_id_list)
                 result['status'] = True
                 return JsonResponse(result)
+            elif request.GET.get('salt_exe_tag_key') == 'search_salt_module':
+                salt_cmd_type = request.GET.get('salt_cmd_type')
+                salt_cmd_list = SaltCmdInfo.objects.filter(salt_cmd_type=salt_cmd_type).values_list(
+                    'salt_cmd_module', flat=True).distinct().order_by('salt_cmd_module')
+                result['result'] = list(salt_cmd_list)
+                result['status'] = True
+                return JsonResponse(result)
             elif request.GET.get('salt_exe_tag_key') == 'search_salt_cmd':
                 salt_cmd_type = request.GET.get('salt_cmd_type')
                 salt_cmd_module = request.GET.get('salt_cmd_module')
@@ -2441,7 +2448,7 @@ def app_release_ajax(request):
                                                                 jid_data = saltapi.jid_api(jid=jid)
                                                                 # 注意[{}] ！= False所以不能用if jid_data['return']判断是否有数据，这个坑埋了好久奶奶的！！！
                                                                 if jid_data is False:
-                                                                    app_log.append('\n同步文件后台出错,SaltAPI调用jid_api请求出错，请联系管理员. 时间戳%s\n' % time.strftime('%X'))
+                                                                    app_log.append('\n同步文件后台出错,SaltAPI调用jid_api请求出错,jid:%s，请联系管理员. 时间戳%s\n' % (jid, time.strftime('%X')))
                                                                     result['result'] = app_log
                                                                     return JsonResponse(result)
                                                                 elif jid_data['return'] == [{}]:

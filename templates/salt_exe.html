@@ -182,6 +182,37 @@
 	         	}
 			});
 
+        //   client下拉框改变，触发module选择框填充命令
+            $('#client_select').blur(function () {
+                var client = $('#client_select').val();
+                if(client == 'local' || client == 'local_async'){
+                    var salt_cmd_type = 'module';
+                }else if(client == 'runner'){
+                    var salt_cmd_type = 'runner';
+                }
+                $.ajax({
+					url:"{% url 'salt_exe_ajax' %}",
+					type:'GET',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+					    'salt_cmd_type':salt_cmd_type,
+                        'salt_exe_tag_key':'search_salt_module'
+					},
+					success:function(result){
+						if(result.status){
+						    $("#module_datalist").empty();
+						    $.each(result.result,function (index,content) {
+						        $("<option value='"+content+"'>"+content+"</option>").appendTo("#module_datalist");
+                            })
+						}else {
+						    toastr.error(result.result,'error',{timeOut: 1500});
+                        }
+					}
+				});
+            });
+
 	     //   module选择框改变，触发Fun选择框填充命令
             $('#module_select').blur(function () {
                 var client = $('#client_select').val();
