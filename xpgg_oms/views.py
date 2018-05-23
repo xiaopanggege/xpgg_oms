@@ -150,13 +150,22 @@ class SaltAPI(object):
         message = 'async_state_api'
         return self.public(data, message)
 
-    # 封装通过jid查询任务执行状态，以便后续操作
+    # 封装通过jid查询任务执行状态，以便后续操作，返回[{}]表示执行完毕，返回数据表示还在执行
     def job_active_api(self, tgt, arg, tgt_type='glob'):
         data = {'client': 'local', 'tgt': tgt, 'tgt_type': tgt_type, 'fun': 'saltutil.find_job', 'arg': arg}
         message = 'job_active_api'
         return self.public(data, message)
 
-    # 封装查询jid结果方法,使用的时候只要代入tgt和arg即可，最多把tgt_type也代入
+    # 封装查询jid执行状态,使用的时候只要代入jid既可以，返回true表示执行结束并且成功退出，false表示没有成功或者还没执行完毕
+    def job_exit_success_api(self, client='runner', fun='jobs.exit_success', jid=None):
+        data = {'client': client,
+                'fun': fun,
+                'jid': jid,
+                }
+        message = 'job_exit_success_api'
+        return self.public(data, message)
+
+    # 封装查询jid结果方法,使用的时候只要代入jid既可以
     def jid_api(self, client='runner', fun='jobs.lookup_jid', jid=None):
         data = {'client': client,
                 'fun': fun,
@@ -979,15 +988,15 @@ def minion_manage(request):
                     data_list = getPage(request, minion_data, 9)
                 else:
                     if search_field == 'search_minion_id':
-                        minion_data = MinionList.objects.filter(minion_id__contains=search_content).order_by(
+                        minion_data = MinionList.objects.filter(minion_id__icontains=search_content).order_by(
                             'create_date')
                         data_list = getPage(request, minion_data, 9)
                     elif search_field == 'search_minion_sys':
-                        minion_data = MinionList.objects.filter(sys__contains=search_content).order_by(
+                        minion_data = MinionList.objects.filter(sys__icontains=search_content).order_by(
                             'create_date')
                         data_list = getPage(request, minion_data, 9)
                     else:
-                        minion_data = MinionList.objects.filter(ip__contains=search_content).order_by(
+                        minion_data = MinionList.objects.filter(ip__icontains=search_content).order_by(
                             'create_date')
                         data_list = getPage(request, minion_data, 9)
                 return render(request, 'minion_manage.html',
@@ -1032,11 +1041,11 @@ def salt_cmd_manage(request):
                     data_list = getPage(request, data, 12)
                 else:
                     if search_field == 'search_salt_cmd':
-                        data = SaltCmdInfo.objects.filter(salt_cmd__contains=search_content).order_by('salt_cmd_type',
+                        data = SaltCmdInfo.objects.filter(salt_cmd__icontains=search_content).order_by('salt_cmd_type',
                                                                                                       'salt_cmd')
                         data_list = getPage(request, data, 12)
                     elif search_field == 'search_salt_cmd_type':
-                        data = SaltCmdInfo.objects.filter(salt_cmd_type__contains=search_content).order_by('salt_cmd_type',
+                        data = SaltCmdInfo.objects.filter(salt_cmd_type__icontains=search_content).order_by('salt_cmd_type',
                                                                                                            'salt_cmd')
                         data_list = getPage(request, data, 12)
                     else:
@@ -1056,7 +1065,7 @@ def salt_cmd_manage_ajax(request):
             # 在ajax提交时候多一个字段作为标识，来区分多个ajax提交哈，厉害！
             if request.GET.get('salt_cmd_tag_key') == 'modal_search_minion_id':
                 minion_id = request.GET.get('minion_id')
-                minion_id_list = MinionList.objects.filter(minion_id__contains=minion_id).order_by(
+                minion_id_list = MinionList.objects.filter(minion_id__icontains=minion_id).order_by(
                     'create_date').values_list('minion_id', flat=True)
                 result['result'] = list(minion_id_list)
                 result['status'] = True
@@ -1458,7 +1467,7 @@ def salt_exe_ajax(request):
             # 在ajax提交时候多一个字段作为标识，来区分多个ajax提交哈，厉害！
             if request.GET.get('salt_exe_tag_key') == 'modal_search_minion_id':
                 minion_id = request.GET.get('minion_id')
-                minion_id_list = MinionList.objects.filter(minion_id__contains=minion_id).order_by(
+                minion_id_list = MinionList.objects.filter(minion_id__icontains=minion_id).order_by(
                     'create_date').values_list('minion_id', flat=True)
                 result['result'] = list(minion_id_list)
                 result['status'] = True
@@ -1522,6 +1531,31 @@ def salt_exe_ajax(request):
                                 return JsonResponse(result)
                             except Exception as e:
                                 app_log.append('\n' + 'salt命令执行失败_error(2):' + str(response_data))
+                                result['result'] = app_log
+                                return JsonResponse(result)
+            elif request.GET.get('salt_exe_tag_key') == 'search_jid_status':
+                jid = request.GET.get('jid')
+                with requests.Session() as s:
+                    saltapi = SaltAPI(session=s)
+                    if saltapi.get_token() is False:
+                        app_log.append('\nsalt命令执行查询jid后台出错_error(0)，请联系管理员')
+                        result['result'] = app_log
+                        return JsonResponse(result)
+                    else:
+                        response_data = saltapi.job_exit_success_api(jid=jid)
+                        # 当调用api失败的时候会返回false
+                        if response_data is False:
+                            app_log.append('\nsalt命令执行查询jid后台出错_error(1)，请联系管理员')
+                            result['result'] = app_log
+                            return JsonResponse(result)
+                        else:
+                            try:
+                                response_data = response_data['return'][0]
+                                result['status'] = True
+                                result['result'] = response_data
+                                return JsonResponse(result)
+                            except Exception as e:
+                                app_log.append('\n' + 'salt命令执行执行查询jid失败_error(2):' + str(response_data))
                                 result['result'] = app_log
                                 return JsonResponse(result)
     except Exception as e:
@@ -1947,25 +1981,53 @@ def app_release(request):
             # 默认如果没有get到的话值为None，这里我需要为空''，所以下面修改默认值为''
             search_field = request.GET.get('search_field', '')
             search_content = request.GET.get('search_content', '')
-            if search_content is '':
-                app_data = AppRelease.objects.all().order_by('create_time')
-                data_list = getPage(request, app_data, 15)
-            else:
-                if search_field == 'search_app_name':
-                    app_data = AppRelease.objects.filter(
-                        app_name__contains=search_content).order_by(
-                        'create_time')
-                    data_list = getPage(request, app_data, 15)
-                elif search_field == 'search_minion_id':
-                    app_data = AppRelease.objects.filter(
-                        minion_id__contains=search_content).order_by(
-                        'create_time')
+            # 判断是否为超级管理员或者普通用户，按权限分配
+            if request.user.is_superuser:
+                if search_content is '':
+                    app_data = AppRelease.objects.all().order_by('create_time')
                     data_list = getPage(request, app_data, 15)
                 else:
-                    data_list = ""
-            return render(request, 'app_release.html',
+                    if search_field == 'search_app_name':
+                        app_data = AppRelease.objects.filter(
+                            app_name__icontains=search_content).order_by(
+                            'create_time')
+                        data_list = getPage(request, app_data, 15)
+                    elif search_field == 'search_minion_id':
+                        app_data = AppRelease.objects.filter(
+                            minion_id__icontains=search_content).order_by(
+                            'create_time')
+                        data_list = getPage(request, app_data, 15)
+                    else:
+                        data_list = ""
+                return render(request, 'app_release.html',
                           {'data_list': data_list, 'search_field': search_field,
                            'search_content': search_content})
+            else:
+                username = request.user.username
+                try:
+                    app_auth_app_data = AppAuth.objects.get(username=username).app_perms.split(',')
+                except Exception as e:
+                    app_auth_app_data = ''
+                if search_content is '':
+                    app_data = AppRelease.objects.filter(app_name__in=app_auth_app_data).order_by('create_time')
+                    data_list = getPage(request, app_data, 15)
+                else:
+                    if search_field == 'search_app_name':
+                        app_data = AppRelease.objects.filter(app_name__in=app_auth_app_data).filter(
+                            app_name__icontains=search_content).order_by(
+                            'create_time')
+                        data_list = getPage(request, app_data, 15)
+                    elif search_field == 'search_minion_id':
+                        app_data = AppRelease.objects.filter(app_name__in=app_auth_app_data).filter(
+                            minion_id__icontains=search_content).order_by(
+                            'create_time')
+                        data_list = getPage(request, app_data, 15)
+                    else:
+                        data_list = ""
+                return render(request, 'app_release.html',
+                          {'data_list': data_list, 'search_field': search_field,
+                           'search_content': search_content})
+
     except Exception as e:
         logger.error('应用发布页面有问题:'+str(e))
         return render(request, 'app_release.html')
@@ -1981,7 +2043,7 @@ def app_release_ajax(request):
             if request.GET.get('app_tag_key') == 'modal_search_minion_id':
                 minion_id = request.GET.get('minion_id')
                 sys = request.GET.get('sys_type')
-                minion_id_list = MinionList.objects.filter(minion_id__contains=minion_id, sys=sys).order_by(
+                minion_id_list = MinionList.objects.filter(minion_id__icontains=minion_id, sys=sys).order_by(
                     'create_date').values_list('minion_id', flat=True)
                 result['result'] = list(minion_id_list)
                 result['status'] = True
@@ -3320,24 +3382,49 @@ def app_group(request):
             # 默认如果没有get到的话值为None，这里我需要为空''，所以下面修改默认值为''
             search_field = request.GET.get('search_field', '')
             search_content = request.GET.get('search_content', '')
-            if search_content is '':
-                app_group_data = AppGroup.objects.all().order_by('id')
-                data_list = getPage(request, app_group_data, 12)
-            else:
-                if search_field == 'search_app_group_name':
-                    app_data = AppGroup.objects.filter(
-                        app_group_name__contains=search_content).order_by(
-                        'id')
-                    data_list = getPage(request, app_data, 12)
-                elif search_field == 'search_app_group_members':
-                    app_data = AppGroup.objects.filter(
-                        app_group_members__contains=search_content).order_by(
-                        'id')
-                    data_list = getPage(request, app_data, 12)
+            if request.user.is_superuser:
+                if search_content is '':
+                    app_group_data = AppGroup.objects.all().order_by('id')
+                    data_list = getPage(request, app_group_data, 12)
                 else:
-                    data_list = ""
-            return render(request, 'app_group.html',
-                          {'data_list': data_list, 'search_field': search_field, 'search_content': search_content})
+                    if search_field == 'search_app_group_name':
+                        app_data = AppGroup.objects.filter(
+                            app_group_name__icontains=search_content).order_by(
+                            'id')
+                        data_list = getPage(request, app_data, 12)
+                    elif search_field == 'search_app_group_members':
+                        app_data = AppGroup.objects.filter(
+                            app_group_members__icontains=search_content).order_by(
+                            'id')
+                        data_list = getPage(request, app_data, 12)
+                    else:
+                        data_list = ""
+                return render(request, 'app_group.html',
+                              {'data_list': data_list, 'search_field': search_field, 'search_content': search_content})
+            else:
+                username = request.user.username
+                try:
+                    app_auth_app_group_data = AppAuth.objects.get(username=username).app_group_perms.split(',')
+                except Exception as e:
+                    app_auth_app_group_data = ''
+                if search_content is '':
+                    app_group_data = AppGroup.objects.filter(app_group_name__in=app_auth_app_group_data).order_by('id')
+                    data_list = getPage(request, app_group_data, 12)
+                else:
+                    if search_field == 'search_app_group_name':
+                        app_data = AppGroup.objects.filter(app_group_name__in=app_auth_app_group_data).filter(
+                            app_group_name__icontains=search_content).order_by(
+                            'id')
+                        data_list = getPage(request, app_data, 12)
+                    elif search_field == 'search_app_group_members':
+                        app_data = AppGroup.objects.filter(app_group_name__in=app_auth_app_group_data).filter(
+                            app_group_members__icontains=search_content).order_by(
+                            'id')
+                        data_list = getPage(request, app_data, 12)
+                    else:
+                        data_list = ""
+                return render(request, 'app_group.html',
+                              {'data_list': data_list, 'search_field': search_field, 'search_content': search_content})
     except Exception as e:
         logger.error('应用发布组页面有问题', e)
         return render(request, 'app_group.html')
@@ -3347,7 +3434,6 @@ def app_group(request):
 def app_group_members_manage(request):
     try:
         if request.method == 'GET':
-            # 默认如果没有get到的话值为None，这里我需要为空''，所以下面修改默认值为''
             app_group_name = request.GET.get('app_group_name')
             app_group_members_data = AppGroup.objects.get(app_group_name=app_group_name).app_group_members
             app_data = []
@@ -3408,7 +3494,7 @@ def app_group_ajax(request):
             elif request.GET.get('app_group_tag_key') == 'modal_search_app_name':
 
                 app_name = request.GET.get('app_name')
-                app_name_list = AppRelease.objects.filter(app_name__contains=app_name).order_by(
+                app_name_list = AppRelease.objects.filter(app_name__icontains=app_name).order_by(
                     'create_time').values_list('app_name', flat=True)
                 result['result'] = list(app_name_list)
                 result['status'] = True
@@ -3482,13 +3568,13 @@ def app_auth(request):
                 data_list = getPage(request, app_auth_data, 12)
             else:
                 if search_field == 'search_myuser_username':
-                    app_auth_data = AppAuth.objects.filter(username__contains=search_content).order_by('my_user_id')
+                    app_auth_data = AppAuth.objects.filter(username__icontains=search_content).order_by('my_user_id')
                     data_list = getPage(request, app_auth_data, 12)
                 elif search_field == 'search_app_name':
-                    app_auth_data = AppAuth.objects.filter(app_perms__contains=search_content).order_by('my_user_id')
+                    app_auth_data = AppAuth.objects.filter(app_perms__icontains=search_content).order_by('my_user_id')
                     data_list = getPage(request, app_auth_data, 12)
                 elif search_field == 'search_app_group_name':
-                    app_auth_data = AppAuth.objects.filter(app_group_perms__contains=search_content).order_by('my_user_id')
+                    app_auth_data = AppAuth.objects.filter(app_group_perms__icontains=search_content).order_by('my_user_id')
                     data_list = getPage(request, app_auth_data, 12)
                 else:
                     data_list = ""
@@ -3518,10 +3604,10 @@ def app_auth_app_manage(request):
                 data_list = getPage(request, app_data_list, 12)
             else:
                 if search_field == 'search_app_name':
-                    app_data_list = app_data_list.filter(app_name__contains=search_content)
+                    app_data_list = app_data_list.filter(app_name__icontains=search_content)
                     data_list = getPage(request, app_data_list, 12)
                 elif search_field == 'search_minion_id':
-                    app_data_list = app_data_list.filter(minion_id__contains=search_content)
+                    app_data_list = app_data_list.filter(minion_id__icontains=search_content)
                     data_list = getPage(request, app_data_list, 12)
                 else:
                     data_list = ""
@@ -3551,10 +3637,10 @@ def app_auth_app_group_manage(request):
                 data_list = getPage(request, app_data_list, 12)
             else:
                 if search_field == 'search_app_group_name':
-                    app_data_list = app_data_list.filter(app_group_name__contains=search_content).order_by('id')
+                    app_data_list = app_data_list.filter(app_group_name__icontains=search_content).order_by('id')
                     data_list = getPage(request, app_data_list, 12)
                 elif search_field == 'search_app_group_members':
-                    app_data_list = app_data_list.filter(app_group_members__contains=search_content).order_by('id')
+                    app_data_list = app_data_list.filter(app_group_members__icontains=search_content).order_by('id')
                     data_list = getPage(request, app_data_list, 12)
                 else:
                     data_list = ""
@@ -3591,20 +3677,20 @@ def app_auth_ajax(request):
                     return JsonResponse(result)
             elif request.GET.get('app_auth_tag_key') == 'modal_search_username':
                 username = request.GET.get('username')
-                username_list = MyUser.objects.filter(username__contains=username).order_by('id').values('id', 'username')
+                username_list = MyUser.objects.filter(username__icontains=username).order_by('id').values('id', 'username')
                 result['result'] = list(username_list)
                 result['status'] = True
                 return JsonResponse(result)
             elif request.GET.get('app_auth_tag_key') == 'modal_search_app_name':
                 app_name = request.GET.get('app_name')
-                app_name_list = AppRelease.objects.filter(app_name__contains=app_name).order_by(
+                app_name_list = AppRelease.objects.filter(app_name__icontains=app_name).order_by(
                     'create_time').values_list('app_name', flat=True)
                 result['result'] = list(app_name_list)
                 result['status'] = True
                 return JsonResponse(result)
             elif request.GET.get('app_auth_tag_key') == 'modal_search_app_group':
                 app_group_name = request.GET.get('app_group_name')
-                app_group_list = AppGroup.objects.filter(app_group_name__contains=app_group_name).order_by(
+                app_group_list = AppGroup.objects.filter(app_group_name__icontains=app_group_name).order_by(
                     'id').values_list('app_group_name', flat=True)
                 result['result'] = list(app_group_list)
                 result['status'] = True
@@ -3652,7 +3738,6 @@ def app_auth_ajax(request):
                     app_perms = AppAuth.objects.get(my_user_id=my_user_id, username=username).app_perms
                     app_perms_list = app_perms.split(',')
                     # 为了结合单个移除和批量移除，对传过来的app_name做列表化因为批量删除就是逗号隔开的字符串，然后移除操作
-                    logger.error(app_name)
                     for data in app_name.split(','):
                         app_perms_list.remove(data) if data in app_perms_list else app_perms_list
                     logger.error(app_perms_list)

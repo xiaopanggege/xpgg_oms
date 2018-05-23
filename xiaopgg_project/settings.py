@@ -72,7 +72,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'xpgg_oms.middleware.UserAuthentication',
+    'xpgg_oms.middleware.UserAuthentication',  # 自定义的中间件
 ]
 
 ROOT_URLCONF = 'xiaopgg_project.urls'
