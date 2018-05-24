@@ -285,6 +285,8 @@
 				});
             });
 
+
+            // 执行salt命令按钮事件
             $('#salt_exe_sumbit').click(function () {
                 var client = $('#client_select').val();
                 var fun = $('#cmd_select').val();
@@ -402,7 +404,7 @@
             };
 
             
-         // 查看异步任务状态执行状态
+         // 查看任务执行状态
          $('.search_jid_status_btn').click(function () {
             var jid = $('#search_jid_status').val();
             if($.trim(jid).length == 0){
@@ -449,7 +451,56 @@
                         }
 					}
 				});
-         });   
+         });
+
+         // 查看任务结果
+         $('.search_jid_result_btn').click(function () {
+            var jid = $('#search_jid_result').val();
+            if($.trim(jid).length == 0){
+                $('#search_jid_result_help').html('jid为空，查询个屁啊');
+                return false
+            }
+            var $btn = $(this).button('loading');
+            $("#salt_exe_result").text("正在执行.....");
+            $.ajax({
+					url:"{% url 'salt_exe_ajax' %}",
+					type:'GET',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+					    'jid':jid,
+                        'salt_exe_tag_key':'search_jid_result'
+					},
+					success:function(result){
+						if(result.result){
+						    $("#salt_exe_result").empty();
+                            var data_count = 0;
+                            // console.log(JSON.stringify(result.result));
+                            $.each(result.result,function (k,v) {
+                                if($.isPlainObject(v)){
+                                    $('#salt_exe_result').append("<p style='color: #45ddd4;font-weight: bold;'>"+k+":</p>");
+                                    result_fun(v,data_count+1);
+                                    $('#salt_exe_result').append('\n\n');
+                                }else if($.isArray(v)){
+                                    $('#salt_exe_result').append("<p style='color: #45ddd4;font-weight: bold;'>"+k+":</p>");
+                                    result_fun(v,data_count+1);
+                                    $('#salt_exe_result').append('\n\n');
+                                }else{
+                                    $('#salt_exe_result').append("<p style='color: #3FB8AF;font-weight: bold;'>"+k+":</p>");
+                                    $('#salt_exe_result').append("<p style='padding-left: 25px;'>"+v+"</p>");
+                                    $('#salt_exe_result').append('\n\n');
+                                }
+                            });
+                            $btn.button('reset');
+						}else {
+						    $("#salt_exe_result").empty();
+						    $('#salt_exe_result').html("<p style='color: #A00000;'>"+result.result+"</p>");
+						    $btn.button('reset');
+                        }
+					}
+				});
+         });
             
 
 		});
@@ -462,10 +513,11 @@
 {% block panel_body_content %}
 
 <div class="row-fluid ">
-    <div class="col-xs-6 overflow_set">
+    <div class="col-xs-6 overflow_set" >
         <div class="he10"></div>
-        <div class="form-horizontal " role="form"  >
-            <div class="form-group tgt_div" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" >
+        <div class="form-horizontal " role="form" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;margin-left: -15px;margin-right: 10px;" >
+            <div class="he10"></div>
+            <div class="form-group tgt_div" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;margin-left: 10px;margin-right: 10px;" >
 				<label class="label label-info " style="font-size: 17px;">执行对象选择</label>
 				<div class="he10"></div>
 				<div class="container-fluid" style="font-size: 14px;">
@@ -645,13 +697,17 @@
                 <label class="control-label  " style="font-weight: normal;color: #3FB8AF;" >提示：输入参数</label>
             </div>
 
-            <div class="form-group col-sm-2">
+            <div class="form-group " style="margin-left: 5px;">
+                <div class="col-sm-2">
                 <button type="button" class="btn btn-success " id="salt_exe_sumbit" data-loading-text="正在执行...">执行命令</button>
+
+                </div>
             </div>
-
-
-            <div class="form-group col-sm-12 async_select_div" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;padding: 0;" >
-				<label class="label label-info " style="font-size: 17px;">异步任务查询快速通道</label>
+        </div>
+        <hr />
+        <div class="form-horizontal " role="form"  >
+            <div class="form-group col-sm-12 async_select_div" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;padding: 0" >
+				<label class="label label-info " style="font-size: 17px;">任务查询快速通道</label>
 				<div class="he10"></div>
 				<div class="container-fluid" style="font-size: 14px;">
 					<div class="row-fluid">
@@ -665,8 +721,8 @@
                                     </span>
                                 </div>
                             </div>
-                            <label class="control-label  col-sm-4" style="font-weight: normal;color: #3FB8AF;text-align: left;" >提示：结果为[{}]说明任务执行完成</label>
-                            <span class=" col-sm-12" id="search_jid_status_help" style="color: #FF0000;">　</span>
+                            <label class="control-label  col-sm-4" style="font-weight: normal;color: #3FB8AF;text-align: left;" >提示：结果为true说明任务执行完成</label>
+                            <span class=" col-sm-10 col-sm-offset-2" id="search_jid_status_help" style="color: #FF0000;">　</span>
                         </div>
 
 
@@ -681,7 +737,7 @@
                                 </div>
                             </div>
                             <label class="control-label  col-sm-4" style="font-weight: normal;color: #3FB8AF;text-align: left;" >提示：注意先确认任务是否执行完毕</label>
-                            <span class=" col-sm-12" id="search_jid_result_help" style="color: #FF0000;">　</span>
+                            <span class=" col-sm-10 col-sm-offset-2" id="search_jid_result_help" style="color: #FF0000;">　</span>
                         </div>
 
 					</div>
@@ -689,22 +745,19 @@
 
 			</div>
 
-            <div class="form-group col-sm-12 ">
-                <ul class="list-group">
-                    <li class="list-group-item ">帮助1：Arg参数如多个参数则以英文连续双逗号“,,”隔开，主要是为了后台能正确处理，其写法与CLI下有所不同；
-                        <br>&emsp;&emsp;&emsp;&nbsp;&nbsp;如 ps.proc_info 命令查看帮助可以看到命令行是这样的：
-                        <br>&emsp;&emsp;&emsp;&nbsp;&nbsp;salt '*' ps.proc_info 2322 attrs='["pid", "name"]'参数是：2322 attrs='["pid", "name"]'
-                        <br>&emsp;&emsp;&emsp;&nbsp;&nbsp;而在这里则需要写成：
-                        <br>&emsp;&emsp;&emsp;&nbsp;&nbsp;pid=11932,,attrs=["cmdline","pid","name"] # 注意内部使用双引号</li>
-                    <li class="list-group-item">帮助2：Module其实就是命令Fun中“.”前面的内容，选择正确的Module在Fun填写时可以给出友好的提示。</li>
-                    <li class="list-group-item">帮助9：由于采用API调用方式，如执行对象不存在或断线则不会出现结果，返回结果为空。</li>
-                </ul>
+            <div class="form-group col-sm-12 " style="font-size: 14px;border: 1px #CCCCCC solid;border-radius: 5px;padding: 0;">
+				<!--<div class="container-fluid" style="font-size: 14px;">-->
+                <pre style="margin: 0;border: 0;">帮助1：Arg参数如果有多个参数，则以英文连续双逗号“,,”隔开，主要是为了后台能正确处理，其写法与CLI下有所不同；
+      如 ps.proc_info 命令查看帮助可以看到命令行是这样的：
+      salt '*' ps.proc_info 2322 attrs='["pid", "name"]'参数是：2322 attrs='["pid", "name"]'
+      而在这里则需要写成：
+      pid=11932,,attrs=["cmdline","pid","name"] # 注意内部使用双引号
+帮助2：Module其实就是命令Fun中“.”前面的内容，选择正确的Module在Fun填写时可以给出友好的提示。
+帮助3：由于采用API调用方式，如执行对象不存在或断线则不会出现结果，返回结果为空。
+                </pre>
             </div>
-            <!--<div class="form-group col-sm-12 alert alert-success ">-->
-                <!--<p>帮助9：由于采用API调用方式，如执行对象不存在或断线则不会出现结果，返回结果为空。</p>-->
-            <!--</div>-->
-        </div>
 
+        </div>
     </div>
     <div class="form-group col-xs-6 overflow_result" style="padding-top: 5px;">
         <label class="label label-danger " style="font-size: 17px;">结果打印</label>

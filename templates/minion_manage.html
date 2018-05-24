@@ -144,7 +144,7 @@
                 var description=$("#update_minion_description").val();
 //				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
 				$.ajax({
-					url:"{% url 'minion_manage' %}",
+					url:"{% url 'minion_manage_ajax' %}",
 					type:'POST',
 					dataType:'json',
                     //如果数据是列表即数组的话要加下面这个traditional不然传不过去
@@ -195,9 +195,9 @@
             });
 
 //            刷新minion列表
-            $("#update_minion_list").click(function () {
+            $("#update_minion_list_submit").click(function () {
                 $.ajax({
-					url:"{% url 'minion_manage' %}",
+					url:"{% url 'minion_manage_ajax' %}",
 					type:'POST',
 					dataType:'json',
                     //如果数据是列表即数组的话要加下面这个traditional不然传不过去
@@ -205,6 +205,33 @@
 //                    提交的数据要和后台form验证的变量一致，不过可以多出来，只要验证的有就行，比如这里就多了project_tag_key
 					data:{
                         'minion_manage_key':'update_minion_list'
+
+					},
+					success:function(result){
+						if(result.status){
+//						    关闭加载图片的模态框
+						    $('.loading_modal').modal('toggle');
+                            toastr.success(result.result,'Success',{timeOut: 1500});
+                            setTimeout(function(){window.location.href=window.location.href}, 1000);
+						}else {
+						        $('.loading_modal').modal('toggle');
+						        toastr.error(result.result,'Error',{timeOut: 1500});
+                        }
+					}
+				});
+            });
+
+//            只刷新minion列表的状态
+            $("#update_minion_status_btn").click(function () {
+                $.ajax({
+					url:"{% url 'minion_manage_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+//                    提交的数据要和后台form验证的变量一致，不过可以多出来，只要验证的有就行，比如这里就多了project_tag_key
+					data:{
+                        'minion_manage_key':'update_minion_status'
 
 					},
 					success:function(result){
@@ -242,8 +269,8 @@
                 <div style="margin-bottom: 5px;">
                 <div class="form-inline" role="form">
                     <div class="form-group">
-                        <button type="button" class="btn btn-success" id="update_minion_list" data-toggle="modal" data-target=".loading_modal">更新列表</button>
-                        <button type="button" class="btn btn-success" id="test_minion_list" data-toggle="modal" data-target=".loading_modal">更新状态</button>
+                        <button type="button" class="btn btn-success" id="update_minion_list_btn" data-toggle="modal" data-target="#update_minion_list_modal">更新列表</button>
+                        <button type="button" class="btn btn-success" id="update_minion_status_btn" data-toggle="modal" data-target=".loading_modal">更新状态</button>
                     </div>
 
 
@@ -327,9 +354,9 @@
                         <td class="minion_mem_total hidden">{{ minion.mem_total }}</td>
                         <td class="minion_createdate hidden">{{ minion.create_date | date:"Y年m月d日 H:i:s"}}</td>
 
-                        <td><button type="button" class="btn btn-info view_detail" data-toggle="modal" data-target="#view_minion">查询</button>
-                          <button type="button" class="btn btn-primary update_description" data-toggle="modal" data-target="#update_minion">修改备注</button>
-                          <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#minion_operation">操作</button>
+                        <td><button type="button" class="btn btn-info btn-sm view_detail" data-toggle="modal" data-target="#view_minion">查询</button>
+                          <button type="button" class="btn btn-primary btn-sm update_description" data-toggle="modal" data-target="#update_minion">修改备注</button>
+                          <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#minion_operation">操作</button>
                           </td>
                     </tr>
                     {% endfor%}
@@ -567,5 +594,30 @@
 			</div>
 		</div><!-- /.modal-content -->
 	</div><!-- /.modal -->
+</div>
+
+<!--更新列表提示框-->
+<div class="modal fade juzhong " id="update_minion_list_modal" tabindex="-1" role="dialog" aria-labelledby="update_minion_list_lable" aria-hidden="true" data-backdrop="static" >
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:80%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">操作提醒</h4>
+            </div>
+            <div class="modal-body">
+                <!--隐藏属性，用来获取触发模态框的那条记录的相关数据-->
+                <input type="hidden" class="hidden_minion_id_list"/>
+                <p style="color: #0063DC;text-align: center;">这将对所有minion进行更新,获取最新信息，minion越多所需时间越久</p>
+                <p style="color: #0063DC;text-align: center;">如果你只是想更新minion状态，可以选择更新状态按钮</p>
+                <p style="color: #FF000C;text-align: center;">确定要更新吗</p>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="update_minion_list_submit" data-dismiss="modal" data-toggle="modal" data-target=".loading_modal"> 确定</button>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

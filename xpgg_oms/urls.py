@@ -10,6 +10,7 @@ urlpatterns = [
     url(r'^net_tool/$', views.net_tool, name='net_tool'),
     url(r'^minion_client_install/$', views.minion_client_install, name='minion_client_install'),
     url(r'^minion_manage/$', views.minion_manage, name='minion_manage'),
+    url(r'^minion_manage_ajax/$', views.minion_manage_ajax, name='minion_manage_ajax'),
     url(r'^saltkey_manage/$', views.saltkey_manage, name='saltkey_manage'),
     url(r'^salt_key_global/$', views.salt_key_global, name='salt_key_global'),
     url(r'^salt_test_ping/$', views.salt_test_ping, name='salt_test_ping'),

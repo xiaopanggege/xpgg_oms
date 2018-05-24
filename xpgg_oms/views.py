@@ -1001,8 +1001,17 @@ def minion_manage(request):
                         data_list = getPage(request, minion_data, 9)
                 return render(request, 'minion_manage.html',
                               {'data_list': data_list, 'search_field': search_field, 'search_content': search_content})
-        elif request.is_ajax():
-            result = {'result': None, 'status': False}
+
+    except Exception as e:
+        logger.error('minion管理页面有问题', e)
+        return render(request, 'minion_manage.html')
+
+
+# minion管理ajax
+def minion_manage_ajax(request):
+    result = {'result': None, 'status': False}
+    try:
+        if request.is_ajax():
             # 在ajax提交时候多一个字段作为标识，来区分多个ajax提交哈，厉害！
             if request.POST.get('minion_manage_key') == 'update_minion_description':
                 minion_id = request.POST.get('minion_id')
@@ -1011,8 +1020,8 @@ def minion_manage(request):
                     result['result'] = '备注内容不得超过200字'
                 else:
                     MinionList.objects.filter(minion_id=minion_id).update(
-                                                     update_time=time.strftime('%Y年%m月%d日 %X'),
-                                                     description=description)
+                        update_time=time.strftime('%Y年%m月%d日 %X'),
+                        description=description)
                     result['result'] = '修改成功'
                     result['status'] = True
                 return JsonResponse(result)
@@ -1024,9 +1033,45 @@ def minion_manage(request):
                 else:
                     result['result'] = '更新失败'
                 return JsonResponse(result)
+            elif request.POST.get('minion_manage_key') == 'update_minion_status':
+                minion_list = MinionList.objects.values_list('minion_id', flat=True)
+                id_list = []
+                with requests.Session() as s:
+                    saltapi = SaltAPI(session=s)
+                    if saltapi.get_token() is False:
+                        logger.error('minion管理更新状态操作获取SaltAPI调用get_token请求出错')
+                        result['result'] = 'minion管理更新状态操作获取SaltAPI调用get_token请求出错'
+                        return JsonResponse(result)
+                    else:
+                        # salt检测minion最准的方法salt-run manage.status
+                        response_data = saltapi.saltrun_manage_status_api()
+                        if response_data is False:
+                            logger.error('minion管理更新状态，操作saltrun_manage_status_api调用API失败了')
+                            result['result'] = 'minion管理更新状态，操作saltrun_manage_status_api调用API失败了'
+                            return JsonResponse(result)
+                        else:
+                            status_up = response_data['return'][0]['up']
+                            for minion_id in status_up:
+                                updated_values = {'minion_id': minion_id, 'minion_status': '在线',
+                                                  'update_time': time.strftime('%Y年%m月%d日 %X')}
+                                MinionList.objects.update_or_create(minion_id=minion_id, defaults=updated_values)
+                            status_down = response_data['return'][0]['down']
+                            for minion_id in status_down:
+                                updated_values = {'minion_id': minion_id, 'minion_status': '在线',
+                                                  'update_time': time.strftime('%Y年%m月%d日 %X')}
+                                MinionList.objects.update_or_create(minion_id=minion_id, defaults=updated_values)
+                            id_list.extend(status_up)
+                            id_list.extend(status_down)
+                            for minion_id in minion_list:
+                                if minion_id not in id_list:
+                                    MinionList.objects.filter(minion_id=minion_id).delete()
+                            result['result'] = '更新成功'
+                            result['status'] = True
+                return JsonResponse(result)
     except Exception as e:
-        logger.error('minion管理页面有问题', e)
-        return render(request, 'minion_manage.html')
+        logger.error('minion管理ajax提交处理有问题', e)
+        result['result'] = 'minion管理ajax提交处理有问题'
+        return JsonResponse(result)
 
 
 # salt命令集
@@ -1405,7 +1450,7 @@ def salt_key_accept(request):
                             response_data = {'result': '接受成功', 'status': True}
                             return JsonResponse(response_data)
                         else:
-                            logger.error('接受key在执行刷新saltkey操作即cron.py里的方法时候出错了' + str(e))
+                            logger.error('接受key在执行刷新saltkey操作即cron.py里的方法时候出错了')
                             response_data = {'result': '接受失败', 'status': False}
                             return JsonResponse(response_data)
     except Exception as e:
@@ -1556,6 +1601,31 @@ def salt_exe_ajax(request):
                                 return JsonResponse(result)
                             except Exception as e:
                                 app_log.append('\n' + 'salt命令执行执行查询jid失败_error(2):' + str(response_data))
+                                result['result'] = app_log
+                                return JsonResponse(result)
+            elif request.GET.get('salt_exe_tag_key') == 'search_jid_result':
+                jid = request.GET.get('jid')
+                with requests.Session() as s:
+                    saltapi = SaltAPI(session=s)
+                    if saltapi.get_token() is False:
+                        app_log.append('\nsalt命令执行查询job结果后台出错_error(0)，请联系管理员')
+                        result['result'] = app_log
+                        return JsonResponse(result)
+                    else:
+                        response_data = saltapi.jid_api(jid=jid)
+                        # 当调用api失败的时候会返回false
+                        if response_data is False:
+                            app_log.append('\nsalt命令执行查询job结果后台出错_error(1)，请联系管理员')
+                            result['result'] = app_log
+                            return JsonResponse(result)
+                        else:
+                            try:
+                                response_data = response_data['return'][0]
+                                result['result'] = True
+                                result['result'] = response_data
+                                return JsonResponse(result)
+                            except Exception as e:
+                                app_log.append('\n' + 'salt命令执行执行查询job结果失败_error(2):' + str(response_data))
                                 result['result'] = app_log
                                 return JsonResponse(result)
     except Exception as e:
