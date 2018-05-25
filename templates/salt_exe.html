@@ -378,7 +378,7 @@
                             $btn.button('reset');
 						}else {
 						    $("#salt_exe_result").empty();
-						    $('#salt_exe_result').html("<p style='color: #A00000;'>"+result.result+"</p>");
+						    $('#salt_exe_result').html("<p style='color: #BF0000;'>"+result.result+"</p>");
 						    $btn.button('reset');
                         }
 					}
@@ -446,7 +446,7 @@
                             $btn.button('reset');
 						}else {
 						    $("#salt_exe_result").empty();
-						    $('#salt_exe_result').html("<p style='color: #A00000;'>"+result.result+"</p>");
+						    $('#salt_exe_result').html("<p style='color: #BF0000;'>"+result.result+"</p>");
 						    $btn.button('reset');
                         }
 					}
@@ -495,7 +495,7 @@
                             $btn.button('reset');
 						}else {
 						    $("#salt_exe_result").empty();
-						    $('#salt_exe_result').html("<p style='color: #A00000;'>"+result.result+"</p>");
+						    $('#salt_exe_result').html("<p style='color: #bf0000;'>"+result.result+"</p>");
 						    $btn.button('reset');
                         }
 					}
@@ -515,7 +515,7 @@
 <div class="row-fluid ">
     <div class="col-xs-6 overflow_set" >
         <div class="he10"></div>
-        <div class="form-horizontal " role="form" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;margin-left: -15px;margin-right: 10px;" >
+        <div class="form-horizontal " role="form" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;margin-left: -15px;margin-right: 15px;" >
             <div class="he10"></div>
             <div class="form-group tgt_div" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;margin-left: 10px;margin-right: 10px;" >
 				<label class="label label-info " style="font-size: 17px;">执行对象选择</label>
@@ -657,7 +657,7 @@
                     </select>
                     <span class="" id="client_select_help" style="color: #FF0000;">　</span>
                 </div>
-                <label class="control-label client_help" style="font-weight: normal;color: #3FB8AF;" >提示：等同命令行salt命令</label>
+                <label class="control-label client_help" style="font-weight: normal;color: #3FB8AF;font-size: 13px;" >提示：等同命令行salt命令</label>
             </div>
 
             <div class="form-group ">
@@ -671,7 +671,7 @@
                     </datalist>
                     <span class="" id="cmodule_select_help" style="color: #FF0000;">　</span>
                 </div>
-                <label class="control-label  " style="font-weight: normal;color: #3FB8AF;" >提示：选择模块,如已知晓命令可省略</label>
+                <label class="control-label  " style="font-weight: normal;color: #3FB8AF;font-size: 13px;" >提示：选择模块,如已知晓命令可省略</label>
             </div>
 
             <div class="form-group">
@@ -682,7 +682,7 @@
                     </datalist>
                     <span class="" id="cmd_select_help" style="color: #FF0000;">　</span>
                 </div>
-                <label class="control-label  " style="font-weight: normal;color: #3FB8AF;margin-right: 10px;" >提示：选择要执行的命令</label>
+                <label class="control-label  " style="font-weight: normal;color: #3FB8AF;margin-right: 10px;font-size: 13px;" >提示：选择要执行的命令</label>
                 <button type="button" class="btn btn-info btn-sm" id="salt_cmd_doc" >命令帮助</button>
                 <!--命令备注是用来查询这个命令自定义备注的，不过后面想想先不加我下有介绍例子感觉，例子应该够了-->
                 <!--<button type="button" class="btn btn-info btn-sm" id="salt_cmd_description" >命令备注</button>-->
@@ -694,7 +694,7 @@
                     <input type="text"  class="form-control" id="arg_data" >
                     <span class="" id="arg_data_help" style="color: #FF0000;">　</span>
                 </div>
-                <label class="control-label  " style="font-weight: normal;color: #3FB8AF;" >提示：输入参数</label>
+                <label class="control-label  " style="font-weight: normal;color: #3FB8AF;font-size: 13px;" >提示：输入参数</label>
             </div>
 
             <div class="form-group " style="margin-left: 5px;">
@@ -704,7 +704,7 @@
                 </div>
             </div>
         </div>
-        <hr />
+        <div class="he10"></div>
         <div class="form-horizontal " role="form"  >
             <div class="form-group col-sm-12 async_select_div" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;padding: 0" >
 				<label class="label label-info " style="font-size: 17px;">任务查询快速通道</label>
@@ -721,7 +721,7 @@
                                     </span>
                                 </div>
                             </div>
-                            <label class="control-label  col-sm-4" style="font-weight: normal;color: #3FB8AF;text-align: left;" >提示：结果为true说明任务执行完成</label>
+                            <label class="control-label  col-sm-4" style="font-weight: normal;color: #3FB8AF;text-align: left;font-size: 13px;" >提示：结果为true说明任务执行完成</label>
                             <span class=" col-sm-10 col-sm-offset-2" id="search_jid_status_help" style="color: #FF0000;">　</span>
                         </div>
 
@@ -736,7 +736,7 @@
                                     </span>
                                 </div>
                             </div>
-                            <label class="control-label  col-sm-4" style="font-weight: normal;color: #3FB8AF;text-align: left;" >提示：注意先确认任务是否执行完毕</label>
+                            <label class="control-label  col-sm-4" style="font-weight: normal;color: #3FB8AF;text-align: left;font-size: 13px;" >提示：注意先确认任务是否执行完毕</label>
                             <span class=" col-sm-10 col-sm-offset-2" id="search_jid_result_help" style="color: #FF0000;">　</span>
                         </div>
 
@@ -748,10 +748,13 @@
             <div class="form-group col-sm-12 " style="font-size: 14px;border: 1px #CCCCCC solid;border-radius: 5px;padding: 0;">
 				<!--<div class="container-fluid" style="font-size: 14px;">-->
                 <pre style="margin: 0;border: 0;">帮助1：Arg参数如果有多个参数，则以英文连续双逗号“,,”隔开，主要是为了后台能正确处理，其写法与CLI下有所不同；
-      如 ps.proc_info 命令查看帮助可以看到命令行是这样的：
+      例1： ps.proc_info 命令查看帮助可以看到命令行是这样的：
       salt '*' ps.proc_info 2322 attrs='["pid", "name"]'参数是：2322 attrs='["pid", "name"]'
       而在这里则需要写成：
-      pid=11932,,attrs=["cmdline","pid","name"] # 注意内部使用双引号
+      pid=11932,,attrs=["cmdline","pid","name"] # 注意第二个参数列表外的引号不需要了
+      例2： salt '*' state.sls myslsfile pillar="{foo: 'Foo!', bar: 'Bar!'}"
+      而在这里则需要写成：
+      myslsfile,,pillar={foo: 'Foo!', bar: 'Bar!'}  # 注意第二个参数字典外的引号不需要了
 帮助2：Module其实就是命令Fun中“.”前面的内容，选择正确的Module在Fun填写时可以给出友好的提示。
 帮助3：由于采用API调用方式，如执行对象不存在或断线则不会出现结果，返回结果为空。
                 </pre>

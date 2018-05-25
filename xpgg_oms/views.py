@@ -667,22 +667,23 @@ def format_state(result):
 def module_deploy(request):
     if request.method == 'GET':
         return render(request, 'module_deploy.html')
-    elif request.is_ajax():
+    elif request.is_ajax() and request.POST.get('module_deploy_tag_key') == 'state_exe':
         # 这里没有做对传入tgt判断是否存在并且是否离线，自己给自己埋坑了因为可以支持多种tgt_type判断太麻烦了蛋疼，不过下面有通过async_state_api返回值判断！！！！！！！！！！！！！！！
-        tgt = request.POST.get('tgt', None)
-        tgt_type = request.POST.get('tgt_type', 'glob')
-        # 注意在ajax传递的是列表过来的时候必须使用getlist来接收，不然接收到的是str！！！
-        state = request.POST.getlist('state', None)
-        with requests.Session() as s:
-            saltapi = SaltAPI(session=s)
-            # 当调用api失败的时候比如salt-api服务stop了会返回false
-            if saltapi.get_token() is False:
-                response_data = '模块部署失败，SaltAPI调用get_token请求出错'
-                return JsonResponse({'result': response_data, 'status': False})
-            else:
-                # 多模块部署
-                data_list = []  # 用来存放多个模块部署使用的
-                for arg in state:
+        data_list = []  # 用来存结果的
+        try:
+            tgt = request.POST.get('tgt', None)
+            tgt_type = request.POST.get('tgt_type')
+            arg = request.POST.getlist('arg')
+            # 下面这个是执行state用队列模式，还有一种是可以用并行，用队列安全性高一些不会出现同时执行同一个state对同一台minion但是相应速度慢
+            # 并且我发现如果在下面api接口async_state_api里直接写arg=arg.append('queue=True')是不行的奶奶的，弄半天才发现！
+            arg.append('queue=True')
+            with requests.Session() as s:
+                saltapi = SaltAPI(session=s)
+                # 当调用api失败的时候比如salt-api服务stop了会返回false
+                if saltapi.get_token() is False:
+                    response_data = '模块部署失败，SaltAPI调用get_token请求出错'
+                    return JsonResponse({'result': response_data, 'status': False})
+                else:
                     # 调用async_state_api方法来执行部署
                     jid = saltapi.async_state_api(tgt=tgt, tgt_type=tgt_type, arg=arg)
                     # 当调用api失败的时候比如salt-api服务stop了会返回false
@@ -695,8 +696,9 @@ def module_deploy(request):
                         return JsonResponse({'result': response_data, 'status': False})
                     else:
                         jid = jid['return'][0]['jid']
-                        check_count = 20
+                        check_count = 60
                         re_count = 0
+                        time.sleep(15)
                         while check_count:
                             false_count = 0
                             job_status = saltapi.job_active_api(tgt=tgt, tgt_type=tgt_type, arg=jid)
@@ -754,18 +756,23 @@ def module_deploy(request):
                                         # 这个是对格式化输出的一个判断，类型str说明格式化出错了呵呵，一般在minion一个sls未执行完成又执行会出现
                                         if type(format_result) == str:
                                             data_list.append(format_state(jid_data))
+                                            response_data = {'result': jid_data['return'][0], 'status': False}
+                                            return JsonResponse(response_data)
                                         else:
                                             data_list.extend(format_state(jid_data))
                                             break
                                 check_count -= 1
-                                time.sleep(20)
+                                time.sleep(10)
                         else:
                             response_data = {
-                                'result': '执行时间已经超过10分钟了，建议您可以去salt任务管理里查看jid：%s 的结果以免耽误泡妞时间。。' % jid,
+                                'result': '执行时间已经超过10分钟了，建议您可以去salt命令执行里有任务查看快捷通道，jid：%s 的结果以免耽误泡妞时间。。' % jid,
                                 'status': False}
                             return JsonResponse(response_data)
-                response_data = {'result': data_list, 'status': True}
-                return JsonResponse(response_data)  # 新版1.7以上写法
+        except Exception as e:
+            response_data = {'result': '模块部署失败，内部代码可能有问题：%s。。' % str(e), 'status': False}
+            return JsonResponse(response_data)
+        response_data = {'result': data_list, 'status': True}
+        return JsonResponse(response_data)  # 新版1.7以上写法
 
 
 # 网络扫描

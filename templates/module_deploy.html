@@ -16,7 +16,7 @@
         }
 
 		/*pre标签不会自动换行第二个是换行，第一个是滚动条*/
-		#result1{
+		#state_exe_result{
         	overflow-y: auto;
 			white-space: pre-wrap;
         }
@@ -42,35 +42,10 @@
     		$(window).resize();
 
 
-    		// 模块部署主机下拉菜单触发文本框提示内容改变
-	        $('#sel_1').change(function(){
-	         	if($(this).val()=='list'){
-	         		$('#minion_info').attr("placeholder",'请输入格式: ID,ID');
-	         		$('#minion_info').val("");
-	         	}else if($(this).val()=='glob'){
-	         		$('#minion_info').attr("placeholder",'请输入Minion主机 ID');
-	         		$('#minion_info').val("");
-	         	}else if($(this).val()=='nodegroup'){
-	         		$('#minion_info').attr("placeholder",'请输入主机组名');
-	         		$('#minion_info').val("");
-	         	}else if($(this).val()=='ipcidr'){
-	         		$('#minion_info').attr("placeholder",'请输入Minion主机 IP');
-	         		$('#minion_info').val("");
-	         	}else if($(this).val()=='grain'){
-	         		$('#minion_info').attr("placeholder",'例:os:CentOS或os:Windows');
-	         		$('#minion_info').val("");
-	         	}
-			});
-
-	        // 主机输入框获取焦点后清空提示信息keyup是键盘弹起后的操作，比较适合输入框，选择框不行所以用focus
-	    	$('#minion_info').keyup(function(){
-	    		$('#jingao1').text('*');
-	    	});
-            //	模块选择清空错误提示
-	    	$("input[type='checkbox']").focus(function(){
-	    		$('#jingao2').text('');
-	    	});
-
+    		// // {#  django 跨站验证需要下面的 ajaxSetup   #}
+            $.ajaxSetup({
+                 data: {csrfmiddlewaretoken: '{{ csrf_token }}' },
+            });
 
 
 	    	//页面输入框改变清空错误提示信息
@@ -85,6 +60,10 @@
 	    	});
 	    	$('#tgt_pcre').keyup(function(){
 	    		$('#tgt_pcre_help').text('　');
+	    	});
+	    	
+	    	$("input[type='checkbox']").focus(function(){
+	    		$('#select_arg_help').text('　');
 	    	});
 
 
@@ -197,61 +176,85 @@
             });
 
 
-			// 表单提交
-			// // {#  django 跨站验证需要下面的 ajaxSetup   #}
-            $.ajaxSetup({
-                 data: {csrfmiddlewaretoken: '{{ csrf_token }}' },
-            });
 
-            //模块部署表单提交
-			$('#modulsumbit').click(function(){
-				// 判断主机是否为空
-				if($.trim($('#minion_info').val())==""){
-					$('#jingao1').text('*不能为空');
-                    //让输入框获取焦点用下面的
-                    $('#minion_info')[0].focus();
-                    //清空输入框内容，因为有时候人家是输入很多空格
-                    $('#minion_info').val("");
-					return false;
-				}
-				// 判断是否未选择模块，state是存sls的
-				var state=[];
-				var sel=$("#modulcheck input[type='checkbox']:checked");
-				if(sel.length==0){
-//					清空上一个输入框的错误提示
-					$('#jingao1').text('*');
-					$('#jingao2').text('*请选择模块');
-					return false;
-				}
-				sel.each(function(){
-					state.push($(this).val());
-				});
-				var tgt_type=$('#sel_1').val();
-				var tgt=$.trim($('#minion_info').val());
-				var $btn = $(this).button('loading');
-				$('#result1').html('正在执行，请稍后....');
-				// 上面如果都过了就开始提交了下面用ajax提交
-				$.ajax({
+
+			// 执行部署按钮事件
+            $('#state_exe_sumbit').click(function () {
+                var other_arg = $.trim($('#other_arg_data').val()).split(',,');
+                var select_tgt = $("input[name='select_tgt']:checked").val();
+                var tgt_type = 'glob';
+                var tgt = '';
+				var arg = $("input[name='select_state']:checked").val();
+                if(select_tgt == 'any'){
+                    tgt = '*';
+                    tgt_type = 'glob';
+                }else if(select_tgt == 'minion_list'){
+                    tgt = $('#search_selected_minion_id option').map(function(){return $(this).val();}).get().join(",");
+                    if(tgt.length == 0){
+                        $('#minion_list_help').text('请选择minion_id');
+                        return false
+                    }
+                    tgt_type = 'list';
+                }else if(select_tgt == 'grain'){
+                    tgt = $.trim($('#tgt_grain').val());
+                    if(tgt.length == 0){
+                        $('#tgt_grain_help').text('请输入grain条件');
+                        $('#tgt_grain').focus();
+                        return false
+                    }
+                    tgt_type = 'grain';
+                }
+                else if(select_tgt == 'grain_pcre'){
+                    tgt = $.trim($('#tgt_grain_pcre').val());
+                    if(tgt.length == 0){
+                        $('#tgt_grain_pcre_help').text('请输入grain正则条件');
+                        $('#tgt_grain_pcre').focus();
+                        return false
+                    }
+                    tgt_type = 'grain_pcre';
+                }
+                else if(select_tgt == 'ip_address'){
+                    tgt = $.trim($('#tgt_ip_address').val());
+                    if(tgt.length == 0){
+                        $('#tgt_ip_address_help').text('请输入IP或IP段');
+                        $('#tgt_ip_address').focus();
+                        return false
+                    }
+                    tgt_type = 'ipcidr';
+                }
+                else if(select_tgt == 'pcre'){
+                    tgt = $.trim($('#tgt_pcre').val());
+                    if(tgt.length == 0){
+                        $('#tgt_pcre_help').text('请输入minion id正则');
+                        $('#tgt_pcre').focus();
+                        return false
+                    }
+                    tgt_type = 'pcre';
+                }
+                var $btn = $(this).button('loading');
+                $("#state_exe_result").text("正在执行.....");
+                $.ajax({
 					url:"{% url 'module_deploy' %}",
 					type:'POST',
 					dataType:'json',
                     //如果数据是列表即数组的话要加下面这个traditional不然传不过去
 					traditional:true,
-					data:{'tgt':tgt,
-						'tgt_type':tgt_type,
-						'state':state},
+					data:{
+                        'tgt':tgt,
+                        'tgt_type':tgt_type,
+                        'other_arg':other_arg,
+                        'arg':[arg],
+                        'module_deploy_tag_key':'state_exe'
+					},
 					success:function(result){
 						if(result.status){
-							$('#result1').html('');
-//							for(var i = 0; i < result.result.length; i++){
-//								var insert_data=$('#result1').html()+'<i>'+result.result[i]+'</i>';
-//								$('#result1').html(insert_data);
+							$('#state_exe_result').html('');
 							for(var i = 0; i < result.result.length; i++){
 //                                console.log(result.result[i]);
 								if(result.result[i].indexOf("Result: False")>-1){
-									$('#result1').append("<p style='color: #A00000;'>"+result.result[i]+"</p>");
+									$('#state_exe_result').append("<p style='color: #A00000;'>"+result.result[i]+"</p>");
 								}else if(result.result[i].indexOf("ChangesIs")>-1){
-									$('#result1').append("<p style='color: #00A0A0;'>"+result.result[i]+"</p>");
+									$('#state_exe_result').append("<p style='color: #00A0A0;'>"+result.result[i]+"</p>");
 								}else if(result.result[i].indexOf("Failed:")>-1){
 //									对汇总的第一行数据中成功失败还有改变做字体颜色区分，即修改颜色
 									var reg1=/Failed:([^\r\n]+)/g;
@@ -260,23 +263,56 @@
 									var str2=result.result[i].match(reg2);
 									var rep_r=result.result[i].replace(reg1,"<span style='color: #A00000;'>"+str1+"</span>");
 									rep_r=rep_r.replace(reg2,"<span style='color: #00B600;'>"+str2+"</span>");
-									$('#result1').append("<p style='color: #00A0A0;'>"+rep_r+"</p>");
+									$('#state_exe_result').append("<p style='color: #00A0A0;'>"+rep_r+"</p>");
 								}else{
-									$('#result1').append("<p style='color: #00B600;'>"+result.result[i]+"</p>");
+									$('#state_exe_result').append("<p style='color: #00B600;'>"+result.result[i]+"</p>");
 								}
 
 							}
-//							$('#result1').val(result.result);
                             $btn.button('reset');
 						}else {
-                            $('#result1').html("<p style='color: #A00000;'>"+result.result+"</p>");
+						    $("#state_exe_result").empty();
+                            var data_count = 0;
+                            $.each(result.result,function (k,v) {
+                                if($.isPlainObject(v)){
+                                    $('#state_exe_result').append("<p style='color: #BF0000;font-weight: bold;'>"+k+":</p>");
+                                    result_fun(v,data_count+1);
+                                    $('#state_exe_result').append('\n\n');
+                                }else if($.isArray(v)){
+                                    $('#state_exe_result').append("<p style='color: #BF0000;font-weight: bold;'>"+k+":</p>");
+                                    result_fun(v,data_count+1);
+                                    $('#state_exe_result').append('\n\n');
+                                }else{
+                                    $('#state_exe_result').append("<p style='color: #BF0000;font-weight: bold;'>"+k+":</p>");
+                                    $('#state_exe_result').append("<p style='padding-left: 25px;'>"+v+"</p>");
+                                    $('#state_exe_result').append('\n\n');
+                                }
+                            });
                             $btn.button('reset');
+                            // $('#state_exe_result').html("<p style='color: #A00000;'>"+result.result+"</p>");
+                            // $btn.button('reset');
                         }
 
 					}
 				});
+            });
 
-			});
+            // 结果输出格式化 递归函数
+            var result_fun = function (data,data_count) {
+                if(!data) return;
+                $.each(data,function(k,v){
+                    if($.isPlainObject(v)){
+                        $('#state_exe_result').append("<p style='color: #3FB8AF;padding-left: "+data_count*25+"px;'>"+k+":</p>");
+                        result_fun(v,data_count+1)
+                    }else if($.isArray(v)){
+                        $('#state_exe_result').append("<p style='color: #3FB8AF;padding-left: "+data_count*25+"px;'>"+k+":</p>");
+                        result_fun(v,data_count+1)
+                    }else{
+                        $('#state_exe_result').append("<p style='color: #3FB8AF;padding-left: "+data_count*25+"px;'>"+k+":</p>");
+                        $('#state_exe_result').append("<p style='padding-left: "+(data_count+1)*25+"px;'>"+v+"</p>");
+                    }
+                });
+            };
 		});
 	</script>
 {% endblock %}
@@ -421,69 +457,57 @@
                 </div>
 
 			</div>
-                <div class="form-group " style="margin-left: 10px;">
-                    <select  class="form-control btn-info" id="sel_1" style="font-size: 15px;">
-                        <option  value="glob">主机ID</option>
-                        <option  value="ipcidr">主机IP</option>
-                        <option  value="list">多主机</option>
-                        <option  value="nodegroup">主机组</option>
-                        <option  value="grain">grain类</option>
-                    </select>
-            <!-- 下面的onkeydown和onkeyup功能是实现文本框自动随数字拉长 -->
-                    <input type="text" class="form-control" id="minion_info"
-                   placeholder="请输入主机minion ID" style="font-size: 14px;" onkeydown="this.onkeyup();" onkeyup="this.size=(this.value.length>25?this.value.length:27);" size="22"  required="required">
-                   <span id="jingao1"  style="color: #FF0000;">*</span>
-                    <!-- <p class="text-danger  " style="color: #FF0000;">&nbsp;</p> -->
-                </div>
+                
 			<div class="he20"></div>
+                
 			<div class="form-group" style="font-size: 14px;border: 1px #CCCCCC solid;border-radius: 5px;margin-left: 10px;margin-right: 10px;" id='modulcheck'>
 				<label class="label label-info " style="font-size: 17px;">模块选择</label>
 				<div class="he10"></div>
 				<div class="container-fluid">
 					<div class="row-fluid">
 						<div class="col-xs-3">
-							<label class="checkbox-inline" >
-								<input type="checkbox" id="inlineCheckbox0" value="init">初始化
+							<label class="radio-inline" >
+								<input type="radio" name="select_state"  value="init" checked>初始化
 							</label>
 						 </div>
 						<div class="col-xs-3">
-							<label class="checkbox-inline" >
-								<input type="checkbox" id="inlineCheckbox1" value="nginx">Nginx
+							<label class="radio-inline" >
+								<input type="radio" name="select_state"  value="nginx">Nginx
 							</label>
 						 </div>
 						<div class="col-xs-6 col-sm-3">
-							<label class="checkbox-inline" >
-								<input type="checkbox" id="inlineCheckbox2" value="tomcat">Tomcat
+							<label class="radio-inline" >
+								<input type="radio" name="select_state"  value="tomcat">Tomcat
 							</label>
 						</div>
 						<div class="col-xs-6 col-sm-3">
-							<label class="checkbox-inline" >
-								<input type="checkbox" id="inlineCheckbox3" value="mysql">Mysql
+							<label class="radio-inline" >
+								<input type="radio" name="select_state"  value="mysql">Mysql
 							</label>
 						</div>
 						<div class="col-xs-6 col-sm-3">
-							<label class="checkbox-inline" >
-								<input type="checkbox" id="inlineCheckbox4" value="lvs">Lvs
+							<label class="radio-inline" >
+								<input type="radio" name="select_state"  value="lvs">Lvs
 							</label>
 						</div>
 						<div class="col-xs-6 col-sm-3">
-							<label class="checkbox-inline" >
-								<input type="checkbox" id="inlineCheckbox5" value="php">PHP
+							<label class="radio-inline" >
+								<input type="radio" name="select_state"  value="php">PHP
 							</label>
 						</div>
 						<div class="col-xs-6 col-sm-3">
-							<label class="checkbox-inline" >
-								<input type="checkbox" id="inlineCheckbox6" value="jdk">JDK
+							<label class="radio-inline" >
+								<input type="radio" name="select_state"  value="jdk">JDK
 							</label>
 						</div>
-						<span id="jingao2"  style="color: #FF0000;"></span>
+						<span id="select_arg_help"  style="color: #FF0000;">　</span>
 					</div>
 				</div>
 				<div class="he10"></div>
 			</div>
 			<div class="he20"></div>
 			<div class="form-group " style="margin-left: 10px;">
-				<button type="button" class="btn btn-success" id="modulsumbit" data-loading-text="正在执行...">执行部署</button>
+				<button type="button" class="btn btn-success" id="state_exe_sumbit" data-loading-text="正在执行...">执行部署</button>
 				<!-- <label class="text-danger ">提交数据验证合法性提示栏</label> -->
 			</div>
                 <div class="he20"></div>
@@ -491,17 +515,17 @@
             <div class="he20"></div>
 
             <!--查看部署日志  -->
-            <div  style="font-size: 15px;border: 1px #756F71 solid;border-radius: 5px;padding:0 10px 0 0;" >
-                    <label class="label label-info " style="font-size: 17px;">模块部署日志查询</label>
+            <!--<div  style="font-size: 15px;border: 1px #756F71 solid;border-radius: 5px;padding:0 10px 0 0;" >-->
+                    <!--<label class="label label-info " style="font-size: 17px;">模块部署日志查询</label>-->
 
-                    <div class="he10"></div>
-                    <label class="form-group" for="minion_id" style="margin-left: 10px;">请输入主机ID:</label>
-                    <input type="text" class="form-control" id="minion_id"
-                   placeholder="请输入主机minion ID" style="font-size: 14px;width: 200px;"  required="required">
-                    <button type="button" class="btn btn-success  search_log" data-toggle="modal" data-target="#search_minion_id_log" style="margin-left: 10px;">查询</button>
+                    <!--<div class="he10"></div>-->
+                    <!--<label class="form-group" for="minion_id" style="margin-left: 10px;">请输入主机ID:</label>-->
+                    <!--<input type="text" class="form-control" id="minion_id"-->
+                   <!--placeholder="请输入主机minion ID" style="font-size: 14px;width: 200px;"  required="required">-->
+                    <!--<button type="button" class="btn btn-success  search_log" data-toggle="modal" data-target="#search_minion_id_log" style="margin-left: 10px;">查询</button>-->
 
-                   <div class="he10"></div>
-                </div>
+                   <!--<div class="he10"></div>-->
+                <!--</div>-->
 		</form>
 	</div>
 	<div class="form-group col-xs-6 overflow_result" style="padding-top: 5px;">
@@ -511,7 +535,7 @@
 		<!--注意如果使用标签textarea的字体一定要设置等宽字体，因为普通的字体在输出的时候无法和在linux下面一样，想要输出程序代码的
 		原样，最好用等宽字体，不用你自己看下有多难看就知道这里用了font-family: monospace;自带的等宽字体-->
 		<!--最后我发现可以直接用prc标签这个标签可以完美的输出后端代码的格式哈哈不过换行和滚动条还是要加在上面的style里-->
-		<pre class="form-control " id="result1"   style="resize:none;font-weight: bold;line-height:100%;height: 100%;margin-top: 4px;background-color:#000;color:#00B600;"></pre>
+		<pre class="form-control " id="state_exe_result"   style="resize:none;font-weight: bold;line-height:100%;height: 100%;margin-top: 4px;background-color:#000;color:#00B600;"></pre>
 	</div>
 </div>
 
