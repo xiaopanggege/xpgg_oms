@@ -797,7 +797,9 @@
             <!--下面这里本来是用form的样式的，后来改成div是因为用form默认带了回车会提交表单的功能，所以改成div不过class还是form的哈哈-->
             <div class="form-inline" role="form">
                 <div class="form-group">
+                    {% if request.user.is_superuser %}
                     <button type="button" class="btn btn-success app_group_member_add_button" data-toggle="modal" data-target="#app_group_member_add_modal" >编辑成员</button>
+                    {% endif %}
                     <!--<button type="button" class="btn btn-success app_add_button" data-toggle="modal" data-target="#app_add_modal">新增应用</button>-->
                     <button type="button" class="btn btn-primary app_batch_release_button" >批量发布</button>
                     {% if app_group_members_data %}
@@ -860,7 +862,9 @@
                         <button type="button" class="btn btn-info btn-sm view_detail" data-toggle="modal" data-target="#view_app_modal">查看</button>
                         <!--<button type="button" class="btn btn-info btn-sm edit_detail " data-toggle="modal" data-target="#app_add_modal">编辑</button>-->
                         <!--<button type="button" class="btn btn-danger btn-sm delete_app" data-toggle="modal" data-target="#delete_app_modal">删除</button>-->
+                        {% if request.user.is_superuser %}
                         <button type="button" class="btn btn-info btn-sm delete_app_group_member" data-toggle="tooltip" title="只是从组中移除，不删除应用">移除成员</button>
+                        {% endif %}
                     </td>
                     <td  style="padding: 0 0 0 3px;text-align: left;">应用:
                         {% if data.app_svn_version %}

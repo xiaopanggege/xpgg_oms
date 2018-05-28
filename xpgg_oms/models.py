@@ -40,10 +40,10 @@ class MinionList(models.Model):
     class Meta:
         verbose_name = 'Minion列表'
         verbose_name_plural = verbose_name
-        ordering = ['ip']
+        ordering = ['minion_id']
 
     def __str__(self):
-        return self.ip
+        return self.minion_id
 
 
 # nginx信息表
@@ -187,4 +187,40 @@ class SaltCmdInfo(models.Model):
         return self.salt_cmd
 
 
+# 主机资源表 精力有限，这块本来是要设置非常多个表单的，以后如果有时间专门做CMDB的话，再来重构
+class ServerList(models.Model):
+    Server_Type = (
+        (0, '物理机'),
+        (1, '虚拟机')
+    )
 
+    server_name = models.CharField(max_length=50, verbose_name='服务器名称', unique=True)
+    server_type = models.CharField(choices=Server_Type, verbose_name='服务器类型', blank=True, null=True)
+    localhost = models.CharField(max_length=50, verbose_name='主机名', blank=True, null=True)
+    ip = models.CharField(max_length=200, verbose_name='IP地址', blank=True, null=True)
+    system_issue = models.CharField(max_length=200, verbose_name='系统版本', blank=True, null=True)
+    sn = models.CharField(max_length=200, verbose_name='SN', blank=True, null=True)
+    cpu_num = models.IntegerField(verbose_name='CPU核数', blank=True, null=True)
+    cpu_model = models.CharField(max_length=200, verbose_name='CPU型号', blank=True, null=True)
+    sys = models.CharField(max_length=200, verbose_name='系统类型', blank=True, null=True)
+    kernel = models.CharField(max_length=200, verbose_name='内核', blank=True, null=True)
+    product_name = models.CharField(max_length=200, verbose_name='品牌名称', blank=True, null=True)
+    ipv4_address = models.CharField(max_length=900, verbose_name='ipv4列表', blank=True, null=True)
+    mac_address = models.CharField(max_length=900, verbose_name='mac地址列表', blank=True, null=True)
+    mem_total = models.IntegerField(verbose_name='内存大小', blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+    update_time = models.CharField(max_length=50, verbose_name='最近一次更新时间', blank=True, null=True)
+    minion_id = models.CharField(max_length=20, verbose_name='minion_id', blank=True, null=True)
+    minion_version = models.CharField(max_length=20, verbose_name='Minion版本', blank=True, null=True)
+    minion_status = models.CharField(max_length=50, verbose_name='Minion状态', blank=True, null=True)
+    idc_name = models.CharField(max_length=50, verbose_name='机房名称', blank=True, null=True)
+    idc_num = models.CharField(max_length=50, verbose_name='机柜号', blank=True, null=True)
+    description = models.CharField(max_length=200, verbose_name='描述备注', blank=True, null=True)
+
+    class Meta:
+        verbose_name = '主机列表'
+        verbose_name_plural = verbose_name
+        ordering = ['id']
+
+    def __str__(self):
+        return self.id

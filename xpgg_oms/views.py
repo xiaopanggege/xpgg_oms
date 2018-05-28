@@ -592,20 +592,21 @@ def index(request):
 
 # salt执行state.sls的返回结果格式化，因为通过api返回的结果不怎么好看呵呵
 def format_state(result):
-    a=result
-    succeeded = 0
-    failed = 0
-    changed = 0
-    Total_states_run = 0
-    Total_run_time = 0
+    a = result
     # b是返回minion列表
     b = (a['return'])
-    # i是每个minion结果字典
+    # 用来存放所有minion格式化后的结果的
+    result_data = []
     try:
-        # i是每个minion结果字典
+        # i是return后面的列表其实就是a['return'][0]
         for i in b:
             # key是minion的ID,value是这个ID执行的所有结果又是一个字典
             for key, value in i.items():
+                succeeded = 0
+                failed = 0
+                changed = 0
+                Total_states_run = 0
+                Total_run_time = 0
                 minion_id = key
                 run_num = len(value)  # 得到执行的state个数
                 result_list = [k for k in range(run_num)] #把列表先用数字撑大，因为接收的数据随机的顺序如（3,5,6），先撑开列表到时候假设是3过来就插3的位子这样顺序就有序了
@@ -656,7 +657,8 @@ def format_state(result):
                 bbb =74*'-'+ '\nSummary for %s\n-------------\nSucceeded: %d (changed=%d)\nFailed:    %2d\n-------------\nTotal states run:     %d\nTotal run time:    %.3f s\n\n' % (
                 minion_id, succeeded, changed, failed, Total_states_run, Total_run_time)
                 result_list.insert(0, bbb)
-                return result_list
+                result_data.extend(result_list)
+        return result_data
     #如果格式化有问题，就把原来的以str来返回，然后在调用这个格式化的方法里写判断如果为str说明格式化失败，然后该怎么处理就怎么处理呵呵
     except Exception as e:
         logger.error('格式化不成功'+str(e))
@@ -1064,7 +1066,7 @@ def minion_manage_ajax(request):
                                 MinionList.objects.update_or_create(minion_id=minion_id, defaults=updated_values)
                             status_down = response_data['return'][0]['down']
                             for minion_id in status_down:
-                                updated_values = {'minion_id': minion_id, 'minion_status': '在线',
+                                updated_values = {'minion_id': minion_id, 'minion_status': '离线',
                                                   'update_time': time.strftime('%Y年%m月%d日 %X')}
                                 MinionList.objects.update_or_create(minion_id=minion_id, defaults=updated_values)
                             id_list.extend(status_up)
@@ -1503,7 +1505,7 @@ def salt_key_reject(request):
 def salt_exe(request):
     try:
         if request.method == 'GET' and not request.is_ajax():
-            data_list = SaltCmdInfo.objects.values('salt_cmd_module').distinct().order_by('salt_cmd_module')
+            data_list = SaltCmdInfo.objects.filter(salt_cmd_type='module').values('salt_cmd_module').distinct().order_by('salt_cmd_module')
             return render(request, 'salt_exe.html', {'data_list': data_list})
     except Exception as e:
         logger.error('salt命令执行页面有问题：', e)
@@ -2126,7 +2128,7 @@ def app_release_ajax(request):
                 result['status'] = True
                 # 返回字典之外的需要把参数safe改成false如：JsonResponse([1, 2, 3], safe=False)
                 return JsonResponse(result)
-            elif request.POST.get('app_tag_key') == 'app_add':
+            elif request.POST.get('app_tag_key') == 'app_add' and request.user.is_superuser:
                 obj = AppReleaseAddForm(request.POST)
                 if obj.is_valid():
                     app_svn_co_path = settings.SITE_BASE_SVN_PATH + time.strftime('%Y%m%d_%H%M%S')
@@ -2150,7 +2152,7 @@ def app_release_ajax(request):
                     error_str = obj.errors.as_json()
                     result['result'] = json.loads(error_str)
                 return JsonResponse(result)
-            elif request.POST.get('app_tag_key') == 'app_update':
+            elif request.POST.get('app_tag_key') == 'app_update' and request.user.is_superuser:
                 obj = AppReleaseUpdateForm(request.POST)
                 if obj.is_valid():
                     app_svn_co_path = AppRelease.objects.get(
@@ -2252,7 +2254,7 @@ def app_release_ajax(request):
                     error_str = obj.errors.as_json()
                     result['result'] = json.loads(error_str)
                 return JsonResponse(result)
-            elif request.POST.get('app_tag_key') == 'app_delete':
+            elif request.POST.get('app_tag_key') == 'app_delete' and request.user.is_superuser:
                 app_name = request.POST.get('app_name')
                 delete_app_file_select = request.POST.get('delete_app_file_select')
                 try:
@@ -3558,7 +3560,7 @@ def app_group_ajax(request):
     try:
         if request.is_ajax():
             # 在ajax提交时候多一个字段作为标识，来区分多个ajax提交哈，厉害！
-            if request.POST.get('app_group_tag_key') == 'app_group_add':
+            if request.POST.get('app_group_tag_key') == 'app_group_add' and request.user.is_superuser:
                 obj = AppGroupAddForm(request.POST)
                 if obj.is_valid():
                     AppGroup.objects.create(app_group_name=obj.cleaned_data["app_group_name"], description=obj.cleaned_data["description"])
@@ -3576,7 +3578,7 @@ def app_group_ajax(request):
                 result['result'] = list(app_name_list)
                 result['status'] = True
                 return JsonResponse(result)
-            elif request.POST.get('app_group_tag_key') == 'app_group_update':
+            elif request.POST.get('app_group_tag_key') == 'app_group_update' and request.user.is_superuser:
                 obj = AppGroupUpdateForm(request.POST)
                 if obj.is_valid():
                     AppGroup.objects.filter(app_group_name=obj.cleaned_data["app_group_name"]).update(
@@ -3587,7 +3589,7 @@ def app_group_ajax(request):
                     error_str = obj.errors.as_json()
                     result['result'] = json.loads(error_str)
                 return JsonResponse(result)
-            elif request.POST.get('app_group_tag_key') == 'app_group_delete':
+            elif request.POST.get('app_group_tag_key') == 'app_group_delete' and request.user.is_superuser:
                 app_group_name = request.POST.get('app_group_name')
                 try:
                     AppGroup.objects.filter(app_group_name=app_group_name).delete()
@@ -3596,7 +3598,7 @@ def app_group_ajax(request):
                 except Exception as e:
                     result['result'] = str(e)
                 return JsonResponse(result)
-            elif request.POST.get('app_group_tag_key') == 'app_group_member_add':
+            elif request.POST.get('app_group_tag_key') == 'app_group_member_add' and request.user.is_superuser:
                 obj = AppGroupUpdateForm(request.POST)
                 if obj.is_valid():
                     AppGroup.objects.filter(app_group_name=obj.cleaned_data["app_group_name"]).update(
@@ -3608,7 +3610,7 @@ def app_group_ajax(request):
                 result['result'] = '成功'
                 result['status'] = True
                 return JsonResponse(result)
-            elif request.POST.get('app_group_tag_key') == 'app_group_member_delete':
+            elif request.POST.get('app_group_tag_key') == 'app_group_member_delete' and request.user.is_superuser:
                 app_name = request.POST.get('app_name')
                 app_group_name = request.POST.get('app_group_name')
                 try:

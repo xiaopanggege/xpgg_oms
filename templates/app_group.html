@@ -290,11 +290,13 @@
             <!--下面这里本来是用form的样式的，后来改成div是因为用form默认带了回车会提交表单的功能，所以改成div不过class还是form的哈哈-->
             <div class="form-inline" role="form">
                 <div class="form-group">
+                    {% if request.user.is_superuser %}
                     <button type="button" class="btn btn-success app_group_add_button" data-toggle="modal" data-target="#app_group_add_modal">新增应用组</button>
+                    {% endif %}
                 </div>
 
 
-                  <div class="form-group pull-right">
+                  <div class="form-group pull-right" style="padding-bottom: 5px;">
                       <label for="search_field">查询字段</label>
                       <select class="form-control" id="search_field">
                           <option value="search_app_group_name">应用组名称</option>
@@ -345,8 +347,10 @@
                     {% endif %}
                     <td class="data_description">{{ data.description }}</td>
                     <td class="">
+                        {% if request.user.is_superuser %}
                         <button type="button" class="btn btn-info btn-sm edit_app_group" data-toggle="modal" data-target="#edit_app_group_modal">编辑备注</button>
                         <button type="button" class="btn btn-danger btn-sm delete_app_group" data-toggle="modal" data-target="#delete_app_group_modal">删除</button>
+                        {% endif %}
                         <a href="{% url 'app_group_members_manage' %}?app_group_name={{data.app_group_name}}"  class="btn btn-sm btn-primary" role="button">成员管理</a>
 
                     </td>

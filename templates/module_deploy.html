@@ -184,7 +184,9 @@
                 var select_tgt = $("input[name='select_tgt']:checked").val();
                 var tgt_type = 'glob';
                 var tgt = '';
-				var arg = $("input[name='select_state']:checked").val();
+                var arg = [];
+                var extra_arg = $('#extra_arg_data').val();
+				arg.push($("input[name='select_state']:checked").val());
                 if(select_tgt == 'any'){
                     tgt = '*';
                     tgt_type = 'glob';
@@ -231,6 +233,11 @@
                     }
                     tgt_type = 'pcre';
                 }
+
+                //判断是否有附加参数
+                if($.trim(extra_arg).length != 0){
+                    arg = arg.concat($.trim(extra_arg).split(',,'))
+                }
                 var $btn = $(this).button('loading');
                 $("#state_exe_result").text("正在执行.....");
                 $.ajax({
@@ -243,7 +250,7 @@
                         'tgt':tgt,
                         'tgt_type':tgt_type,
                         'other_arg':other_arg,
-                        'arg':[arg],
+                        'arg':arg,
                         'module_deploy_tag_key':'state_exe'
 					},
 					success:function(result){
@@ -273,7 +280,12 @@
 						}else {
 						    $("#state_exe_result").empty();
                             var data_count = 0;
-                            $.each(result.result,function (k,v) {
+                            if(typeof(result.result) == 'string'){
+                                $('#state_exe_result').html("<p style='color: #BF0000;'>"+result.result+"</p>");
+                                $btn.button('reset');
+                            }
+                            else{
+                                $.each(result.result,function (k,v) {
                                 if($.isPlainObject(v)){
                                     $('#state_exe_result').append("<p style='color: #BF0000;font-weight: bold;'>"+k+":</p>");
                                     result_fun(v,data_count+1);
@@ -287,8 +299,10 @@
                                     $('#state_exe_result').append("<p style='padding-left: 25px;'>"+v+"</p>");
                                     $('#state_exe_result').append('\n\n');
                                 }
-                            });
-                            $btn.button('reset');
+                                });
+                                $btn.button('reset');
+                            }
+
                             // $('#state_exe_result').html("<p style='color: #A00000;'>"+result.result+"</p>");
                             // $btn.button('reset');
                         }
@@ -460,7 +474,7 @@
                 
 			<div class="he20"></div>
                 
-			<div class="form-group" style="font-size: 14px;border: 1px #CCCCCC solid;border-radius: 5px;margin-left: 10px;margin-right: 10px;" id='modulcheck'>
+			<div class="form-group" style="font-size: 14px;border: 1px #CCCCCC solid;border-radius: 5px;margin-left: 10px;margin-right: 10px;" >
 				<label class="label label-info " style="font-size: 17px;">模块选择</label>
 				<div class="he10"></div>
 				<div class="container-fluid">
@@ -505,6 +519,25 @@
 				</div>
 				<div class="he10"></div>
 			</div>
+
+            <div class="form-group">
+                <label class="control-label col-sm-2 " for="extra_arg_data">附加参数:</label>
+                <div class="col-sm-7">
+                    <input type="text"  class="form-control" id="extra_arg_data" >
+                    <span class="" id="extra_arg_data_help" style="color: #FF0000;">　</span>
+                </div>
+                <label class="control-label  " style="font-weight: normal;color: #3FB8AF;font-size: 13px;" >提示：模块之外的参数</label>
+            </div>
+
+            <div class="form-group  " style="font-size: 14px;border: 1px #CCCCCC solid;border-radius: 5px;padding: 0;margin: 0 15px 0 15px;">
+				<!--<div class="container-fluid" style="font-size: 14px;">-->
+                <pre  style="border: 0;">帮助1：附加参数如果有多个参数，则以英文连续双逗号“,,”隔开，主要是为了后台能正确处理，其写法与CLI下有所不同；
+      例： salt '*' state.sls myslsfile pillar="{foo: 'Foo!', bar: 'Bar!'}" saltenv=base
+      而在这里则需要写成：
+      pillar={foo: 'Foo!', bar: 'Bar!'},,saltenv=base  # 注意参数字典外的引号不需要了
+                </pre>
+            </div>
+
 			<div class="he20"></div>
 			<div class="form-group " style="margin-left: 10px;">
 				<button type="button" class="btn btn-success" id="state_exe_sumbit" data-loading-text="正在执行...">执行部署</button>
