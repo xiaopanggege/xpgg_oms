@@ -978,10 +978,37 @@ def minion_client_install(request):
 # 主机管理
 def server_list(request):
     try:
-        if request.method == 'GET':
-            return render(request, 'server_list.html')
+        # 这里主要是担心通过ajax提交了get请求，其实多此一举因为这个页面没有ajax的get请求哈哈
+        if request.is_ajax() is not True:
+            if request.method == 'GET':
+                search_field = request.GET.get('search_field', '')
+                search_content = request.GET.get('search_content', '')
+                if search_content is '':
+                    server_data = ServerList.objects.all().order_by('create_date')
+                    data_list = getPage(request, server_data, 9)
+                else:
+                    if search_field == 'search_server_name':
+                        server_data = ServerList.objects.filter(server_name__icontains=search_content).order_by(
+                            'create_date')
+                        data_list = getPage(request, server_data, 9)
+                    elif search_field == 'search_ip':
+                        server_data = ServerList.objects.filter(ip__icontains=search_content).order_by(
+                            'create_date')
+                        data_list = getPage(request, server_data, 9)
+                    elif search_field == 'search_sys':
+                        server_data = ServerList.objects.filter(sys__icontains=search_content).order_by(
+                            'create_date')
+                        data_list = getPage(request, server_data, 9)
+                    else:
+                        server_data = ServerList.objects.filter(sys__icontains=search_content).order_by(
+                            'create_date')
+                        data_list = getPage(request, server_data, 9)
+                return render(request, 'server_list.html',
+                              {'data_list': data_list, 'search_field': search_field, 'search_content': search_content})
+
     except Exception as e:
-        logger.error('主机列表有问题', e)
+        logger.error('主机列表管理页面有问题', e)
+        return render(request, 'server_list.html')
 
 
 # minion管理

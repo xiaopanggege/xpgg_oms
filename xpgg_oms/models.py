@@ -1,5 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, AbstractBaseUser
+from django.contrib.auth import password_validation
+from django.contrib.auth.hashers import (
+    check_password, is_password_usable, make_password,
+)
 # Create your models here.
 
 
@@ -214,8 +218,6 @@ class ServerList(models.Model):
     create_date = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
     update_time = models.CharField(max_length=50, verbose_name='最近一次更新时间', blank=True, null=True)
     minion_id = models.CharField(max_length=20, verbose_name='minion_id', blank=True, null=True)
-    minion_version = models.CharField(max_length=20, verbose_name='Minion版本', blank=True, null=True)
-    minion_status = models.CharField(max_length=50, verbose_name='Minion状态', blank=True, null=True)
     idc_name = models.CharField(max_length=50, verbose_name='机房名称', blank=True, null=True)
     idc_num = models.CharField(max_length=50, verbose_name='机柜号', blank=True, null=True)
     login_ip = models.CharField(max_length=20, verbose_name='远程访问IP', blank=True, null=True)

@@ -46,7 +46,7 @@
     input:-webkit-autofill,textarea:-webkit-autofill,select:-webkit-autofill {
         -webkit-box-shadow: 0 0 0 1000px white inset !important;
     }
-    
+
 
 </style>
 
@@ -1510,7 +1510,7 @@
                 if (e.keyCode == 13) {
                     $('.search_btn').click();
                 }
-            });            
+            });
 
 		});
 
@@ -1692,7 +1692,7 @@
 {% block another_content %}
 
 <!-- 添加发布模态框 -->
-<div class="modal fade juzhong" id="app_add_modal" tabindex="-1" role="dialog" aria-labelledby="app_add_lable" aria-hidden="true" data-backdrop="static" >
+<div class="modal fade juzhong" id="app_add_modal" tabindex="-1" role="dialog" aria-labelledby="app_add_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
 	<div class="modal-dialog" style="width: 1200px;">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -1709,7 +1709,7 @@
 
                 <div class="row" >
                     <div class="col-sm-6">
-                        <div class="form-horizontal " role="form"  >
+                        <form class="form-horizontal " role="form"  >
                             <div class="form-group">
 										<label class="control-label col-sm-2 " for="add_app_name">应用名称:</label>
                                 <div class="col-sm-6">
@@ -1825,9 +1825,9 @@
 								</div>
                                 <label class="control-label  " style="color: #FF0000;" >*</label>
 							</div>
+                    </form>
                     </div>
-                    </div>
-                    <div class="col-sm-6">
+                    <form class="col-sm-6">
                         <div class="form-horizontal " role="form"  >
                             <div class="form-group " id="add_release_sequence_div">
                                     <label class="control-label col-sm-3 " >多主机执行顺序:</label>
@@ -2017,7 +2017,7 @@
 							</div>
 
                         </div>
-				    </div>
+				    </form>
                 </div>
 
 			</div>
