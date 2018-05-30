@@ -23,6 +23,7 @@ urlpatterns = [
     url(r'^salt_exe/$', views.salt_exe, name='salt_exe'),
     url(r'^salt_exe_ajax/$', views.salt_exe_ajax, name='salt_exe_ajax'),
     url(r'^server_list/$', views.server_list, name='server_list'),
+    url(r'^server_list_ajax/$', views.server_list_ajax, name='server_list_ajax'),
     url(r'^nginx_upstream/$', views.nginx_upstream, name='nginx_upstream'),
     url(r'^nginx_manage/$', views.nginx_manage, name='nginx_manage'),
     url(r'^nginx_conflist/$', views.nginx_conflist, name='nginx_conflist'),

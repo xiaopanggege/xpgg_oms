@@ -133,3 +133,43 @@ class AppAuthUpdateForm(forms.Form):
     app_perms = forms.CharField(widget=forms.Textarea, validators=[app_group_members_validate], required=False)
     app_group_perms = forms.CharField(widget=forms.Textarea, validators=[app_group_validate], required=False)
     description = forms.CharField(required=False, max_length=200, error_messages={'max_length': '最多200位'})
+
+
+# 资源管理 主机列表 表单验证 验证服务器名称是否重复
+def server_name_exist_validate(value):
+    is_server_name_exist = ServerList.objects.filter(server_name=value).exists()
+    if is_server_name_exist:
+        raise ValidationError('服务器名称已存在，请检查')
+
+
+# 资源管理 主机列表  新增主机表单验证 主
+class ServerListAddForm(forms.Form):
+    Server_Type = (
+        ('0', '物理机'),
+        ('1', '虚拟机')
+    )
+    server_name = forms.CharField(max_length=50, error_messages={'required': '服务器名称不能为空', 'max_length': '最多50位'}, validators=[server_name_exist_validate])
+    server_type = forms.ChoiceField(required=False, choices=Server_Type, error_messages={'invalid_choice': '无效的服务器类型'})
+    localhost = forms.CharField(required=False, max_length=50, error_messages={'max_length': '最多50位'})
+    ip = forms.CharField(required=False, max_length=200, error_messages={'max_length': '最多50位'})
+    system_issue = forms.CharField(required=False, max_length=50, error_messages={'max_length': '最多50位'})
+    sn = forms.CharField(required=False, max_length=100, error_messages={'max_length': '最多50位'})
+    cpu_num = forms.IntegerField(required=False, error_messages={'invalid': '无效的参数'})
+    cpu_model = forms.CharField(required=False, max_length=100, error_messages={'max_length': '最多50位'})
+    sys_type = forms.CharField(required=False, max_length=20, error_messages={'max_length': '最多50位'})
+    kernel = forms.CharField(required=False, max_length=50, error_messages={'max_length': '最多50位'})
+    product_name = forms.CharField(required=False, max_length=100, error_messages={'max_length': '最多50位'})
+    ipv4_address = forms.CharField(required=False, max_length=900, error_messages={'max_length': '最多50位'})
+    mac_address = forms.CharField(required=False, max_length=900, error_messages={'max_length': '最多50位'})
+    mem_total = forms.IntegerField(required=False, error_messages={'invalid': '无效的参数'})
+    mem_explain = forms.CharField(required=False, max_length=200, error_messages={'max_length': '最多50位'})
+    disk_total = forms.IntegerField(required=False, error_messages={'invalid': '无效的参数'})
+    disk_explain = forms.CharField(required=False, max_length=200, error_messages={'max_length': '最多50位'})
+    minion_id = forms.CharField(required=False, max_length=20, error_messages={'max_length': '最多50位'})
+    idc_name = forms.CharField(required=False, max_length=50, error_messages={'max_length': '最多50位'})
+    idc_num = forms.CharField(required=False, max_length=50, error_messages={'max_length': '最多50位'})
+    login_ip = forms.CharField(required=False, max_length=20, error_messages={'max_length': '最多50位'})
+    login_port = forms.IntegerField(required=False, max_value=65535, min_value=1, error_messages={'invalid': '无效的参数','min_value': '从1开始', 'max_value': '最大65535'})
+    login_user = forms.CharField(required=False, max_length=50, error_messages={'max_length': '最多50位'})
+    login_password = forms.CharField(required=False, max_length=20, error_messages={'max_length': '最多50位'})
+    description = forms.CharField(required=False, max_length=200, error_messages={'max_length': '最多50位'})
