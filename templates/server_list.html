@@ -440,7 +440,64 @@
 				$('#add_kernel').val($.trim($(this).parent().siblings('.data_kernel').html()));
 				$('#add_product_name').val($.trim($(this).parent().siblings('.data_product_name').html()));
                 $('#add_ipv4_address').val($.trim($(this).parent().siblings('.data_ipv4_address').html()));
-                $('#add_mac_address').val($.trim($(this).parent().siblings('.data_server_name').html()));
+                $('#add_mac_address').val($.trim($(this).parent().siblings('.data_mac_address').html()));
+                $('#add_mem_total').val($.trim($(this).parent().siblings('.data_mem_total').html()));
+                $('#add_mem_explain').val($.trim($(this).parent().siblings('.data_mem_explain').html()));
+                $('#add_disk_total').val($.trim($(this).parent().siblings('.data_disk_total').html()));
+                $('#add_disk_explain').val($.trim($(this).parent().siblings('.data_disk_explain').html()));
+                $('#add_idc_name').val($.trim($(this).parent().siblings('.data_idc_name').html()));
+                $('#add_idc_num').val($.trim($(this).parent().siblings('.data_idc_num').html()));
+                $('#add_login_ip').val($.trim($(this).parent().siblings('.data_login_ip').html()));
+                $('#add_login_port').val($.trim($(this).parent().siblings('.data_login_port').html()));
+                $('#add_login_user').val($.trim($(this).parent().siblings('.data_login_user').html()));
+                $('#add_login_password').val($.trim($(this).parent().siblings('.data_login_password').html()));
+				$('#add_description').val($.trim($(this).parent().siblings('.data_description').html()));
+            });
+
+
+//            编辑按钮触发内容填充模态框
+            $('.edit_detail').click(function () {
+                //  隐藏新增按钮和显示更新按钮的显示
+                $("#add_server_list_submit").addClass("hidden");
+                $("#update_server_list_submit").removeClass("hidden");
+                $("#clone_server_list_submit").removeClass("hidden");
+                // 模态框标题修改
+                $('#server_list_add_lable').html('编辑主机信息');
+
+                $('#add_server_name').val($.trim($(this).parent().siblings('.data_server_name').html()));
+                $("#add_server_name").attr('readonly','readonly');
+
+                var view_server_type = $(this).parent().siblings('.data_server_type').html();
+                if(view_server_type=='虚拟机'){
+                    $("input[name='add_server_type']").eq(1).click();
+                }else{
+                    $("input[name='add_server_type']").eq(0).click();
+                }
+
+                $('#add_localhost').val($.trim($(this).parent().siblings('.data_localhost').html()));
+                $('#add_ip').val($.trim($(this).parent().siblings('.data_ip').html()));
+
+                var view_sys_data = $(this).parent().siblings('.data_sys_type').html();
+                if(view_sys_data=='windows'){
+                    $("input[name='add_sys_type']").eq(1).click();
+                }else{
+                    $("input[name='add_sys_type']").eq(0).click();
+                }
+
+
+                $('#add_system_issue').val($.trim($(this).parent().siblings('.data_system_issue').html()));
+                $('#add_search_minion_id').val('');
+				if($(this).parent().siblings('.data_minion_id').html()){
+                    var minion_id = $(this).parent().siblings('.data_minion_id').html();
+                    $("<label><input type='radio' name='radio_minion_id'  value='"+minion_id+"' checked> "+minion_id+"</label><br>").appendTo("#add_radio_minion_id");
+                }
+				$('#add_sn').val($.trim($(this).parent().siblings('.data_sn').html()));
+				$('#add_cpu_num').val($.trim($(this).parent().siblings('.data_cpu_num').html()));
+				$('#add_cpu_model').val($.trim($(this).parent().siblings('.data_cpu_model').html()));
+				$('#add_kernel').val($.trim($(this).parent().siblings('.data_kernel').html()));
+				$('#add_product_name').val($.trim($(this).parent().siblings('.data_product_name').html()));
+                $('#add_ipv4_address').val($.trim($(this).parent().siblings('.data_ipv4_address').html()));
+                $('#add_mac_address').val($.trim($(this).parent().siblings('.data_mac_address').html()));
                 $('#add_mem_total').val($.trim($(this).parent().siblings('.data_mem_total').html()));
                 $('#add_mem_explain').val($.trim($(this).parent().siblings('.data_mem_explain').html()));
                 $('#add_disk_total').val($.trim($(this).parent().siblings('.data_disk_total').html()));
@@ -453,305 +510,39 @@
                 $('#add_login_password').val($.trim($(this).parent().siblings('.data_login_password').html()));
 				$('#add_description').val($.trim($(this).parent().siblings('.data_description').html()));
 
-
-				$('#add_server_name_help').text('　');
-				$('#add_localhost_help').text('　');
-                $('#add_ip_help').text('　');
-                $('#add_system_issue_help').text('　');
-				$('#add_minion_id_help').text('　');
-				$('#add_sn_help').text('　');
-				$('#add_cpu_num_help').text('　');
-				$('#add_cpu_model_help').text('　');
-				$('#add_kernel_help').text('　');
-				$('#add_product_name_help').text('　');
-				$('#add_ipv4_address_help').text('　');
-				$('#add_mac_address_help').text('　');
-				$('#add_mem_total_help').text('　');
-				$('#add_mem_explain_help').text('　');
-                $('#add_disk_total_help').text('　');
-                $('#add_disk_explain_help').text('　');
-                $('#add_idc_name_help').text('　');
-                $('#add_idc_num_help').text('　');
-                $('#add_login_ip_help').text('　');
-                $('#add_login_port_help').text('　');
-                $('#add_login_user_help').text('　');
-                $('#add_login_password_help').text('　');
-				$('#add_description_help').text('　');
-            });
-
-
-//            编辑按钮触发内容填充模态框
-            $('.edit_detail').click(function () {
-                //  隐藏新增按钮和显示更新按钮的显示
-                $("#add_server_list_submit").addClass("hidden");
-                $("#update_server_list_submit").removeClass("hidden");
-                $("#clone_server_list_submit").removeClass("hidden");
-
-                // 模态框标题修改
-                $('#server_list_add_lable').html('编辑应用发布');
-
-                $('#add_server_name').val($(this).parent().siblings('.data_app_name').html());
-                $("#add_server_name").attr('readonly','readonly');
-                var view_sys_data = $(this).parent().siblings('.data_sys_type').html();
-                if(view_sys_data=='windows'){
-                    $("input[name='add_sys_type']").eq(1).click();
-                }else{
-                    $("input[name='add_sys_type']").eq(0).click();
-                }
-//                之所以加一层if是因为minion_id由于minion表id删除会出现None的情况在minion_id全为空的时候，如果出现None我们就不需要做下面的填充内容操作，不然会填充None过去
-                if($(this).parent().siblings('.data_minion_id').html()){
-                    var minion_id = $(this).parent().siblings('.data_minion_id').html().split(',');
-                    for(var i=0;i<minion_id.length;i++) {
-                        $("<option value='"+minion_id[i]+"'>"+minion_id[i]+"</option>").appendTo("#add_selected_minion_id");
-                    }
-                }
-
-                $('#add_sn').val($(this).parent().siblings('.data_app_path').html());
-                $('#add_cpu_num').val($(this).parent().siblings('.data_app_path_owner').html());
-                $('#add_cpu_model').val($(this).parent().siblings('.data_app_svn_url').html());
-                $('#add_kernel').val($(this).parent().siblings('.data_app_svn_user').html());
-                $('#add_product_name').val($(this).parent().siblings('.data_app_svn_password').html());
-
-                var data_execution_style = $(this).parent().siblings('.data_execution_style').html();
-                if(data_execution_style=='parallel'){
-                    $("input[name='add_execution_style']").eq(1).click();
-                }else{
-                    $("input[name='add_execution_style']").eq(0).click();
-                }
-
-                var content_data = $(this).parent().siblings('.data_operation_content').text().split('>>');
-                for(var i=0;i<content_data.length;i++) {
-                    $("<option value='"+content_data[i]+"'>"+content_data[i]+"</option>").appendTo("#add_selected_operation");
-                    $("#add_select_operation option[value="+content_data[i]+"]").remove();
-                    if($.trim(content_data[i]) == "同步文件"){
-                        $("#add_sync_file_div").removeClass("hidden");
-                        var sync_file_style = $.trim($(this).parent().siblings('.data_sync_file_style').html());
-//                       设置按值选中radio
-                        $("input[name='add_sync_file_style'][value="+sync_file_style+"]").click();
-
-                        $("#add_sync_file_method_div").removeClass("hidden");
-                        var sync_file_method = $.trim($(this).parent().siblings('.data_sync_file_method').html());
-//                       设置按值选中radio
-                        $("input[name='add_sync_file_method'][value="+sync_file_method+"]").click();
-                        if(sync_file_method=='rsync'){
-                            $("#add_rsync_server_content_div").removeClass("hidden");
-                            var sync_rsync_ip = $.trim($(this).parent().siblings('.data_sync_rsync_ip').html());
-                            var sync_rsync_port = $.trim($(this).parent().siblings('.data_sync_rsync_port').html());
-                            $('#add_rsync_server_ip').val(sync_rsync_ip);
-                            $('#add_rsync_server_port').val(sync_rsync_port);
-                        }
-                    }
-                    if($.trim(content_data[i]) == "应用停止"){
-                        $("#add_server_stop_div").removeClass("hidden");
-                        var stop_style = $.trim($(this).parent().siblings('.data_server_stop_style').html());
-//                       设置按值选中radio
-                        $("input[name='add_server_stop_style'][value="+stop_style+"]").click();
-                        var stop_cmd = $.trim($(this).parent().siblings('.data_server_stop_cmd').html());
-                        $("#add_server_stop_cmd").val(stop_cmd);
-                    }
-                    if($.trim(content_data[i]) == "应用启动"){
-                        $("#add_server_start_div").removeClass("hidden");
-                        var start_style = $.trim($(this).parent().siblings('.data_server_start_style').html());
-//                       设置按值选中radio
-                        $("input[name='add_server_start_style'][value="+start_style+"]").click();
-                        var start_cmd = $.trim($(this).parent().siblings('.data_server_start_cmd').html());
-                        $("#add_server_start_cmd").val(start_cmd);
-                    }
-                    if($.trim(content_data[i]) == "执行命令1"){
-                        $("#add_execute_command_1_div").removeClass("hidden");
-                        var execute_command_1_cmd = $.trim($(this).parent().siblings('.data_execute_command_1_cmd').html());
-                        $("#add_ipv4_address").val(execute_command_1_cmd);
-                    }
-                    if($.trim(content_data[i]) == "执行命令2"){
-                        $("#add_execute_command_2_div").removeClass("hidden");
-                        var execute_command_2_cmd = $.trim($(this).parent().siblings('.data_execute_command_2_cmd').html());
-                        $("#add_mac_address").val(execute_command_2_cmd);
-                    }
-                }
-
-                var app_backup_path = $(this).parent().siblings('.data_app_backup_path').html();
-                $("#add_mem_total").val(app_backup_path);
-
-                $('#add_description').val($(this).parent().siblings('.data_description').html());
-
             });
 
 
 //          编辑应用更新按钮触发提交更新
             $('#update_server_list_submit').click(function(){
-                var app_name = $.trim($('#add_server_name').val());
+                var server_name = $.trim($('#add_server_name').val());
+                var server_type = $("input[name='add_server_type']:checked").val();
+                var localhost = $.trim($('#add_localhost').val());
+                var ip = $.trim($('#add_ip').val());
+                var system_issue = $.trim($('#add_system_issue').val());
+                var sn = $.trim($('#add_sn').val());
+                var cpu_num = $.trim($('#add_cpu_num').val());
+                var cpu_model = $.trim($('#add_cpu_model').val());
 				var sys_type = $("input[name='add_sys_type']:checked").val();
-				var minion_id=$('#add_selected_minion_id option').map(function(){return $(this).val();}).get().join(",");
-				var app_path=$.trim($('#add_sn').val());
-				var app_path_owner=$.trim($('#add_cpu_num').val());
-				var app_svn_url=$.trim($('#add_cpu_model').val());
-				var app_svn_user=$.trim($('#add_kernel').val());
-				var app_svn_password=$.trim($('#add_product_name').val());
-				var execution_style = $("input[name='add_execution_style']:checked").val();
-				var operation_content=$('#add_selected_operation option').map(function(){return $.trim($(this).val());}).get().join(",");
-				var server_stop_style= "";
-				var server_stop_cmd= "";
-				var server_start_style= "";
-				var server_start_cmd= "";
-//				妈的因为不知道怎么传字典到后端，所以最后用拼接的方式把字典变成字符串的方式赋值给operation_arguments然后传递到后端eval解开一层字符串
-				var operation_arguments = "";
-//				var svn_rollback_version_key = "SVN回滚版本";
-//				var svn_rollback_version = "";
-				var sync_file_style_key = "文件同步方式";
-				var sync_file_style = "";
-				var sync_file_method_key = "文件同步方法";
-				var sync_file_method = "";
-				var sync_rsync_server_ip_key = "rsync源IP";
-				var sync_rsync_server_ip = $.trim($('#add_rsync_server_ip').val());
-				var sync_rsync_server_port_key = "rsync源端口";
-				var sync_rsync_server_port = $.trim($('#add_rsync_server_port').val());
-				var execute_command_1_key= "执行命令1";
-				var execute_command_1_cmd= "";
-				var execute_command_2_key= "执行命令2";
-				var execute_command_2_cmd= "";
-				if(operation_content.indexOf("同步文件")>-1){
-					sync_file_style = $("input[name='add_sync_file_style']:checked").val();
-                    operation_arguments = operation_arguments+'"' + sync_file_style_key +'":r"'+ sync_file_style +'",' ;
-                    sync_file_method = $("input[name='add_sync_file_method']:checked").val();
-                    operation_arguments = operation_arguments+'"' + sync_file_method_key +'":r"'+ sync_file_method +'",' ;
-                    if(sync_file_method=='rsync'){
-                        var reg1 = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/;
-                        // 判断rsync的IP输入是否为空
-                        if(sync_rsync_server_ip==""){
-                            $('#add_rsync_server_ip_help').text('请输入ip');
-                            //让输入框获取焦点用下面的,当输入内容时候取消告警提示的方法我全部放在xiaopggyunwei.js里了
-                            $("#add_rsync_server_ip")[0].focus();
-                            //清空输入框内容，因为有时候输入很多空格，我判断他为空
-                            $('#add_rsync_server_ip').val("");
-                            return false;
-                        }
-                        //判断ip格式是否正确
-                        else if(sync_rsync_server_ip.match(reg1)==null){
-                            $('#add_rsync_server_ip_help').text('IP格式不合法');
-                            $('#add_rsync_server_ip')[0].focus();
-                            return false;
-                        }
-
-                        // 判断rsync的端口是否正确
-                        var reg2 =/^([0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-5]{2}[0-3][0-5])$/;
-                        if(sync_rsync_server_port==""){
-                            $('#add_rsync_server_port_help').text('请输入端口');
-                            //让输入框获取焦点用下面的,当输入内容时候取消告警提示的方法我全部放在xiaopggyunwei.js里了
-                            $("#add_rsync_server_port")[0].focus();
-                            //清空输入框内容，因为有时候输入很多空格，我判断他为空
-                            $('#add_rsync_server_port').val("");
-                            return false;
-                        }
-                        //判断端口格式是否正确
-                        else if(sync_rsync_server_port.match(reg2)==null){
-                            $('#add_rsync_server_port_help').text('端口不合法');
-                            $('#add_rsync_server_port')[0].focus();
-                            return false;
-                        }
-                        operation_arguments = operation_arguments+'"' + sync_rsync_server_ip_key +'":r"'+ sync_rsync_server_ip +'",' ;
-                        operation_arguments = operation_arguments+'"' + sync_rsync_server_port_key +'":r"'+ sync_rsync_server_port +'",' ;
-                    }
-
-
-				}
-				if(operation_content.indexOf("应用停止")>-1){
-					server_stop_style = $("input[name='add_server_stop_style']:checked").val();
-                    server_stop_cmd = $.trim($("#add_server_stop_cmd").val());
-                    if(server_stop_cmd.length < 1){
-                        $('#add_server_stop_cmd_help').text('该项不能为空');
-                        $('#add_server_stop_cmd')[0].focus();
-					    return false;
-                    }
-                    if(server_stop_cmd.length >500){
-                        $('#add_server_stop_cmd_help').text('长度不能超过500');
-                        $('#add_server_stop_cmd')[0].focus();
-                        return false;
-				    }
-
-				    if(server_stop_style == '映像名称和命令行'){
-                        if(server_stop_cmd.indexOf('"')>-1){
-                        server_stop_cmd = server_stop_cmd.replace(/"/g,'');
-                        }
-                        if(server_stop_cmd.indexOf("'")>-1){
-                            server_stop_cmd = server_stop_cmd.replace(/'/g,'');
-                        }
-                        operation_arguments = operation_arguments+'"' + server_stop_style +'":r"'+ server_stop_cmd +'",' ;
-                    }
-                    else if(server_stop_style == '停止命令'){
-                        // 注意顺序不要改下面的，因为两个if中都加了\所以一改，命令就变了不是原来的了
-                        if(server_stop_cmd.indexOf('\\')>-1){
-                            server_stop_cmd = server_stop_cmd.replace(/\\/g,'\\\\');
-				        }
-                        if(server_stop_cmd.indexOf('"')>-1){
-                            server_stop_cmd = server_stop_cmd.replace(/"/g,'\\\"');
-                        }
-                        operation_arguments = operation_arguments+'"' + server_stop_style +'":"'+ server_stop_cmd +'",' ;
-                    }else{
-                        operation_arguments = operation_arguments+'"' + server_stop_style +'":r"'+ server_stop_cmd +'",' ;
-                    }
-
-				}
-				if(operation_content.indexOf("应用启动")>-1){
-					server_start_style = $("input[name='add_server_start_style']:checked").val();
-                    server_start_cmd = $.trim($("#add_server_start_cmd").val());
-                    if(server_start_cmd.length < 1){
-                        $('#add_server_start_cmd_help').text('该项不能为空');
-                        $('#add_server_start_cmd')[0].focus();
-					    return false;
-                    }
-                    if(server_start_cmd.length >500){
-                        $('#add_server_start_cmd_help').text('长度不能超过500');
-                        $('#add_server_start_cmd')[0].focus();
-                        return false;
-				    }
-				    if(server_start_style == '启动命令'){
-                        if(server_start_cmd.indexOf('\\')>-1){
-                            server_start_cmd = server_start_cmd.replace(/\\/g,'\\\\');
-				        }
-                        if(server_start_cmd.indexOf('"')>-1){
-                            server_start_cmd = server_start_cmd.replace(/"/g,'\\\"');
-                        }
-                        operation_arguments = operation_arguments+'"' + server_start_style +'":"'+ server_start_cmd +'",' ;
-                    }else{
-                        operation_arguments = operation_arguments+'"' + server_start_style +'":r"'+ server_start_cmd +'",' ;
-                    }
-
-				}
-				if(operation_content.indexOf("执行命令1")>-1){
-					execute_command_1_cmd = $.trim($("#add_ipv4_address").val());
-					if(execute_command_1_cmd.length < 1){
-                        $('#add_ipv4_address_help').text('该项不能为空');
-                        $('#add_ipv4_address')[0].focus();
-					    return false;
-                    }
-                    if(execute_command_1_cmd.indexOf('\\')>-1){
-                        execute_command_1_cmd = execute_command_1_cmd.replace(/\\/g,'\\\\');
-				    }
-				    if(execute_command_1_cmd.indexOf('"')>-1){
-                        execute_command_1_cmd = execute_command_1_cmd.replace(/"/g,'\\\"');
-				    }
-                    operation_arguments = operation_arguments+'"' + execute_command_1_key +'":"'+ execute_command_1_cmd +'",' ;
-				}
-				if(operation_content.indexOf("执行命令2")>-1){
-					execute_command_2_cmd = $.trim($("#add_mac_address").val());
-					if(execute_command_2_cmd.length < 1){
-                        $('#add_mac_address_help').text('该项不能为空');
-                        $('#add_mac_address')[0].focus();
-					    return false;
-                    }
-                    if(execute_command_2_cmd.indexOf('\\')>-1){
-                        execute_command_2_cmd = execute_command_2_cmd.replace(/\\/g,'\\\\');
-				    }
-				    if(execute_command_2_cmd.indexOf('"')>-1){
-                        execute_command_2_cmd = execute_command_2_cmd.replace(/"/g,'\\\"');
-				    }
-                    operation_arguments = operation_arguments+'"' + execute_command_2_key +'":"'+ execute_command_2_cmd +'",' ;
-				}
-				var app_backup_path = $.trim($('#add_mem_total').val());
+                var kernel = $.trim($('#add_kernel').val());
+                var product_name = $.trim($('#add_product_name').val());
+                var ipv4_address = $.trim($('#add_ipv4_address').val());
+                var mac_address = $.trim($('#add_mac_address').val());
+                var mem_total = $.trim($('#add_mem_total').val());
+                var mem_explain = $.trim($('#add_mem_explain').val());
+                var disk_total = $.trim($('#add_disk_total').val());
+                var disk_explain = $.trim($('#add_disk_explain').val());
+				var minion_id = $("input[name='radio_minion_id']:checked").val();
+                var idc_name = $.trim($('#add_idc_name').val());
+                var idc_num = $.trim($('#add_idc_num').val());
+                var login_ip = $.trim($('#add_login_ip').val());
+                var login_port = $.trim($('#add_login_port').val());
+				var login_user = $.trim($('#add_login_user').val());
+				var login_password = $.trim($('#add_login_password').val());
 				var description = $.trim($('#add_description').val());
 
-                // 把密码框改成清空
-                $('#add_product_name').val("");
+                //提交之前清空密码框防止提示保存密码
+                $('#add_login_password').val("");
 
 //				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
 				$.ajax({
@@ -760,22 +551,35 @@
 					dataType:'json',
                     //如果数据是列表即数组的话要加下面这个traditional不然传不过去
 					traditional:true,
+//                    由于有密码字段要加下面的cache不然老提示保存密码
                     cache:false,
 					data:{
-						'app_name':app_name,
-                        'sys_type':sys_type,
-                        'minion_id':minion_id,
-                        'app_path':app_path,
-                        'app_path_owner':app_path_owner,
-                        'app_svn_url':app_svn_url,
-                        'app_svn_user':app_svn_user,
-                        'app_svn_password':app_svn_password,
-                        'execution_style':execution_style,
-                        'operation_content':operation_content,
-                        'operation_arguments':'{'+operation_arguments+'}',
-                        'app_backup_path':app_backup_path,
-                        'description':description,
-                        'server_list_tag_key':'app_update'
+					    'server_name' : server_name,
+                        'server_type' : server_type,
+                        'localhost' : localhost,
+                        'ip' : ip,
+                        'system_issue' : system_issue,
+                        'sn' : sn,
+                        'cpu_num' : cpu_num,
+                        'cpu_model' : cpu_model,
+                        'sys_type' : sys_type,
+                        'kernel' : kernel,
+                        'product_name' : product_name,
+                        'ipv4_address' : ipv4_address,
+                        'mac_address' : mac_address,
+                        'mem_total' : mem_total,
+                        'mem_explain' : mem_explain,
+                        'disk_total' : disk_total,
+                        'disk_explain' : disk_explain,
+                        'minion_id' : minion_id,
+                        'idc_name' : idc_name,
+                        'idc_num' : idc_num,
+                        'login_ip' : login_ip,
+                        'login_port' : login_port,
+                        'login_user' : login_user,
+                        'login_password' : login_password,
+                        'description' : description,
+                        'server_list_tag_key':'update_server_list'
 
 					},
 					success:function(result){
@@ -789,8 +593,8 @@
 //						        把错误信息插入到对应的错误help位子
                                 $('#add_'+k+'_help').text(v[0].message);
                             });
-						    // 如果ajax失败了则要记得把提交前清空的密码框再填充回去
-						    $('#add_product_name').val(app_svn_password);
+						    // 如果提交失败要把提交前清空的密码框填充回去
+						    $('#add_login_password').val(login_password);
                            console.log(JSON.stringify(result.result));
                         }
 					}
@@ -924,19 +728,18 @@
 
                     <!--隐藏内容-->
                     <td class="data_sn hidden">{{ server_data.sn }}</td>
-                    <td class="data_cpu_num hidden">{{ server_data.cpu_num }}</td>
+                    <td class="data_cpu_num hidden">{% if server_data.cpu_num %}{{ server_data.cpu_num }}{% endif %}</td>
                     <td class="data_cpu_model hidden">{{ server_data.cpu_model }}</td>
                     <td class="data_kernel hidden">{{ server_data.kernel }}</td>
                     <td class="data_product_name hidden">{{ server_data.product_name }}</td>
-                    <td class="data_minion_productname hidden">{{ server_data.product_name }}</td>
                     <td class="data_ipv4_address hidden">{{ server_data.ipv4_address }}</td>
                     <td class="data_mac_address hidden">{{ server_data.mac_address }}</td>
-                    <td class="data_mem_total hidden">{{ server_data.mem_total }}</td>
+                    <td class="data_mem_total hidden">{% if server_data.mem_total %}{{ server_data.mem_total }}{% endif %}</td>
                     <td class="data_mem_explain hidden">{{ server_data.mem_explain }}</td>
-                    <td class="data_disk_total hidden">{{ server_data.disk_total }}</td>
+                    <td class="data_disk_total hidden">{% if server_data.disk_total %}{{ server_data.disk_total }}{% endif %}</td>
                     <td class="data_disk_explain hidden">{{ server_data.disk_explain }}</td>
                     <td class="data_login_ip hidden">{{ server_data.login_ip }}</td>
-                    <td class="data_login_port hidden">{{ server_data.login_port }}</td>
+                    <td class="data_login_port hidden">{% if server_data.login_port %}{{ server_data.login_port }}{% endif %}</td>
                     <td class="data_login_user hidden">{{ server_data.login_user }}</td>
                     <td class="data_create_date hidden">{{ server_data.create_date | date:"Y-m-d H:i:s"}}</td>
 
@@ -986,9 +789,9 @@
 
 <!-- 添加主机模态框 -->
 <div class="modal fade juzhong" id="add_server_list_modal" tabindex="-1" role="dialog" aria-labelledby="server_list_add_lable" aria-hidden="true" data-backdrop="static" >
-	<div class="modal-dialog" style="width: 1200px;">
+	<div class="modal-dialog" style="width: 900px;">
 		<div class="modal-content">
-			<div class="modal-header">
+			<div class="modal-header" style="padding: 5px;">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
 					&times;
 				</button>
@@ -998,14 +801,14 @@
                 <!--<span id="xxxxxx" style="color: #FF0000;">　</span>-->
 
 			</div>
-			<div class="modal-body">
+			<div class="modal-body" style="padding-bottom: 0;">
 
                 <div class="row" >
                     <div class="col-sm-6">
                         <form class="form-horizontal " role="form"  >
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_server_name">服务器名称:</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_server_name">服务器名称:</label>
+                                <div class="col-sm-7">
 										<input type="text" class="form-control" id="add_server_name"
 									    style="font-size: 14px;"  >
 									    <span id="add_server_name_help" style="color: #FF0000;">　</span>
@@ -1014,8 +817,8 @@
 							</div>
 
                             <div class="form-group">
-                                    <label class="control-label col-sm-3 " >服务器类型:</label>
-                                <div class="col-sm-8">
+                                    <label class="control-label col-sm-4 " >服务器类型:</label>
+                                <div class="col-sm-7">
                                 <label class="radio-inline">
                                 <input type="radio" class="add_server_type" name="add_server_type"  value="0" checked> 物理机
                                  </label>
@@ -1026,8 +829,8 @@
                             </div>
 
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_localhost">主机名:</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_localhost">主机名:</label>
+                                <div class="col-sm-7">
 										<input type="text" class="form-control" id="add_localhost"
 									    style="font-size: 14px;"  >
 									    <span id="add_localhost_help" style="color: #FF0000;">　</span>
@@ -1036,8 +839,8 @@
 							</div>
 
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_ip">IP:</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_ip">IP:</label>
+                                <div class="col-sm-7">
 										<input type="text" class="form-control" id="add_ip"
 									    style="font-size: 14px;"  >
 									    <span id="add_ip_help" style="color: #FF0000;">　</span>
@@ -1046,8 +849,8 @@
 							</div>
 
                             <div class="form-group" >
-                                    <label class="control-label col-sm-3 " >系统类型:</label>
-                                <div class="col-sm-8">
+                                    <label class="control-label col-sm-4 " >系统类型:</label>
+                                <div class="col-sm-7">
                                 <label class="radio-inline">
                                 <input type="radio" class="add_sys_type" name="add_sys_type"  value="linux" checked> Linux
                                  </label>
@@ -1058,8 +861,8 @@
                             </div>
 
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_system_issue">系统版本:</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_system_issue">系统版本:</label>
+                                <div class="col-sm-7">
 										<input type="text" class="form-control" id="add_system_issue"
 									    style="font-size: 14px;"  >
 									    <span id="add_system_issue_help" style="color: #FF0000;">　</span>
@@ -1068,8 +871,8 @@
 							</div>
 
 							<div class="form-group " style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " >Minion_ID:</label>
-                                <div class="panel panel-default col-sm-5" style="padding: 0;margin-left: 15px;margin-bottom: 0;">
+										<label class="control-label col-sm-4 " >Minion_ID:</label>
+                                <div class="panel panel-default col-sm-7" style="padding: 0;margin-left: 15px;margin-bottom: 0;">
                                     <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
                                         <div class="input-group">
                                         <input type="text" class="form-control input-sm" id="add_search_minion_id" placeholder="查询Minion_ID">
@@ -1089,14 +892,14 @@
                                 </div>
                                 <label class="control-label  " style="color: #FF0000;" ></label>
 
-                                <div class="col-sm-6 col-sm-offset-3">
+                                <div class="col-sm-6 col-sm-offset-4">
 									    <span id="add_minion_id_help" style="color: #FF0000;">　</span>
 								</div>
 							</div>
 
 							<div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_sn">SN:</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_sn">SN:</label>
+                                <div class="col-sm-7">
 										<input type="text" class="form-control" id="add_sn"
 									    style="font-size: 14px;"  required="required" >
                                         <span class="" id="add_sn_help" style="color: #FF0000;">　</span>
@@ -1105,8 +908,8 @@
 							</div>
 
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_cpu_num">CPU核数(个):</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_cpu_num">CPU核数(个):</label>
+                                <div class="col-sm-7">
 										<input type="text" class="form-control" id="add_cpu_num"
 									     style="font-size: 14px;"  required="required" >
                                         <span class="" id="add_cpu_num_help" style="color: #FF0000;">　</span>
@@ -1115,8 +918,8 @@
 							</div>
 
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_cpu_model">CPU型号:</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_cpu_model">CPU型号:</label>
+                                <div class="col-sm-7">
 										<input type="text" class="form-control" id="add_cpu_model"
 									    style="font-size: 14px;"  required="required" >
 									    <span class="" id="add_cpu_model_help" style="color: #FF0000;">　</span>
@@ -1125,8 +928,8 @@
 							</div>
 
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_kernel">内核:</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_kernel">内核:</label>
+                                <div class="col-sm-7">
 										<input type="text"  class="form-control" id="add_kernel"
 									   style="font-size: 14px;"  required="required" >
 									    <span class="" id="add_kernel_help" style="color: #FF0000;">　</span>
@@ -1135,8 +938,8 @@
 							</div>
 
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_product_name">品牌名称:</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_product_name">品牌名称:</label>
+                                <div class="col-sm-7">
 										<input type="text"   class="form-control" id="add_product_name"
 									   style="font-size: 14px;"    required="required" >
 									    <span class="" id="add_product_name_help" style="color: #FF0000;">　</span>
@@ -1151,8 +954,8 @@
 
 
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_ipv4_address">IPV4列表:</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_ipv4_address">IPV4列表:</label>
+                                <div class="col-sm-7">
 										<input type="text" class="form-control" id="add_ipv4_address"
 									   style="font-size: 14px;"  required="required" >
 									    <span class="" id="add_ipv4_address_help" style="color: #FF0000;">　</span>
@@ -1161,8 +964,8 @@
 							</div>
 
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_mac_address">MAC地址列表:</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_mac_address">MAC地址列表:</label>
+                                <div class="col-sm-7">
 										<input type="text" class="form-control" id="add_mac_address"
 									   style="font-size: 14px;"  required="required" >
 									    <span class="" id="add_mac_address_help" style="color: #FF0000;">　</span>
@@ -1173,8 +976,8 @@
 
 
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_mem_total">内存大小(M):</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_mem_total">内存大小(M):</label>
+                                <div class="col-sm-7">
 										<input type="text" class="form-control" id="add_mem_total"
 									   style="font-size: 14px;" >
                                         <span  id="add_mem_total_help" style="color: #FF0000;">　</span>
@@ -1183,8 +986,8 @@
 							</div>
 
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_mem_explain">内存说明:</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_mem_explain">内存说明:</label>
+                                <div class="col-sm-7">
 										<input type="text" class="form-control" id="add_mem_explain"
 									   style="font-size: 14px;" >
                                         <span  id="add_mem_explain_help" style="color: #FF0000;">　</span>
@@ -1194,8 +997,8 @@
 
 
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_disk_total">磁盘大小(G):</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_disk_total">磁盘大小(G):</label>
+                                <div class="col-sm-7">
 										<input type="text" class="form-control" id="add_disk_total"
 									   style="font-size: 14px;" >
                                         <span  id="add_disk_total_help" style="color: #FF0000;">　</span>
@@ -1204,8 +1007,8 @@
 							</div>
 
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_disk_explain">磁盘说明:</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_disk_explain">磁盘说明:</label>
+                                <div class="col-sm-7">
 										<input type="text" class="form-control" id="add_disk_explain"
 									   style="font-size: 14px;" >
                                         <span  id="add_disk_explain_help" style="color: #FF0000;">　</span>
@@ -1214,8 +1017,8 @@
 							</div>
 
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_idc_name">机房名称:</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_idc_name">机房名称:</label>
+                                <div class="col-sm-7">
 										<input type="text" class="form-control" id="add_idc_name"
 									   style="font-size: 14px;" >
                                         <span  id="add_idc_name_help" style="color: #FF0000;">　</span>
@@ -1224,8 +1027,8 @@
 							</div>
 
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_idc_num">机柜号:</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_idc_num">机柜号:</label>
+                                <div class="col-sm-7">
 										<input type="text" class="form-control" id="add_idc_num"
 									   style="font-size: 14px;" >
                                         <span  id="add_idc_num_help" style="color: #FF0000;">　</span>
@@ -1234,8 +1037,8 @@
 							</div>
 
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_login_ip">远程访问IP:</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_login_ip">远程访问IP:</label>
+                                <div class="col-sm-7">
 										<input type="text" class="form-control" id="add_login_ip"
 									   style="font-size: 14px;" >
                                         <span  id="add_login_ip_help" style="color: #FF0000;">　</span>
@@ -1244,8 +1047,8 @@
 							</div>
 
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_login_port">远程访问端口:</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_login_port">远程访问端口:</label>
+                                <div class="col-sm-7">
 										<input type="text" class="form-control" id="add_login_port"
 									   style="font-size: 14px;" >
                                         <span  id="add_login_port_help" style="color: #FF0000;">　</span>
@@ -1254,8 +1057,8 @@
 							</div>
 
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_login_user">远程访问用户:</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_login_user">远程访问用户:</label>
+                                <div class="col-sm-7">
 										<input type="text" class="form-control" id="add_login_user"
 									   style="font-size: 14px;" >
                                         <span  id="add_login_user_help" style="color: #FF0000;">　</span>
@@ -1264,8 +1067,8 @@
 							</div>
 
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_login_password">远程访问密码:</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_login_password">远程访问密码:</label>
+                                <div class="col-sm-7">
 										<input type="text" class="form-control" id="add_login_password"
 									   style="font-size: 14px;" >
                                         <span  id="add_login_password_help" style="color: #FF0000;">　</span>
@@ -1274,8 +1077,8 @@
 							</div>
 
                             <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-3 " for="add_description">备注:</label>
-                                <div class="col-sm-6">
+										<label class="control-label col-sm-4 " for="add_description">备注:</label>
+                                <div class="col-sm-7">
 										<input type="text" class="form-control" id="add_description"
 									   style="font-size: 14px;" >
                                         <span  id="add_description_help" style="color: #FF0000;">　</span>
@@ -1287,16 +1090,16 @@
                 </div>
 
 			</div>
-			<div class="modal-footer">
-                <button type="button" class="btn btn-primary pull-left" id="clone_server_list_submit">
+			<div class="modal-footer" style="padding: 5px;">
+                <button type="button" class="btn btn-sm btn-primary pull-left" id="clone_server_list_submit">
 					克隆主机
 				</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal">取消
+				<button type="button" class="btn btn-sm btn-default" data-dismiss="modal">取消
 				</button>
-                <button type="button" class="btn btn-primary" id="add_server_list_submit">
+                <button type="button" class="btn btn-sm btn-primary" id="add_server_list_submit">
 					确认提交
 				</button>
-                <button type="button" class="btn btn-primary" id="update_server_list_submit">
+                <button type="button" class="btn btn-sm btn-primary" id="update_server_list_submit">
 					提交更新
 				</button>
 			</div>

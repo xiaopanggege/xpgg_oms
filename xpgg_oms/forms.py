@@ -173,3 +173,16 @@ class ServerListAddForm(forms.Form):
     login_user = forms.CharField(required=False, max_length=50, error_messages={'max_length': '最多50位'})
     login_password = forms.CharField(required=False, max_length=20, error_messages={'max_length': '最多50位'})
     description = forms.CharField(required=False, max_length=200, error_messages={'max_length': '最多50位'})
+
+
+# 资源管理 主机列表 表单验证 验证服务器名称是否重复
+def server_name_not_exist_validate(value):
+    is_server_name_exist = ServerList.objects.filter(server_name=value).exists()
+    if not is_server_name_exist:
+        raise ValidationError('服务器名称不存在，请检查')
+
+
+# 资源管理 主机列表  更新主机表单验证 主
+class ServerListUpdateForm(ServerListAddForm):
+    server_name = forms.CharField(max_length=50, error_messages={'required': '服务器名称不能为空', 'max_length': '最多50位'},
+                                  validators=[server_name_not_exist_validate])
