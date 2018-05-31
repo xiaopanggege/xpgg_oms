@@ -603,25 +603,15 @@
 
 
 //            点击删除填充模态框
-            $('.delete_app').click(function () {
-                $('.hidden_app_name').val($(this).parent().siblings('.data_app_name').html());
-                $('input[name=delete_app_file_select]').removeAttr('checked');
-                $('.delete_app_file_select_help').html('');
+            $('.delete_server').click(function () {
+                $('.hidden_server_name').val($(this).parent().siblings('.data_server_name').html());
             });
 
-//            删除框里单选框点击事件
-            $("input[name='delete_app_file_select']").click(function () {
-                $('.delete_app_file_select_help').html('');
-            });
+
 //            点击确定删除应用
-            $('#delete_app_button').click(function(){
-				var app_name=$.trim($('.hidden_app_name').val());
-				var delete_app_file_select = $("input[name='delete_app_file_select']:checked").val();
-				if(delete_app_file_select == null){
-                    $('.delete_app_file_select_help').html('未选择是否删除文件夹');
-                    return false
-                }
-				$('#delete_app_modal').modal('toggle');
+            $('#delete_server_button').click(function(){
+				var server_name=$.trim($('.hidden_server_name').val());
+				$('#delete_server_modal').modal('toggle');
 				$.ajax({
 					url:"{% url 'server_list_ajax' %}",
 					type:'POST',
@@ -630,9 +620,8 @@
 					traditional:true,
 //                    提交的数据要和后台form验证的变量一致，不过可以多出来，只要验证的有就行，比如这里就多了project_tag_key
 					data:{
-                        'app_name':app_name,
-                        'delete_app_file_select':delete_app_file_select,
-                        'server_list_tag_key':'app_delete'
+                        'server_name':server_name,
+                        'server_list_tag_key':'delete_server_list'
 
 					},
 					success:function(result){
@@ -746,7 +735,7 @@
                     <td>
                         <button type="button" class="btn btn-info btn-sm view_detail" data-toggle="modal" data-target="#add_server_list_modal">查看</button>
                         <button type="button" class="btn btn-info btn-sm edit_detail " data-toggle="modal" data-target="#add_server_list_modal">编辑</button>
-                        <button type="button" class="btn btn-danger btn-sm delete_app" data-toggle="modal" data-target="#delete_app_modal">删除</button>
+                        <button type="button" class="btn btn-danger btn-sm delete_server" data-toggle="modal" data-target="#delete_server_modal">删除</button>
 
                     </td>
                 </tr>
@@ -1107,7 +1096,38 @@
 	</div><!-- /.modal -->
 </div>
 
-<!-- 查询模态框 -->
+
+<!--删除提示框，也是用的模态框-->
+<div class="modal fade juzhong " id="delete_server_modal" tabindex="-1" role="dialog" aria-labelledby="delete_server_lable" aria-hidden="true" data-backdrop="static" >
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:50%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">操作提醒</h4>
+            </div>
+            <div class="modal-body">
+                <!--隐藏属性，用来获取触发模态框的那条记录的相关数据-->
+                <input type="hidden" class="hidden_server_name"/>
+                <p style="color: red;">确认要删除？</p>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="delete_server_button" data-dismiss="modal" data-toggle="modal" data-target=".loading_modal"> 确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- loading模态框 -->
+<div class="modal fade juzhong loading_modal " data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog"  aria-hidden="true" >
+	<div class="modal-dialog" style="width:100px;">
+		<div class="modal-content" style="background-color: rgba(255,255,255,0.5);">
+				<img src="../static/images/loading.gif"  alt="未加载" >
+		</div>
+	</div>
+</div>
 
 
 {% endblock %}
