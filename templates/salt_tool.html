@@ -15,7 +15,7 @@
         	overflow: auto;
         }
 		/*pre标签不会自动换行第二个是换行，第一个是滚动条*/
-		#salt_exe_result {
+		#salt_tool_result {
             overflow-y: auto;
             white-space: pre-wrap;
         }
@@ -59,14 +59,14 @@
 	    	$('#tgt_pcre').keyup(function(){
 	    		$('#tgt_pcre_help').text('　');
 	    	});
-	    	$('#search_jid_status').keyup(function(){
-	    		$('#search_jid_status_help').text('　');
+	    	$('#task_name_data').keyup(function(){
+	    		$('#task_name_data_help').text('　');
 	    	});
-	    	$('#search_jid_result').keyup(function(){
-	    		$('#search_jid_result_help').text('　');
+	    	$('#cmd_data').keyup(function(){
+	    		$('#cmd_data_help').text('　');
 	    	});
-            
-            
+
+
 
 			// 执行对象选择触发输入框的隐藏显示
 			$('input[name="select_tgt"]').click(function () {
@@ -175,122 +175,26 @@
                 })
             });
 
-//          client下拉框触发文本框提示内容改变
-	        $('#client_select').change(function(){
-	         	if($(this).val()=='local'){
-	         		$('.client_help').text('提示：等同命令行salt命令');
-	         		$('.tgt_div').removeClass('hidden');
-	         	}else if($(this).val()=='local_async'){
-	         	    $('.client_help').text('提示：等同命令行salt --async异步命令');
-	         	    $('.tgt_div').removeClass('hidden');
-	         	}else if($(this).val()=='runner'){
-	         		$('.client_help').text('提示：等同命令行salt-run命令,salt-run不需要执行对象参数');
-	         		$('.tgt_div').addClass('hidden');
+//          用户下拉框触发文本框提示内容改变
+	        $('#username_select').change(function(){
+	         	if($(this).val()=='administrator'){
+	         		$('.username_help').text('提示：需前台运行的任务请选择administrator用户');
+	         	}else if($(this).val()=='system'){
+	         	    $('.username_help').text('提示：后台运行任务请选择system用户');
 	         	}
 			});
 
-        //   client下拉框改变，触发module选择框填充命令
-            $('#client_select').blur(function () {
-                var client = $('#client_select').val();
-                if(client == 'local' || client == 'local_async'){
-                    var salt_cmd_type = 'module';
-                }else if(client == 'runner'){
-                    var salt_cmd_type = 'runner';
-                }
-                $.ajax({
-					url:"{% url 'salt_exe_ajax' %}",
-					type:'GET',
-					dataType:'json',
-                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
-					traditional:true,
-					data:{
-					    'salt_cmd_type':salt_cmd_type,
-                        'salt_exe_tag_key':'search_salt_module'
-					},
-					success:function(result){
-						if(result.status){
-						    $("#module_datalist").empty();
-						    $.each(result.result,function (index,content) {
-						        $("<option value='"+content+"'>"+content+"</option>").appendTo("#module_datalist");
-                            })
-						}else {
-						    toastr.error(result.result,'error',{timeOut: 1500});
-                        }
-					}
-				});
-            });
-
-	     //   module选择框改变，触发Fun选择框填充命令
-            $('#module_select').blur(function () {
-                var client = $('#client_select').val();
-                if(client == 'local' || client == 'local_async'){
-                    var salt_cmd_type = 'module';
-                }else if(client == 'runner'){
-                    var salt_cmd_type = 'runner';
-                }
-                var salt_cmd_module =  $("#module_select").val();
-                $.ajax({
-					url:"{% url 'salt_exe_ajax' %}",
-					type:'GET',
-					dataType:'json',
-                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
-					traditional:true,
-					data:{
-					    'salt_cmd_type':salt_cmd_type,
-                        'salt_cmd_module':salt_cmd_module,
-                        'salt_exe_tag_key':'search_salt_cmd'
-					},
-					success:function(result){
-						if(result.status){
-						    $("#cmd_datalist").empty();
-						    $.each(result.result,function (index,content) {
-						        $("<option value='"+content+"'>"+content+"</option>").appendTo("#cmd_datalist");
-                            })
-						}else {
-						    toastr.error(result.result,'error',{timeOut: 1500});
-                        }
-					}
-				});
-            });
-
-         //   使用帮助点击事件
-            $('#salt_cmd_doc').click(function () {
-                var client = $('#client_select').val();
-                if(client == 'local' || client == 'local_async'){
-                    var salt_cmd_type = 'module';
-                }else if(client == 'runner'){
-                    var salt_cmd_type = 'runner';
-                }
-                var salt_cmd = $('#cmd_select').val()
-                $.ajax({
-					url:"{% url 'salt_exe_ajax' %}",
-					type:'GET',
-					dataType:'json',
-                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
-					traditional:true,
-					data:{
-					    'salt_cmd':salt_cmd,
-                        'salt_cmd_type':salt_cmd_type,
-                        'salt_exe_tag_key':'search_salt_cmd_doc'
-					},
-					success:function(result){
-						if(result.status){
-						    $("#salt_cmd_doc_info").text("");
-						    $('#salt_cmd_doc_modal').modal('toggle');
-                            $('#salt_cmd_doc_info').text(result.result);
-						}else {
-						    toastr.error(result.result,'error',{timeOut: 1500});
-                        }
-					}
-				});
-            });
+            
 
 
             // 执行salt命令按钮事件
             $('#salt_exe_sumbit').click(function () {
-                var client = $('#client_select').val();
-                var fun = $('#cmd_select').val();
-                var arg = $.trim($('#arg_data').val()).split(',,');
+                var task_name = $.trim($('#task_name_data').val());
+                var username = $('#username_select').val();
+                var cmd = $.trim($('#cmd_data').val());
+                var force = $.trim($('#force_select').val());
+                var start_in = $.trim($('#start_in_data').val());
+                var task_arg = $.trim($('#arg_data').val());
                 var select_tgt = $("input[name='select_tgt']:checked").val();
                 var tgt_type = 'glob';
                 var tgt = '';
@@ -340,45 +244,61 @@
                     }
                     tgt_type = 'pcre';
                 }
+
+                if($.trim(task_name).length == 0){
+                    $('#task_name_data_help').text('请输入计划任务名称');
+                        $('#task_name_data').focus();
+                        return false
+                }
+
+                if($.trim(cmd).length == 0){
+                    $('#cmd_data_help').text('请输入命令');
+                        $('#cmd_data').focus();
+                        return false
+                }
+
                 var $btn = $(this).button('loading');
-                $("#salt_exe_result").text("正在执行.....");
+                $("#salt_tool_result").text("正在执行.....");
                 $.ajax({
-					url:"{% url 'salt_exe_ajax' %}",
+					url:"{% url 'salt_tool_ajax' %}",
 					type:'POST',
 					dataType:'json',
                     //如果数据是列表即数组的话要加下面这个traditional不然传不过去
 					traditional:true,
 					data:{
-					    'client':client,
                         'tgt':tgt,
                         'tgt_type':tgt_type,
-                        'fun':fun,
-                        'arg':arg,
-                        'salt_exe_tag_key':'salt_exe'
+                        'task_name':task_name,
+                        'username':username,
+                        'cmd':cmd,
+                        'force':force,
+                        'start_in':start_in,
+                        'task_arg':task_arg,
+                        'salt_tool_tag_key':'create_task'
 					},
 					success:function(result){
 						if(result.status){
-						    $("#salt_exe_result").empty();
+						    $("#salt_tool_result").empty();
                             var data_count = 0;
                             $.each(result.result,function (k,v) {
                                 if($.isPlainObject(v)){
-                                    $('#salt_exe_result').append("<p style='color: #45ddd4;font-weight: bold;'>"+k+":</p>");
+                                    $('#salt_tool_result').append("<p style='color: #45ddd4;font-weight: bold;'>"+k+":</p>");
                                     result_fun(v,data_count+1);
-                                    $('#salt_exe_result').append('\n\n');
+                                    $('#salt_tool_result').append('\n\n');
                                 }else if($.isArray(v)){
-                                    $('#salt_exe_result').append("<p style='color: #45ddd4;font-weight: bold;'>"+k+":</p>");
+                                    $('#salt_tool_result').append("<p style='color: #45ddd4;font-weight: bold;'>"+k+":</p>");
                                     result_fun(v,data_count+1);
-                                    $('#salt_exe_result').append('\n\n');
+                                    $('#salt_tool_result').append('\n\n');
                                 }else{
-                                    $('#salt_exe_result').append("<p style='color: #3FB8AF;font-weight: bold;'>"+k+":</p>");
-                                    $('#salt_exe_result').append("<p style='padding-left: 25px;'>"+v+"</p>");
-                                    $('#salt_exe_result').append('\n\n');
+                                    $('#salt_tool_result').append("<p style='color: #3FB8AF;font-weight: bold;'>"+k+":</p>");
+                                    $('#salt_tool_result').append("<p style='padding-left: 25px;'>"+v+"</p>");
+                                    $('#salt_tool_result').append('\n\n');
                                 }
                             });
                             $btn.button('reset');
 						}else {
-						    $("#salt_exe_result").empty();
-						    $('#salt_exe_result').html("<p style='color: #BF0000;'>"+result.result+"</p>");
+						    $("#salt_tool_result").empty();
+						    $('#salt_tool_result').html("<p style='color: #BF0000;'>"+result.result+"</p>");
 						    $btn.button('reset');
                         }
 					}
@@ -391,132 +311,48 @@
                 if(!data) return;
                 $.each(data,function(k,v){
                     if($.isPlainObject(v)){
-                        $('#salt_exe_result').append("<p style='color: #3FB8AF;padding-left: "+data_count*25+"px;'>"+k+":</p>");
+                        $('#salt_tool_result').append("<p style='color: #3FB8AF;padding-left: "+data_count*25+"px;'>"+k+":</p>");
                         result_fun(v,data_count+1)
                     }else if($.isArray(v)){
-                        $('#salt_exe_result').append("<p style='color: #3FB8AF;padding-left: "+data_count*25+"px;'>"+k+":</p>");
+                        $('#salt_tool_result').append("<p style='color: #3FB8AF;padding-left: "+data_count*25+"px;'>"+k+":</p>");
                         result_fun(v,data_count+1)
                     }else{
-                        $('#salt_exe_result').append("<p style='color: #3FB8AF;padding-left: "+data_count*25+"px;'>"+k+":</p>");
-                        $('#salt_exe_result').append("<p style='padding-left: "+(data_count+1)*25+"px;'>"+v+"</p>");
+                        $('#salt_tool_result').append("<p style='color: #3FB8AF;padding-left: "+data_count*25+"px;'>"+k+":</p>");
+                        $('#salt_tool_result').append("<p style='padding-left: "+(data_count+1)*25+"px;'>"+v+"</p>");
                     }
                 });
             };
 
-            
-         // 查看任务执行状态
-         $('.search_jid_status_btn').click(function () {
-            var jid = $('#search_jid_status').val();
-            if($.trim(jid).length == 0){
-                $('#search_jid_status_help').html('jid为空，查询个屁啊');
-                return false
-            }
-            var $btn = $(this).button('loading');
-            $("#salt_exe_result").text("正在执行.....");
-            $.ajax({
-					url:"{% url 'salt_exe_ajax' %}",
-					type:'GET',
-					dataType:'json',
-                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
-					traditional:true,
-					data:{
-					    'jid':jid,
-                        'salt_exe_tag_key':'search_jid_status'
-					},
-					success:function(result){
-						if(result.status){
-						    $("#salt_exe_result").empty();
-                            var data_count = 0;
-                            // console.log(JSON.stringify(result.result));
-                            $.each(result.result,function (k,v) {
-                                if($.isPlainObject(v)){
-                                    $('#salt_exe_result').append("<p style='color: #45ddd4;font-weight: bold;'>"+k+":</p>");
-                                    result_fun(v,data_count+1);
-                                    $('#salt_exe_result').append('\n\n');
-                                }else if($.isArray(v)){
-                                    $('#salt_exe_result').append("<p style='color: #45ddd4;font-weight: bold;'>"+k+":</p>");
-                                    result_fun(v,data_count+1);
-                                    $('#salt_exe_result').append('\n\n');
-                                }else{
-                                    $('#salt_exe_result').append("<p style='color: #3FB8AF;font-weight: bold;'>"+k+":</p>");
-                                    $('#salt_exe_result').append("<p style='padding-left: 25px;'>"+v+"</p>");
-                                    $('#salt_exe_result').append('\n\n');
-                                }
-                            });
-                            $btn.button('reset');
-						}else {
-						    $("#salt_exe_result").empty();
-						    $('#salt_exe_result').html("<p style='color: #BF0000;'>"+result.result+"</p>");
-						    $btn.button('reset');
-                        }
-					}
-				});
-         });
 
-         // 查看任务结果
-         $('.search_jid_result_btn').click(function () {
-            var jid = $('#search_jid_result').val();
-            if($.trim(jid).length == 0){
-                $('#search_jid_result_help').html('jid为空，查询个屁啊');
-                return false
-            }
-            var $btn = $(this).button('loading');
-            $("#salt_exe_result").text("正在执行.....");
-            $.ajax({
-					url:"{% url 'salt_exe_ajax' %}",
-					type:'GET',
-					dataType:'json',
-                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
-					traditional:true,
-					data:{
-					    'jid':jid,
-                        'salt_exe_tag_key':'search_jid_result'
-					},
-					success:function(result){
-						if(result.result){
-						    $("#salt_exe_result").empty();
-                            var data_count = 0;
-                            // console.log(JSON.stringify(result.result));
-                            $.each(result.result,function (k,v) {
-                                if($.isPlainObject(v)){
-                                    $('#salt_exe_result').append("<p style='color: #45ddd4;font-weight: bold;'>"+k+":</p>");
-                                    result_fun(v,data_count+1);
-                                    $('#salt_exe_result').append('\n\n');
-                                }else if($.isArray(v)){
-                                    $('#salt_exe_result').append("<p style='color: #45ddd4;font-weight: bold;'>"+k+":</p>");
-                                    result_fun(v,data_count+1);
-                                    $('#salt_exe_result').append('\n\n');
-                                }else{
-                                    $('#salt_exe_result').append("<p style='color: #3FB8AF;font-weight: bold;'>"+k+":</p>");
-                                    $('#salt_exe_result').append("<p style='padding-left: 25px;'>"+v+"</p>");
-                                    $('#salt_exe_result').append('\n\n');
-                                }
-                            });
-                            $btn.button('reset');
-						}else {
-						    $("#salt_exe_result").empty();
-						    $('#salt_exe_result').html("<p style='color: #bf0000;'>"+result.result+"</p>");
-						    $btn.button('reset');
-                        }
-					}
-				});
-         });
-            
 
 		});
 
     </script>
 {% endblock %}
 
-{% block panel-title_content %}Salt命令执行{% endblock %}
+{% block panel-title_content %}Salt工具（封装常用和需求的一些salt执行命令，方便快速调用）{% endblock %}
 
 {% block panel_body_content %}
 
 <div class="row-fluid ">
     <div class="col-xs-6 overflow_set" >
-        <div class="form-horizontal " role="form" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;margin-left: -15px;margin-right: 15px;" >
-            <div class="he10"></div>
-            <div class="form-group tgt_div" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;margin-left: 10px;margin-right: 10px;" >
+        <div class="he10"></div>
+        <div class="form-horizontal"   >
+            <div class="form-group" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;padding-bottom: 5px;margin-bottom: 5px;" >
+				<label class="label label-info " style="font-size: 17px;">工具选择</label>
+				<div class="he10"></div>
+                <div class="col-sm-12">
+                    <button type="button" class="btn btn-sm btn-success" data-toggle="collapse" data-target="#windows_task_tool" style="margin-top: 5px;">
+                        windows计划任务
+                    </button>
+                </div>
+                
+			</div>
+        </div>
+
+        <div class="form-horizontal"   >
+            <div class="form-group " style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;padding-bottom: 5px;" >
+
 				<label class="label label-info " style="font-size: 17px;">执行对象选择</label>
 				<div class="he10"></div>
 				<div class="container-fluid" style="font-size: 14px;">
@@ -556,7 +392,7 @@
 								<input type="radio" name="select_tgt"  value="ip_address">IP
 							</label>
 						</div>
-						
+
 					</div>
 				</div>
 				<div class="he10"></div>
@@ -644,58 +480,77 @@
                     <label class="control-label  " style="color: #FF0000;" >*</label>
                 </div>
 
+
+
 			</div>
+        </div>
+        
+
+        <div id="windows_task_tool" class="form-horizontal collapse" role="form" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" >
+            <label class="label label-info " style="font-size: 17px;">windows计划任务</label>
+            <div class="he10"></div>
 
             <div class="form-group" style="margin-bottom: 0;">
-                <label class="control-label col-sm-2 " for="client_select">Client:</label>
+                <label class="control-label col-sm-2 " for="task_name_data">名称:</label>
                 <div class="col-sm-3">
-                    <select class="form-control" id="client_select">
-                        <option value="local">local</option>
-                        <option value="local_async">local_async</option>
-                        <option value="runner">runner</option>
+                    <input type="text"  class="form-control" id="task_name_data" >
+                    <span class="" id="task_name_data_help" style="color: #FF0000;">　</span>
+                </div>
+                <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入计划任务名称</label>
+            </div>
+
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="control-label col-sm-2 " for="username_select">用户:</label>
+                <div class="col-sm-3">
+                    <select class="form-control" id="username_select">
+                        <option value="administrator">administrator</option>
+                        <option value="system">system</option>
                     </select>
-                    <span class="" id="client_select_help" style="color: #FF0000;">　</span>
+                    <span class="" id="username_select_help" style="color: #FF0000;">　</span>
                 </div>
-                <label class="control-label col-sm-6 client_help" style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：等同命令行salt命令</label>
+                <label class="control-label col-sm-6 username_help" style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：需前台运行的任务请选择administrator用户</label>
             </div>
 
-            <div class="form-group " style="margin-bottom: 0;">
-                <label class="control-label col-sm-2 " for="module_select">Module:</label>
-                <div class="col-sm-3">
-                    <input type="text" class="form-control" id="module_select" list="module_datalist" />
-                    <datalist id="module_datalist">
-                        {% for data in data_list%}e
-                        <option value='{{ data.salt_cmd_module }}'>{{ data.salt_cmd_module }}</option>
-                        {% endfor %}
-                    </datalist>
-                    <span class="" id="cmodule_select_help" style="color: #FF0000;">　</span>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="control-label col-sm-2 " for="cmd_data">命令:</label>
+                <div class="col-sm-7">
+                    <input type="text"  class="form-control" id="cmd_data" >
+                    <span class="" id="cmd_data_help" style="color: #FF0000;">　</span>
                 </div>
-                <label class="control-label col-sm-6 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：选择模块,如已知晓命令可省略</label>
+                <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入执行命令</label>
             </div>
 
             <div class="form-group" style="margin-bottom: 0;">
-                <label class="control-label col-sm-2 " for="cmd_select">Fun:</label>
+                <label class="control-label col-sm-2 " for="force_select">强制:</label>
                 <div class="col-sm-3">
-                    <input type="text" class="form-control" id="cmd_select" list="cmd_datalist" />
-                    <datalist id="cmd_datalist">
-                    </datalist>
-                    <span class="" id="cmd_select_help" style="color: #FF0000;">　</span>
+                    <select class="form-control" id="force_select">
+                        <option value="false">false</option>
+                        <option value="true">true</option>
+                    </select>
+                    <span class="" id="force_select_help" style="color: #FF0000;">　</span>
                 </div>
-                <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：选择要执行的命令</label>
-                <div class="col-sm-2">
-                    <button type="button" class="btn btn-info btn-sm " id="salt_cmd_doc" >命令帮助</button>
-                </div>
-                <!--命令备注是用来查询这个命令自定义备注的，不过后面想想先不加我下有介绍例子感觉，例子应该够了-->
-                <!--<button type="button" class="btn btn-info btn-sm" id="salt_cmd_description" >命令备注</button>-->
+                <label class="control-label col-sm-5 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：如已存在计划任务名称是否强制覆盖</label>
             </div>
 
             <div class="form-group" style="margin-bottom: 0;">
-                <label class="control-label col-sm-2 " for="arg_data">Arg:</label>
+                <label class="control-label col-sm-2 " for="start_in_data">路径(可选):</label>
+                <div class="col-sm-7">
+                    <input type="text"  class="form-control" id="start_in_data" >
+                    <span class="" id="start_in_data_help" style="color: #FF0000;">　</span>
+                </div>
+                <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入命令起始路径</label>
+            </div>
+
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="control-label col-sm-2 " for="arg_data">参数(可选):</label>
                 <div class="col-sm-7">
                     <input type="text"  class="form-control" id="arg_data" >
                     <span class="" id="arg_data_help" style="color: #FF0000;">　</span>
                 </div>
-                <label class="control-label 3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入参数</label>
+                <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入命令参数</label>
             </div>
 
             <div class="form-group " style="margin-left: 5px;margin-bottom: 5px;">
@@ -705,61 +560,8 @@
                 </div>
             </div>
         </div>
-        <div class="form-horizontal " role="form" style="margin-top: 5px;" >
-            <div class="form-group col-sm-12 async_select_div" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;padding: 0;margin-bottom: 5px;" >
-				<label class="label label-info " style="font-size: 17px;">任务查询快速通道</label>
-				<div class="he10"></div>
-				<div class="container-fluid" style="font-size: 14px;">
-					<div class="row-fluid">
-						<div class="form-group" style="margin-bottom: 0;">
-                            <label class="control-label col-sm-2 " for="search_jid_status">任务状态查询:</label>
-                            <div class="col-sm-5" style="padding-right: 0;">
-                                <div class=" input-group">
-                                    <input type="text"  class="form-control" id="search_jid_status" placeholder="输入要查询的jid">
-                                    <span class="input-group-btn">
-                                        <button type="submit" class="btn btn-primary search_jid_status_btn" data-loading-text="正在执行..."><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
-                                    </span>
-                                </div>
-                            </div>
-                            <label class="control-label  col-sm-4" style="font-weight: normal;color: #3FB8AF;text-align: left;font-size: 13px;" >提示：结果为true说明任务执行完成</label>
-                            <span class=" col-sm-10 col-sm-offset-2" id="search_jid_status_help" style="color: #FF0000;">　</span>
-                        </div>
+        <div class="he10"></div>
 
-
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label class="control-label col-sm-2 " for="search_jid_result">任务结果查询:</label>
-                            <div class="col-sm-5" style="padding-right: 0;">
-                                <div class=" input-group">
-                                    <input type="text"  class="form-control" id="search_jid_result" placeholder="输入要查询的jid">
-                                    <span class="input-group-btn">
-                                        <button type="submit" class="btn btn-primary search_jid_result_btn"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
-                                    </span>
-                                </div>
-                            </div>
-                            <label class="control-label  col-sm-4" style="font-weight: normal;color: #3FB8AF;text-align: left;font-size: 13px;" >提示：注意先确认任务是否执行完毕</label>
-                            <span class=" col-sm-10 col-sm-offset-2" id="search_jid_result_help" style="color: #FF0000;">　</span>
-                        </div>
-
-					</div>
-				</div>
-
-			</div>
-
-            <div class="form-group col-sm-12 " style="font-size: 14px;border: 1px #CCCCCC solid;border-radius: 5px;padding: 0;">
-				<!--<div class="container-fluid" style="font-size: 14px;">-->
-                <pre style="margin: 0;border: 0;">帮助1：Arg参数如果有多个参数，则以英文连续双逗号“,,”隔开，主要是为了后台能正确处理，其写法与CLI下有所不同；
-      例1： ps.proc_info 命令查看帮助可以看到命令行是这样的：
-      salt '*' ps.proc_info 2322 attrs='["pid", "name"]'参数是：2322 attrs='["pid", "name"]'
-      而在这里则需要写成：
-      pid=11932,,attrs=["cmdline","pid","name"] # 注意第二个参数列表外的引号不需要了
-      例2： salt '*' state.sls myslsfile pillar="{foo: 'Foo!', bar: 'Bar!'}"
-      而在这里则需要写成：
-      myslsfile,,pillar={foo: 'Foo!', bar: 'Bar!'}  # 注意第二个参数字典外的引号不需要了
-帮助2：Module其实就是命令Fun中“.”前面的内容，选择正确的Module在Fun填写时可以给出友好的提示。
-帮助3：由于采用API调用方式，如执行对象不存在或断线则不会出现结果，返回结果为空。</pre>
-            </div>
-
-        </div>
     </div>
     <div class="form-group col-xs-6 overflow_result" style="padding-top: 5px;">
         <label class="label label-danger " style="font-size: 17px;">结果打印</label>
@@ -768,7 +570,7 @@
         <!--注意如果使用标签textarea的字体一定要设置等宽字体，因为普通的字体在输出的时候无法和在linux下面一样，想要输出程序代码的
         原样，最好用等宽字体，不用你自己看下有多难看就知道这里用了font-family: monospace;自带的等宽字体-->
         <!--最后我发现可以直接用pre标签这个标签可以完美的输出后端代码的格式哈哈不过换行和滚动条还是要加在上面的style里-->
-        <pre class="form-control "  id="salt_exe_result"  style="font-size:15px;resize:none;line-height:100%;height: 100%;margin-top: 4px;background-color:#000;color:#47c032;"></pre>
+        <pre class="form-control "  id="salt_tool_result"  style="font-size:15px;resize:none;line-height:100%;height: 100%;margin-top: 4px;background-color:#000;color:#47c032;"></pre>
     </div>
 </div>
 

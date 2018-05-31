@@ -378,6 +378,18 @@ class SaltAPI(object):
         message = 'ps_kill_pid_api'
         return self.public(data, message)
 
+    # 封装task.create_task创建windows计划任务，salt '192.168.68.1' task.create_task ooxx  action_type=Execute
+    # cmd='"C:\ooxx\Shadowsocks.exe"' force=true execution_time_limit=False  user_name=administrator
+    def task_create_api(self, client='local', tgt='*', tgt_type='glob', fun='task.create_task', arg=None):
+        data = {'client': client,
+                'tgt': tgt,
+                'tgt_type': tgt_type,
+                'fun': fun,
+                'arg': arg,
+                }
+        message = 'task_create_api'
+        return self.public(data, message)
+
     # 封装task.run启动windows计划任务，salt '192.168.100.171' task.run test1
     # ！坑！官方文档里命令是salt '192.168.100.171' task.list_run test1 根本就不行！
     def task_run_api(self, client='local', tgt='*', tgt_type='glob', fun='task.run', arg=None):
@@ -1878,6 +1890,117 @@ def salt_exe_ajax(request):
         result['result'] = 'salt命令执行ajax提交处理有问题'
         return JsonResponse(result)
 
+
+# salt_tool执行salt各种封装好的命令
+def salt_tool(request):
+    try:
+        if request.method == 'GET' and not request.is_ajax():
+            return render(request, 'salt_tool.html')
+    except Exception as e:
+        logger.error('salt命令集页面有问题', e)
+        return render(request, 'salt_tool.html')
+
+
+# salt_tool执行salt各种封装好的命令ajax操作
+def salt_tool_ajax(request):
+    result = {'result': None, 'status': False}
+    app_log = []
+    try:
+        if request.is_ajax():
+            # 在ajax提交时候多一个字段作为标识，来区分多个ajax提交哈，厉害！
+            if request.POST.get('salt_tool_tag_key') == 'create_task':
+                tgt = request.POST.get('tgt')
+                tgt_type = request.POST.get('tgt_type')
+                task_name = request.POST.get('task_name')
+                username = request.POST.get('username')
+                cmd = request.POST.get('cmd')
+                force = request.POST.get('force')
+                start_in = request.POST.get('start_in')
+                task_arg = request.POST.get('task_arg')
+                arg = []
+                arg.extend([task_name, 'action_type=Execute', 'user_name=%s' % username, 'cmd=%s' % cmd, 'force=%s' % force, 'execution_time_limit=False'])
+                # 这是判断arg是否传输值过来，如果没有前端会传个['']过来，这是由于我前端设置了的
+                if start_in != '':
+                    arg.append('start_in=%s' % start_in)
+                if task_arg != '':
+                    arg.append('arguments=%s' % task_arg)
+                with requests.Session() as s:
+                    saltapi = SaltAPI(session=s)
+                    if saltapi.get_token() is False:
+                        app_log.append('\nwindows创建计划任务后台出错_error(0)，请联系管理员')
+                        result['result'] = app_log
+                        return JsonResponse(result)
+                    else:
+                        response_data = saltapi.task_create_api(tgt=tgt, tgt_type=tgt_type, arg=arg)
+                        # 当调用api失败的时候会返回false
+                        if response_data is False:
+                            app_log.append('\nwindows创建计划任务后台出错_error(1)，请联系管理员')
+                            result['result'] = app_log
+                            return JsonResponse(result)
+                        else:
+                            try:
+                                response_data = response_data['return'][0]
+                                result['status'] = True
+                                result['result'] = response_data
+                                return JsonResponse(result)
+                            except Exception as e:
+                                app_log.append('\n' + 'windows创建计划任务失败_error(2):' + str(response_data))
+                                result['result'] = app_log
+                                return JsonResponse(result)
+            elif request.GET.get('salt_tool_tag_key') == 'search_jid_status':
+                jid = request.GET.get('jid')
+                with requests.Session() as s:
+                    saltapi = SaltAPI(session=s)
+                    if saltapi.get_token() is False:
+                        app_log.append('\nsalt命令执行查询jid后台出错_error(0)，请联系管理员')
+                        result['result'] = app_log
+                        return JsonResponse(result)
+                    else:
+                        response_data = saltapi.job_exit_success_api(jid=jid)
+                        # 当调用api失败的时候会返回false
+                        if response_data is False:
+                            app_log.append('\nsalt命令执行查询jid后台出错_error(1)，请联系管理员')
+                            result['result'] = app_log
+                            return JsonResponse(result)
+                        else:
+                            try:
+                                response_data = response_data['return'][0]
+                                result['status'] = True
+                                result['result'] = response_data
+                                return JsonResponse(result)
+                            except Exception as e:
+                                app_log.append('\n' + 'salt命令执行执行查询jid失败_error(2):' + str(response_data))
+                                result['result'] = app_log
+                                return JsonResponse(result)
+            elif request.GET.get('salt_tool_tag_key') == 'search_jid_result':
+                jid = request.GET.get('jid')
+                with requests.Session() as s:
+                    saltapi = SaltAPI(session=s)
+                    if saltapi.get_token() is False:
+                        app_log.append('\nsalt命令执行查询job结果后台出错_error(0)，请联系管理员')
+                        result['result'] = app_log
+                        return JsonResponse(result)
+                    else:
+                        response_data = saltapi.jid_api(jid=jid)
+                        # 当调用api失败的时候会返回false
+                        if response_data is False:
+                            app_log.append('\nsalt命令执行查询job结果后台出错_error(1)，请联系管理员')
+                            result['result'] = app_log
+                            return JsonResponse(result)
+                        else:
+                            try:
+                                response_data = response_data['return'][0]
+                                result['result'] = True
+                                result['result'] = response_data
+                                return JsonResponse(result)
+                            except Exception as e:
+                                app_log.append('\n' + 'salt命令执行执行查询job结果失败_error(2):' + str(response_data))
+                                result['result'] = app_log
+                                return JsonResponse(result)
+    except Exception as e:
+        logger.error('salt命令执行ajax提交处理有问题', e)
+        result['result'] = 'salt命令执行ajax提交处理有问题'
+        return JsonResponse(result)
 
 # #nginx添加功能
 # def nginx_add(request):
