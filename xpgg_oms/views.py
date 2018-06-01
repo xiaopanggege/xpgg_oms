@@ -1801,7 +1801,14 @@ def salt_tool_ajax(request):
     try:
         if request.is_ajax():
             # 在ajax提交时候多一个字段作为标识，来区分多个ajax提交哈，厉害！
-            if request.POST.get('salt_tool_tag_key') == 'create_task':
+            if request.GET.get('salt_tool_tag_key') == 'modal_search_minion_id':
+                minion_id = request.GET.get('minion_id')
+                minion_id_list = MinionList.objects.filter(minion_id__icontains=minion_id).order_by(
+                    'create_date').values_list('minion_id', flat=True)
+                result['result'] = list(minion_id_list)
+                result['status'] = True
+                return JsonResponse(result)
+            elif request.POST.get('salt_tool_tag_key') == 'create_task':
                 tgt = request.POST.get('tgt')
                 tgt_type = request.POST.get('tgt_type')
                 task_name = request.POST.get('task_name')
@@ -1811,7 +1818,7 @@ def salt_tool_ajax(request):
                 start_in = request.POST.get('start_in')
                 task_arg = request.POST.get('task_arg')
                 arg = []
-                arg.extend([task_name, 'action_type=Execute', 'user_name=%s' % username, 'cmd=%s' % cmd, 'force=%s' % force, 'execution_time_limit=False'])
+                arg.extend([task_name, 'action_type=Execute', 'user_name=%s' % username, 'cmd=%s' % cmd, 'force=%s' % force, 'execution_time_limit=False', 'trigger_type=OnBoot'])
                 # 这是判断arg是否传输值过来，如果没有前端会传个['']过来，这是由于我前端设置了的
                 if start_in != '':
                     arg.append('start_in=%s' % start_in)
@@ -1890,6 +1897,9 @@ def salt_tool_ajax(request):
                                 app_log.append('\n' + 'salt命令执行执行查询job结果失败_error(2):' + str(response_data))
                                 result['result'] = app_log
                                 return JsonResponse(result)
+            else:
+                result['result'] = 'salt工具页ajax提交了错误的tag'
+                return JsonResponse(result)
     except Exception as e:
         logger.error('salt命令执行ajax提交处理有问题', e)
         result['result'] = 'salt命令执行ajax提交处理有问题'

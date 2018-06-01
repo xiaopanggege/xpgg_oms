@@ -113,14 +113,14 @@
 
 //				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
 				$.ajax({
-					url:"{% url 'salt_exe_ajax' %}",
+					url:"{% url 'salt_tool_ajax' %}",
 					type:'GET',
 					dataType:'json',
                     //如果数据是列表即数组的话要加下面这个traditional不然传不过去
 					traditional:true,
 					data:{
                         'minion_id':minion_id,
-                        'salt_exe_tag_key':'modal_search_minion_id'
+                        'salt_tool_tag_key':'modal_search_minion_id'
 					},
 					success:function(result){
 						if(result.status){
@@ -558,6 +558,8 @@
                 <button type="button" class="btn btn-success " id="salt_exe_sumbit" data-loading-text="正在执行...">执行命令</button>
 
                 </div>
+                <label class="control-label col-sm-8 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：默认封装触发器系统启动时运行</label>
+
             </div>
         </div>
         <div class="he10"></div>
