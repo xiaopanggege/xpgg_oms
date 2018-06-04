@@ -9,12 +9,12 @@
 centos7.4  
 python3.5.2  
 django2.0.5  
-saltstack version 2017.7.5  
+saltstack version 2017.7.3  
 
 ***
 
 
->项目发布系统需要svn和rsync支持：`yum install subversion rsync -y `  
+>依赖软件安装：`yum install subversion rsync tcpdump -y `  
 
 >数据库：mysql5.7.12-mysql8.0.11都可以，账号自行创建，新建一个数据库名`xpgg_oms`,编码字符集是`utf8mb4 -- UTF-8 Unicode`，排序是`utf8mb4_0900_ai_ci`   
 
