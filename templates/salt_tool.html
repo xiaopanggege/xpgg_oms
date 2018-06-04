@@ -40,6 +40,13 @@
             });
     		$(window).resize();
 
+            $('.collapse_parent').click(function () {
+               var collapse_name = $(this).attr('name');
+               $(collapse_name).siblings('.salt_tool_collapse').collapse('hide');
+               $(collapse_name).collapse('toggle');
+            });
+
+
 			// // {#  django 跨站验证需要下面的 ajaxSetup   #}
             $.ajaxSetup({
                  data: {csrfmiddlewaretoken: '{{ csrf_token }}' }
@@ -187,8 +194,8 @@
             
 
 
-            // 执行salt命令按钮事件
-            $('#salt_exe_sumbit').click(function () {
+            // windows计划任务执行命令按钮事件
+            $('#windows_task_submit').click(function () {
                 var task_name = $.trim($('#task_name_data').val());
                 var username = $('#username_select').val();
                 var cmd = $.trim($('#cmd_data').val());
@@ -305,6 +312,129 @@
 				});
             });
 
+            // supervisor创建执行命令按钮事件
+            $('#supervisor_create_submit').click(function () {
+                var program = $.trim($('#supervisor_program_data').val());
+                var command = $.trim($('#supervisor_cmd_data').val());
+                var directory = $.trim($('#supervisor_directory_data').val());
+                var force = $.trim($('#supervisor_force_select').val());
+                var logfile = $.trim($('#supervisor_log_data').val());
+                var errorlogfile = $.trim($('#supervisor_errorlog_data').val());
+                var select_tgt = $("input[name='select_tgt']:checked").val();
+                var tgt_type = 'glob';
+                var tgt = '';
+                if(select_tgt == 'any'){
+                    tgt = '*';
+                    tgt_type = 'glob';
+                }else if(select_tgt == 'minion_list'){
+                    tgt = $('#search_selected_minion_id option').map(function(){return $(this).val();}).get().join(",");
+                    if(tgt.length == 0){
+                        $('#minion_list_help').text('请选择minion_id');
+                        return false
+                    }
+                    tgt_type = 'list';
+                }else if(select_tgt == 'grain'){
+                    tgt = $.trim($('#tgt_grain').val());
+                    if(tgt.length == 0){
+                        $('#tgt_grain_help').text('请输入grain条件');
+                        $('#tgt_grain').focus();
+                        return false
+                    }
+                    tgt_type = 'grain';
+                }
+                else if(select_tgt == 'grain_pcre'){
+                    tgt = $.trim($('#tgt_grain_pcre').val());
+                    if(tgt.length == 0){
+                        $('#tgt_grain_pcre_help').text('请输入grain正则条件');
+                        $('#tgt_grain_pcre').focus();
+                        return false
+                    }
+                    tgt_type = 'grain_pcre';
+                }
+                else if(select_tgt == 'ip_address'){
+                    tgt = $.trim($('#tgt_ip_address').val());
+                    if(tgt.length == 0){
+                        $('#tgt_ip_address_help').text('请输入IP或IP段');
+                        $('#tgt_ip_address').focus();
+                        return false
+                    }
+                    tgt_type = 'ipcidr';
+                }
+                else if(select_tgt == 'pcre'){
+                    tgt = $.trim($('#tgt_pcre').val());
+                    if(tgt.length == 0){
+                        $('#tgt_pcre_help').text('请输入minion id正则');
+                        $('#tgt_pcre').focus();
+                        return false
+                    }
+                    tgt_type = 'pcre';
+                }
+
+                if($.trim(program).length == 0){
+                    $('#supervisor_program_data_help').text('请输入进程名称');
+                        $('#supervisor_program_data').focus();
+                        return false
+                }
+
+                if($.trim(command).length == 0){
+                    $('#supervisor_cmd_data_help').text('请输入命令');
+                        $('#supervisor_cmd_data').focus();
+                        return false
+                }
+
+                if($.trim(directory).length == 0){
+                    $('#supervisor_directory_data_help').text('请输入命令执行目录');
+                        $('#supervisor_directory_data').focus();
+                        return false
+                }
+
+                var $btn = $(this).button('loading');
+                $("#salt_tool_result").text("正在执行.....");
+                $.ajax({
+					url:"{% url 'salt_tool_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+                        'tgt':tgt,
+                        'tgt_type':tgt_type,
+                        'program':program,
+                        'command':command,
+                        'directory':directory,
+                        'force':force,
+                        'logfile':logfile,
+                        'errorlogfile':errorlogfile,
+                        'salt_tool_tag_key':'create_supervisor'
+					},
+					success:function(result){
+						if(result.status){
+						    $("#salt_tool_result").empty();
+                            var data_count = 0;
+                            $.each(result.result,function (k,v) {
+                                if($.isPlainObject(v)){
+                                    $('#salt_tool_result').append("<p style='color: #45ddd4;font-weight: bold;'>"+k+":</p>");
+                                    result_fun(v,data_count+1);
+                                    $('#salt_tool_result').append('\n\n');
+                                }else if($.isArray(v)){
+                                    $('#salt_tool_result').append("<p style='color: #45ddd4;font-weight: bold;'>"+k+":</p>");
+                                    result_fun(v,data_count+1);
+                                    $('#salt_tool_result').append('\n\n');
+                                }else{
+                                    $('#salt_tool_result').append("<p style='color: #3FB8AF;font-weight: bold;'>"+k+":</p>");
+                                    $('#salt_tool_result').append("<p style='padding-left: 25px;'>"+v+"</p>");
+                                    $('#salt_tool_result').append('\n\n');
+                                }
+                            });
+                            $btn.button('reset');
+						}else {
+						    $("#salt_tool_result").empty();
+						    $('#salt_tool_result').html("<p style='color: #BF0000;'>"+result.result+"</p>");
+						    $btn.button('reset');
+                        }
+					}
+				});
+            });
 
             // 结果输出格式化 递归函数
             var result_fun = function (data,data_count) {
@@ -342,8 +472,12 @@
 				<label class="label label-info " style="font-size: 17px;">工具选择</label>
 				<div class="he10"></div>
                 <div class="col-sm-12">
-                    <button type="button" class="btn btn-sm btn-success" data-toggle="collapse" data-target="#windows_task_tool" style="margin-top: 5px;">
+                    <button type="button" class="btn btn-sm btn-success collapse_parent"   name="#windows_task_tool" style="margin-top: 5px;">
                         windows计划任务
+                    </button>
+
+                    <button type="button" class="btn btn-sm btn-success collapse_parent"  name="#supervisor_create_tool" style="margin-top: 5px;">
+                        supervisor创建
                     </button>
                 </div>
                 
@@ -351,8 +485,8 @@
         </div>
 
         <div class="form-horizontal"   >
-            <div class="form-group " style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;padding-bottom: 5px;" >
 
+            <div class="form-group " style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;padding-bottom: 5px;" >
 				<label class="label label-info " style="font-size: 17px;">执行对象选择</label>
 				<div class="he10"></div>
 				<div class="container-fluid" style="font-size: 14px;">
@@ -485,85 +619,170 @@
 			</div>
         </div>
         
+        <div class="">
+            <div id="windows_task_tool" class="form-horizontal  salt_tool_collapse collapse"  role="form" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" >
+                <label class="label label-info " style="font-size: 17px;">windows计划任务</label>
+                <div class="he10"></div>
 
-        <div id="windows_task_tool" class="form-horizontal collapse" role="form" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" >
-            <label class="label label-info " style="font-size: 17px;">windows计划任务</label>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="control-label col-sm-2 " for="task_name_data">名称:</label>
+                    <div class="col-sm-3">
+                        <input type="text"  class="form-control" id="task_name_data" >
+                        <span class="" id="task_name_data_help" style="color: #FF0000;">　</span>
+                    </div>
+                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入计划任务名称</label>
+                </div>
+
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="control-label col-sm-2 " for="username_select">用户:</label>
+                    <div class="col-sm-3">
+                        <select class="form-control" id="username_select">
+                            <option value="administrator">administrator</option>
+                            <option value="system">system</option>
+                        </select>
+                        <span class="" id="username_select_help" style="color: #FF0000;">　</span>
+                    </div>
+                    <label class="control-label col-sm-6 username_help" style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：需前台运行的任务请选择administrator用户</label>
+                </div>
+
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="control-label col-sm-2 " for="cmd_data">命令:</label>
+                    <div class="col-sm-7">
+                        <input type="text"  class="form-control" id="cmd_data" >
+                        <span class="" id="cmd_data_help" style="color: #FF0000;">　</span>
+                    </div>
+                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入执行命令</label>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="control-label col-sm-2 " for="force_select">强制:</label>
+                    <div class="col-sm-3">
+                        <select class="form-control" id="force_select">
+                            <option value="false">false</option>
+                            <option value="true">true</option>
+                        </select>
+                        <span class="" id="force_select_help" style="color: #FF0000;">　</span>
+                    </div>
+                    <label class="control-label col-sm-5 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：如已存在计划任务名称是否强制覆盖</label>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="control-label col-sm-2 " for="start_in_data">路径(可选):</label>
+                    <div class="col-sm-7">
+                        <input type="text"  class="form-control" id="start_in_data" >
+                        <span class="" id="start_in_data_help" style="color: #FF0000;">　</span>
+                    </div>
+                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入命令起始路径</label>
+                </div>
+
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="control-label col-sm-2 " for="arg_data">参数(可选):</label>
+                    <div class="col-sm-7">
+                        <input type="text"  class="form-control" id="arg_data" >
+                        <span class="" id="arg_data_help" style="color: #FF0000;">　</span>
+                    </div>
+                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入命令参数</label>
+                </div>
+
+                <div class="form-group " style="margin-left: 5px;margin-bottom: 5px;">
+                    <div class="col-sm-2">
+                    <button type="button" class="btn btn-success " id="windows_task_submit" data-loading-text="正在执行...">执行命令</button>
+
+                    </div>
+                    <label class="control-label col-sm-8 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：默认封装触发器系统启动时运行</label>
+
+                </div>
+            </div>
             <div class="he10"></div>
 
-            <div class="form-group" style="margin-bottom: 0;">
-                <label class="control-label col-sm-2 " for="task_name_data">名称:</label>
-                <div class="col-sm-3">
-                    <input type="text"  class="form-control" id="task_name_data" >
-                    <span class="" id="task_name_data_help" style="color: #FF0000;">　</span>
+            <div id="supervisor_create_tool" class="form-horizontal  salt_tool_collapse collapse"   role="form" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" >
+                <label class="label label-info " style="font-size: 17px;">supervisor创建</label>
+                <div class="he10"></div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="control-label col-sm-2 " for="supervisor_program_data">program:</label>
+                    <div class="col-sm-3">
+                        <input type="text"  class="form-control" id="supervisor_program_data" >
+                        <span class="" id="supervisor_program_data_help" style="color: #FF0000;">　</span>
+                    </div>
+                    <label class="control-label col-sm-5 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入进程名称，并且生成的文件名为进程名.ini</label>
                 </div>
-                <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入计划任务名称</label>
-            </div>
 
 
-            <div class="form-group" style="margin-bottom: 0;">
-                <label class="control-label col-sm-2 " for="username_select">用户:</label>
-                <div class="col-sm-3">
-                    <select class="form-control" id="username_select">
-                        <option value="administrator">administrator</option>
-                        <option value="system">system</option>
-                    </select>
-                    <span class="" id="username_select_help" style="color: #FF0000;">　</span>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="control-label col-sm-2 " for="supervisor_cmd_data">command:</label>
+                    <div class="col-sm-7">
+                        <input type="text"  class="form-control" id="supervisor_cmd_data" >
+                        <span class="" id="supervisor_cmd_data_help" style="color: #FF0000;">　</span>
+                    </div>
+                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入执行命令</label>
                 </div>
-                <label class="control-label col-sm-6 username_help" style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：需前台运行的任务请选择administrator用户</label>
-            </div>
 
-
-            <div class="form-group" style="margin-bottom: 0;">
-                <label class="control-label col-sm-2 " for="cmd_data">命令:</label>
-                <div class="col-sm-7">
-                    <input type="text"  class="form-control" id="cmd_data" >
-                    <span class="" id="cmd_data_help" style="color: #FF0000;">　</span>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="control-label col-sm-2 " for="supervisor_cmd_data">directory:</label>
+                    <div class="col-sm-7">
+                        <input type="text"  class="form-control" id="supervisor_directory_data" >
+                        <span class="" id="supervisor_directory_data_help" style="color: #FF0000;">　</span>
+                    </div>
+                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入执行命令的目录</label>
                 </div>
-                <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入执行命令</label>
-            </div>
 
-            <div class="form-group" style="margin-bottom: 0;">
-                <label class="control-label col-sm-2 " for="force_select">强制:</label>
-                <div class="col-sm-3">
-                    <select class="form-control" id="force_select">
-                        <option value="false">false</option>
-                        <option value="true">true</option>
-                    </select>
-                    <span class="" id="force_select_help" style="color: #FF0000;">　</span>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="control-label col-sm-2 " for="supervisor_force_select">强制:</label>
+                    <div class="col-sm-3">
+                        <select class="form-control" id="supervisor_force_select">
+                            <option value="false">false</option>
+                            <option value="true">true</option>
+                        </select>
+                        <span class="" id="supervisor_force_select_help" style="color: #FF0000;">　</span>
+                    </div>
+                    <label class="control-label col-sm-5 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：如已存进程(文件名)名称是否强制覆盖</label>
                 </div>
-                <label class="control-label col-sm-5 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：如已存在计划任务名称是否强制覆盖</label>
-            </div>
 
-            <div class="form-group" style="margin-bottom: 0;">
-                <label class="control-label col-sm-2 " for="start_in_data">路径(可选):</label>
-                <div class="col-sm-7">
-                    <input type="text"  class="form-control" id="start_in_data" >
-                    <span class="" id="start_in_data_help" style="color: #FF0000;">　</span>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="control-label col-sm-2 " for="supervisor_env_data">environment(可选):</label>
+                    <div class="col-sm-7">
+                        <input type="text"  class="form-control" id="supervisor_env_data" >
+                        <span class="" id="supervisor_env_data_help" style="color: #FF0000;">　</span>
+                    </div>
+                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：环境变量</label>
                 </div>
-                <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入命令起始路径</label>
-            </div>
 
 
-            <div class="form-group" style="margin-bottom: 0;">
-                <label class="control-label col-sm-2 " for="arg_data">参数(可选):</label>
-                <div class="col-sm-7">
-                    <input type="text"  class="form-control" id="arg_data" >
-                    <span class="" id="arg_data_help" style="color: #FF0000;">　</span>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="control-label col-sm-2 " for="supervisor_log_data">日志路径(可选):</label>
+                    <div class="col-sm-7">
+                        <input type="text"  class="form-control" id="supervisor_log_data" >
+                        <span class="" id="supervisor_log_data_help" style="color: #FF0000;">　</span>
+                    </div>
+                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入日志路径</label>
                 </div>
-                <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入命令参数</label>
-            </div>
 
-            <div class="form-group " style="margin-left: 5px;margin-bottom: 5px;">
-                <div class="col-sm-2">
-                <button type="button" class="btn btn-success " id="salt_exe_sumbit" data-loading-text="正在执行...">执行命令</button>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="control-label col-sm-2 " for="supervisor_errorlog_data">错误日志路径(可选):</label>
+                    <div class="col-sm-7">
+                        <input type="text"  class="form-control" id="supervisor_errorlog_data" >
+                        <span class="" id="supervisor_errorlog_data_help" style="color: #FF0000;">　</span>
+                    </div>
+                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入错误日志路径</label>
+                </div>
+
+
+                <div class="form-group " style="margin-left: 5px;margin-bottom: 5px;">
+                    <div class="col-sm-2">
+                    <button type="button" class="btn btn-success " id="supervisor_create_submit" data-loading-text="正在执行...">执行命令</button>
+
+                    </div>
+                    <label class="control-label col-sm-8 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：文件目录为/etc/supervisord.d/,如不存在则报错No such file or directory，如结果为:Wrote xx lines to "/etc/supervisord.d/xxx.ini"则说明成功</label>
 
                 </div>
-                <label class="control-label col-sm-8 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：默认封装触发器系统启动时运行</label>
-
             </div>
+            <div class="he10"></div>
         </div>
-        <div class="he10"></div>
-
     </div>
     <div class="form-group col-xs-6 overflow_result" style="padding-top: 5px;">
         <label class="label label-danger " style="font-size: 17px;">结果打印</label>
