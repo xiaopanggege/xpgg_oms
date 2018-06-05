@@ -424,6 +424,17 @@ class SaltAPI(object):
         message = 'file_mkdir_api'
         return self.public(data, message)
 
+    # 封装file.makedirs,创建目录最后可以需要/号，不然只创建到有/那一层这点也是可以利用的呵呵
+    def file_makedirs_api(self, client='local', tgt='*', tgt_type='glob', fun='file.makedirs', arg=None):
+        data = {'client': client,
+                'tgt': tgt,
+                'tgt_type': tgt_type,
+                'fun': fun,
+                'arg': arg,
+                }
+        message = 'file_makedirs_api'
+        return self.public(data, message)
+
     # 封装file_exists,检查文件是否存在
     def file_exists_api(self, client='local', tgt='*', tgt_type='glob', fun='file.file_exists', arg=None):
         data = {'client': client,
@@ -482,9 +493,11 @@ class SaltAPI(object):
     # 封装supervisord.status,检测supervisor守护名称的状态，返回结果有这几种情况：
     # 1、没这个命令，salt需要安装supervisor才能用{'return': [{'192.168.100.171': "'supervisord.status' is not available."}]}
     # 2、没这个守护名称{'return': [{'192.168.68.50-master': {'1:': {'reason': '(no such process)', 'state': 'ERROR'}}}]}
-    # 3、安装了supervisor但是没启动{'return': [{'192.168.100.170': {'unix:///var/run/supervisor/supervisor.sock': {'reason': 'such file', 'state': 'no'}}}]}
+    # 3、安装了supervisor但是没启动{'return': [{'192.168.100.170': {'unix:///var/run/supervisor/supervisor.sock': {'reason'
+    # : 'such file', 'state': 'no'}}}]}
     # 4、正常获取结果的情况：
-    # 启动{'return': [{'192.168.68.50-master': {'djangoproject.runserver': {'state': 'RUNNING', 'reason': 'pid 1233, uptime 1 day, 6:56:14'}}}]}
+    # 启动{'return': [{'192.168.68.50-master': {'djangoproject.runserver': {'state': 'RUNNING', 'reason': 'pid 1233,
+    #  uptime 1 day, 6:56:14'}}}]}
     # 停止{'return': [{'192.168.100.170': {'test': {'state': 'STOPPED', 'reason': 'Dec 13 05:23 PM'}}}]}
     def supervisord_status_api(self, client='local', tgt='*', tgt_type='glob', fun='supervisord.status', arg=None):
         data = {'client': client,
@@ -522,6 +535,17 @@ class SaltAPI(object):
                 'arg': arg,
                 }
         message = 'supervisord_start_api'
+        return self.public(data, message)
+
+    # supervisord配置重载会启动新添加的程序
+    def supervisord_update_api(self, client='local', tgt='*', tgt_type='glob', fun='supervisord.update', arg=None):
+        data = {'client': client,
+                'tgt': tgt,
+                'tgt_type': tgt_type,
+                'fun': fun,
+                'arg': arg,
+                }
+        message = 'supervisord_update_api'
         return self.public(data, message)
 
     # 封装rsync.rsync同步命令
@@ -1804,7 +1828,7 @@ def salt_exe_ajax(request):
                         else:
                             try:
                                 response_data = response_data['return'][0]
-                                result['result'] = True
+                                result['status'] = True
                                 result['result'] = response_data
                                 return JsonResponse(result)
                             except Exception as e:
@@ -1880,12 +1904,42 @@ def salt_tool_ajax(request):
                                 app_log.append('\n' + 'windows创建计划任务失败_error(2):' + str(response_data))
                                 result['result'] = app_log
                                 return JsonResponse(result)
+            elif request.GET.get('salt_tool_tag_key') == 'get_supervisor_content':
+                program = request.GET.get('program')
+                command = request.GET.get('command')
+                directory = request.GET.get('directory')
+                env = request.GET.get('env')
+                logfile = request.GET.get('logfile')
+                errorlogfile = request.GET.get('errorlogfile')
+                arg = []
+                arg.extend(['[program:%s]' % program, 'command=%s' % command, 'stdout_logfile_maxbytes=10MB',
+                            'stderr_logfile_maxbytes=10MB', 'stdout_logfile_backups=5', 'stderr_logfile_backups=5',
+                            'startsecs=5', 'stopsignal=QUIT', 'stopasgroup=true', 'killasgroup=true'])
+                # 这是判断arg是否传输值过来，如果没有前端会传个['']过来，这是由于我前端设置了的
+                if logfile != '':
+                    arg.append('stdout_logfile=%s' % logfile)
+                else:
+                    logfile = 'stdout_logfile=/var/log/supervisor/%s.log' % program
+                    arg.append(logfile)
+                if errorlogfile != '':
+                    arg.append('stderr_logfile=%s' % errorlogfile)
+                else:
+                    errorlogfile = 'stderr_logfile=/var/log/supervisor/%s.log' % program
+                    arg.append(errorlogfile)
+                if env != '':
+                    arg.append('environment=%s' % env)
+                if directory != '':
+                    arg.append('directory=%s' % directory)
+                result['status'] = True
+                result['result'] = arg
+                return JsonResponse(result)
             elif request.POST.get('salt_tool_tag_key') == 'create_supervisor':
                 tgt = request.POST.get('tgt')
                 tgt_type = request.POST.get('tgt_type')
                 program = request.POST.get('program')
                 command = request.POST.get('command')
                 directory = request.POST.get('directory')
+                env = request.POST.get('env')
                 logfile = request.POST.get('logfile')
                 errorlogfile = request.POST.get('errorlogfile')
                 force = request.POST.get('force')
@@ -1894,14 +1948,24 @@ def salt_tool_ajax(request):
                 # file_path是文件路径加文件名后缀是.ini，这个也是在supervisord.conf的include定义好的格式
                 file_path = path + program + '.ini'
                 arg = []
-                arg.extend(['[program:%s]' % program, 'command=%s' % command, 'directory=%s' % directory,
-                            'stdout_logfile_maxbytes=10MB', 'stderr_logfile_maxbytes=10MB', 'stdout_logfile_backups=5',
-                            'stderr_logfile_backups=5', 'startsecs=5', 'stopsignal=QUIT', 'stopasgroup=true', 'killasgroup=true'])
+                arg.extend(['[program:%s]' % program, 'command=%s' % command,'stdout_logfile_maxbytes=10MB',
+                            'stderr_logfile_maxbytes=10MB', 'stdout_logfile_backups=5', 'stderr_logfile_backups=5',
+                            'startsecs=5', 'stopsignal=QUIT', 'stopasgroup=true', 'killasgroup=true'])
                 # 这是判断arg是否传输值过来，如果没有前端会传个['']过来，这是由于我前端设置了的
                 if logfile != '':
                     arg.append('stdout_logfile=%s' % logfile)
+                else:
+                    logfile = 'stdout_logfile=/var/log/supervisor/%s.log' % program
+                    arg.append(logfile)
                 if errorlogfile != '':
                     arg.append('stderr_logfile=%s' % errorlogfile)
+                else:
+                    errorlogfile = 'stderr_logfile=/var/log/supervisor/%s.log' % program
+                    arg.append(errorlogfile)
+                if env != '':
+                    arg.append('environment=%s' % env)
+                if directory != '':
+                    arg.append('directory=%s' % directory)
                 with requests.Session() as s:
                     saltapi = SaltAPI(session=s)
                     if saltapi.get_token() is False:
@@ -1922,7 +1986,7 @@ def salt_tool_ajax(request):
                                 for k, v in response_data.items():
                                     # 判断如果执行的minion中是否已经存在了该文件夹，如果存在并且强制没有选中True就不继续执行这个minion的下一步操作
                                     if v is True and force == 'false':
-                                        app_log.append('\nminion_id:%s已存在同名文件，如需覆盖请选择强制' % k)
+                                        app_log.append({k: 'minion_id:%s已存在同名文件，如需覆盖请选择强制' % k})
                                     else:
                                         success_tgt.append(k)
                                 if success_tgt:
@@ -1935,36 +1999,30 @@ def salt_tool_ajax(request):
                                     else:
                                         response_data = response_data['return']
                                         app_log.extend(response_data)
-                                        result['status'] = True
+                                    # 日志文件目录创建
+                                    response_data = saltapi.file_makedirs_api(tgt=success_tgt, tgt_type='list',
+                                                                              arg=logfile)
+                                    if response_data is False:
+                                        app_log.append('\n创建supervisor进程日志创建出错_error(3)，请联系管理员')
+                                        result['result'] = app_log
+                                        return JsonResponse(result)
+                                    response_data = saltapi.file_makedirs_api(tgt=success_tgt, tgt_type='list',
+                                                                              arg=errorlogfile)
+                                    if response_data is False:
+                                        app_log.append('\n创建supervisor进程日志创建出错_error(4)，请联系管理员')
+                                        result['result'] = app_log
+                                        return JsonResponse(result)
+                                    # 重载supervisord配置
+                                    response_data = saltapi.supervisord_update_api(tgt=success_tgt, tgt_type='list')
+                                    if response_data is False:
+                                        app_log.append('\n创建supervisor进程重载配置出错_error(5)，请联系管理员')
+                                        result['result'] = app_log
+                                        return JsonResponse(result)
+                                result['status'] = True
                                 result['result'] = app_log
                                 return JsonResponse(result)
                             except Exception as e:
                                 app_log.append('\n' + '创建supervisor进程失败_error(3):' + str(response_data))
-                                result['result'] = app_log
-                                return JsonResponse(result)
-            elif request.GET.get('salt_tool_tag_key') == 'search_jid_result':
-                jid = request.GET.get('jid')
-                with requests.Session() as s:
-                    saltapi = SaltAPI(session=s)
-                    if saltapi.get_token() is False:
-                        app_log.append('\nsalt命令执行查询job结果后台出错_error(0)，请联系管理员')
-                        result['result'] = app_log
-                        return JsonResponse(result)
-                    else:
-                        response_data = saltapi.jid_api(jid=jid)
-                        # 当调用api失败的时候会返回false
-                        if response_data is False:
-                            app_log.append('\nsalt命令执行查询job结果后台出错_error(1)，请联系管理员')
-                            result['result'] = app_log
-                            return JsonResponse(result)
-                        else:
-                            try:
-                                response_data = response_data['return'][0]
-                                result['result'] = True
-                                result['result'] = response_data
-                                return JsonResponse(result)
-                            except Exception as e:
-                                app_log.append('\n' + 'salt命令执行执行查询job结果失败_error(2):' + str(response_data))
                                 result['result'] = app_log
                                 return JsonResponse(result)
             else:

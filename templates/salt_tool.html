@@ -72,6 +72,12 @@
 	    	$('#cmd_data').keyup(function(){
 	    		$('#cmd_data_help').text('　');
 	    	});
+            $('#supervisor_program_data').keyup(function(){
+	    		$('#supervisor_program_data_help').text('　');
+	    	});
+	    	$('#supervisor_cmd_data').keyup(function(){
+	    		$('#supervisor_cmd_data_help').text('　');
+	    	});
 
 
 
@@ -312,12 +318,69 @@
 				});
             });
 
+            // supervisor生成结果查询命令按钮事件
+            $('#supervisor_content_submit').click(function () {
+                var program = $.trim($('#supervisor_program_data').val());
+                var command = $.trim($('#supervisor_cmd_data').val());
+                var directory = $.trim($('#supervisor_directory_data').val());
+                var env = $.trim($('#supervisor_env_data').val());
+                var logfile = $.trim($('#supervisor_log_data').val());
+                var errorlogfile = $.trim($('#supervisor_errorlog_data').val());
+
+                if($.trim(program).length == 0){
+                    $('#supervisor_program_data_help').text('请输入进程名称');
+                        $('#supervisor_program_data').focus();
+                        return false
+                }
+
+                if($.trim(command).length == 0){
+                    $('#supervisor_cmd_data_help').text('请输入命令');
+                        $('#supervisor_cmd_data').focus();
+                        return false
+                }
+
+
+                var $btn = $(this).button('loading');
+                $("#salt_tool_result").text("正在执行.....");
+                $.ajax({
+					url:"{% url 'salt_tool_ajax' %}",
+					type:'GET',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+                        'program':program,
+                        'command':command,
+                        'directory':directory,
+                        'env':env,
+                        'logfile':logfile,
+                        'errorlogfile':errorlogfile,
+                        'salt_tool_tag_key':'get_supervisor_content'
+					},
+					success:function(result){
+						if(result.status){
+						    $("#salt_tool_result").empty();
+                            $.each(result.result,function (i,v) {
+                                $('#salt_tool_result').append("<p style='padding-left: 25px;'>"+v+"</p>");
+
+                            });
+                            $btn.button('reset');
+						}else {
+						    $("#salt_tool_result").empty();
+						    $('#salt_tool_result').html("<p style='color: #BF0000;'>"+result.result+"</p>");
+						    $btn.button('reset');
+                        }
+					}
+				});
+            });
+
             // supervisor创建执行命令按钮事件
             $('#supervisor_create_submit').click(function () {
                 var program = $.trim($('#supervisor_program_data').val());
                 var command = $.trim($('#supervisor_cmd_data').val());
                 var directory = $.trim($('#supervisor_directory_data').val());
                 var force = $.trim($('#supervisor_force_select').val());
+                var env = $.trim($('#supervisor_env_data').val());
                 var logfile = $.trim($('#supervisor_log_data').val());
                 var errorlogfile = $.trim($('#supervisor_errorlog_data').val());
                 var select_tgt = $("input[name='select_tgt']:checked").val();
@@ -382,11 +445,6 @@
                         return false
                 }
 
-                if($.trim(directory).length == 0){
-                    $('#supervisor_directory_data_help').text('请输入命令执行目录');
-                        $('#supervisor_directory_data').focus();
-                        return false
-                }
 
                 var $btn = $(this).button('loading');
                 $("#salt_tool_result").text("正在执行.....");
@@ -403,6 +461,7 @@
                         'command':command,
                         'directory':directory,
                         'force':force,
+                        'env':env,
                         'logfile':logfile,
                         'errorlogfile':errorlogfile,
                         'salt_tool_tag_key':'create_supervisor'
@@ -411,6 +470,7 @@
 						if(result.status){
 						    $("#salt_tool_result").empty();
                             var data_count = 0;
+                            console.log(JSON.stringify(result.result));
                             $.each(result.result,function (k,v) {
                                 if($.isPlainObject(v)){
                                     $('#salt_tool_result').append("<p style='color: #45ddd4;font-weight: bold;'>"+k+":</p>");
@@ -708,7 +768,7 @@
                         <input type="text"  class="form-control" id="supervisor_program_data" >
                         <span class="" id="supervisor_program_data_help" style="color: #FF0000;">　</span>
                     </div>
-                    <label class="control-label col-sm-5 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入进程名称，并且生成的文件名为进程名.ini</label>
+                    <label class="control-label col-sm-5 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入进程名称，并且生成的文件名为"进程名.ini"</label>
                 </div>
 
 
@@ -721,14 +781,6 @@
                     <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入执行命令</label>
                 </div>
 
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="control-label col-sm-2 " for="supervisor_cmd_data">directory:</label>
-                    <div class="col-sm-7">
-                        <input type="text"  class="form-control" id="supervisor_directory_data" >
-                        <span class="" id="supervisor_directory_data_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入执行命令的目录</label>
-                </div>
 
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="control-label col-sm-2 " for="supervisor_force_select">强制:</label>
@@ -743,19 +795,28 @@
                 </div>
 
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label class="control-label col-sm-2 " for="supervisor_env_data">environment(可选):</label>
+                    <label class="control-label col-sm-2 " for="supervisor_cmd_data">dir(可选):</label>
+                    <div class="col-sm-7">
+                        <input type="text"  class="form-control" id="supervisor_directory_data" >
+                        <span class="" id="supervisor_directory_data_help" style="color: #FF0000;">　</span>
+                    </div>
+                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入执行命令的目录</label>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="control-label col-sm-2 " for="supervisor_env_data">env(可选):</label>
                     <div class="col-sm-7">
                         <input type="text"  class="form-control" id="supervisor_env_data" >
                         <span class="" id="supervisor_env_data_help" style="color: #FF0000;">　</span>
                     </div>
-                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：环境变量</label>
+                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入环境变量</label>
                 </div>
 
 
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="control-label col-sm-2 " for="supervisor_log_data">日志路径(可选):</label>
                     <div class="col-sm-7">
-                        <input type="text"  class="form-control" id="supervisor_log_data" >
+                        <input type="text"  class="form-control" id="supervisor_log_data" placeholder="默认为/var/log/supervisor/进程名.log">
                         <span class="" id="supervisor_log_data_help" style="color: #FF0000;">　</span>
                     </div>
                     <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入日志路径</label>
@@ -763,9 +824,9 @@
 
 
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label class="control-label col-sm-2 " for="supervisor_errorlog_data">错误日志路径(可选):</label>
+                    <label class="control-label col-sm-2 " for="supervisor_errorlog_data">error日志路径(可选):</label>
                     <div class="col-sm-7">
-                        <input type="text"  class="form-control" id="supervisor_errorlog_data" >
+                        <input type="text"  class="form-control" id="supervisor_errorlog_data" placeholder="默认为/var/log/supervisor/进程名.log">
                         <span class="" id="supervisor_errorlog_data_help" style="color: #FF0000;">　</span>
                     </div>
                     <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入错误日志路径</label>
@@ -773,11 +834,16 @@
 
 
                 <div class="form-group " style="margin-left: 5px;margin-bottom: 5px;">
-                    <div class="col-sm-2">
-                    <button type="button" class="btn btn-success " id="supervisor_create_submit" data-loading-text="正在执行...">执行命令</button>
+                    <div class="col-sm-3" style="padding: 0;">
+                        <button type="button" class="btn btn-info " id="supervisor_content_submit" data-loading-text="正在执行...">查看配置</button>
+                        <button type="button" class="btn btn-success " id="supervisor_create_submit" data-loading-text="正在执行...">执行创建</button>
 
                     </div>
-                    <label class="control-label col-sm-8 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：文件目录为/etc/supervisord.d/,如不存在则报错No such file or directory，如结果为:Wrote xx lines to "/etc/supervisord.d/xxx.ini"则说明成功</label>
+                    <!--<div class="col-sm-2" style="padding: 0;">-->
+                    <!---->
+
+                    <!--</div>-->
+                    <label class="control-label col-sm-8 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：文件目录为/etc/supervisord.d/,如不存在则报错No such file or directory，如结果为:Wrote xx lines to "/etc/supervisord.d/xxx.ini"则说明成功并且update supervisor</label>
 
                 </div>
             </div>
