@@ -4031,7 +4031,6 @@ def app_auth(request):
             search_field = request.GET.get('search_field', '')
             search_content = request.GET.get('search_content', '')
             username_list = list(AppAuth.objects.values('my_user_id', 'username'))
-            logger.error(username_list)
             if search_content is '':
                 app_auth_data = AppAuth.objects.all().order_by('my_user_id')
                 data_list = getPage(request, app_auth_data, 12)
@@ -4134,7 +4133,6 @@ def app_auth_ajax(request):
                 for id_and_username in username_list:
                     id_and_username = id_and_username.split(' ')
                     data = {'my_user_id': id_and_username[0], 'username': id_and_username[1]}
-                    logger.error(data)
                     obj = AppAuthCreateForm(data)
                     if obj.is_valid():
                         AppAuth.objects.create(my_user_id=obj.cleaned_data["my_user_id"], username=obj.cleaned_data["username"])
@@ -4143,7 +4141,8 @@ def app_auth_ajax(request):
                     else:
                         error_str = obj.errors.as_json()
                         result['result'] = json.loads(error_str)
-                    return JsonResponse(result)
+                        return JsonResponse(result)
+                return JsonResponse(result)
             elif request.GET.get('app_auth_tag_key') == 'modal_search_username':
                 username = request.GET.get('username')
                 username_list = MyUser.objects.filter(username__icontains=username).order_by('id').values('id', 'username')

@@ -114,16 +114,7 @@
                  data: {csrfmiddlewaretoken: '{{ csrf_token }}' }
             });
 
-//           用户添加按钮触发内容填充模态框
-//             $('.edit_username_btn').click(function () {
-//                 var username_list = {{ username_list | safe}};
-//                 if(username_list.length != 0) {
-//                     $.each(username_list,function (index,content) {
-//                          // 我这里做的是把已经存在用户的添加到选中那边,这次要隐藏，因为这次只做添加操作不做删除，表操作麻烦所以单独做个删除操作
-//                         $("<option class='hidden'  value='"+ content.my_user_id +" "+ content.username + "'>" + content.my_user_id +" "+ content.username + "</option>").appendTo("#edit_selected_username");
-//                     })
-//                 }
-//             });
+
 
 //            用户添加模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
             $('#edit_username_modal').on('shown.bs.modal', function () {
