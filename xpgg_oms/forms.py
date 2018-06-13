@@ -186,3 +186,14 @@ def server_name_not_exist_validate(value):
 class ServerListUpdateForm(ServerListAddForm):
     server_name = forms.CharField(max_length=50, error_messages={'required': '服务器名称不能为空', 'max_length': '最多50位'},
                                   validators=[server_name_not_exist_validate])
+
+
+def validate_excel(value):
+    logger.error(value.name.rsplit('.')[1])
+    if value.name.rsplit('.')[1] != 'xlsx':
+        raise ValidationError('文件类型错误，只接受xlsx类型文件')
+
+
+# 资源管理 主机列表  导入主机验证 主
+class ServerListImportForm(forms.Form):
+    file = forms.FileField(validators=[validate_excel])

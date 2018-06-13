@@ -21,6 +21,9 @@ from django.core.paginator import Paginator
 from django.contrib.auth import logout, login, authenticate  # 登陆注销注册django自带模块引用
 from django.contrib.auth.hashers import make_password  # django自带密码加密模块
 import ast  # 去掉字符串的一层""
+import openpyxl  # 操作excel读写
+from io import BytesIO
+from django.views.decorators.csrf import  csrf_exempt
 
 
 import logging
@@ -1081,6 +1084,7 @@ def server_list(request):
 
 
 # 主机管理ajax
+@csrf_exempt
 def server_list_ajax(request):
     result = {'result': None, 'status': False}
     app_log = []
@@ -1172,6 +1176,18 @@ def server_list_ajax(request):
                     result['status'] = True
                 except Exception as e:
                     result['result'] = str(e)
+                return JsonResponse(result)
+            elif request.POST.get('server_list_tag_key') == 'import_server_list':
+                obj = ServerListImportForm(request.POST, request.FILES)
+                if obj.is_valid():
+                    wb = openpyxl.load_workbook(filename=BytesIO(request.FILES['file'].read()))
+                    table = wb[wb.sheetnames[0]]
+                    data = table.cell(row=2, column=1).value
+                    result['result'] = data
+                    result['status'] = True
+                else:
+                    error_str = obj.errors.as_json()
+                    result['result'] = json.loads(error_str)
                 return JsonResponse(result)
             else:
                 result['result'] = '主机管理页ajax提交了错误的tag'

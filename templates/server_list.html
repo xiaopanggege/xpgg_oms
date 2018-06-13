@@ -244,6 +244,10 @@
 	    	});
 
 
+            // // {#  django 跨站验证需要下面的 ajaxSetup   #}
+            $.ajaxSetup({
+                 data: {csrfmiddlewaretoken: '{{ csrf_token }}' }
+            });
 
 //          点击页面添加主机按钮时，隐藏模态框提交更新的按钮
             $('.add_server_list_btn').click(function () {
@@ -303,10 +307,7 @@
                 $("#add_server_name_help").html('请修改服务器名称');
             });
 
-            // // {#  django 跨站验证需要下面的 ajaxSetup   #}
-            $.ajaxSetup({
-                 data: {csrfmiddlewaretoken: '{{ csrf_token }}' }
-            });
+
 
 //          新增主机表单提交
             $('#add_server_list_submit').click(function(){
@@ -390,7 +391,7 @@
                             });
 						    // 如果提交失败要把提交前清空的密码框填充回去
 						    $('#add_login_password').val(login_password);
-                           console.log(JSON.stringify(result.result));
+                           // console.log(JSON.stringify(result.result));
                         }
 					}
 				});
@@ -637,6 +638,48 @@
 				});
 			});
 
+
+            //点击选择文件，清除help提示框
+            $('#server_list_file').click(function () {
+                $('#server_list_file_help').text('　');
+            });
+
+            // 上传文件事件
+            $('#import_server_list_submit').click(function () {
+                var file_data = new FormData();
+                var file_info =$( '#server_list_file')[0].files[0];
+                file_data.append('file',file_info);
+                if(file_info==undefined){
+                    $('#server_list_file_help').text('你没有选择任何文件');
+                    return false
+                }
+                file_data.append('server_list_tag_key','import_server_list');
+                $.ajax({
+					url:"{% url 'server_list_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+                    //提交的数据要和后台form验证的变量一致，不过可以多出来，只要验证的有就行，比如这里就多了project_tag_key
+					data:file_data,
+                    // 上传文件需要加下面2个来使http能正确传输文件
+                    processData: false,
+                    contentType: false,
+					success:function(result){
+						if(result.status){
+                            $('.loading_modal').modal('toggle');
+                            toastr.success(result.result,'Success',{timeOut: 1500});
+                            setTimeout(function(){window.location.href=window.location.href}, 1000);
+						}else {
+						    $('.loading_modal').modal('toggle');
+						    toastr.error(result.result,'Error',{timeOut: 1500});
+						    console.log(JSON.stringify(result.result));
+                        }
+					}
+				});
+
+            });
+
         });
 </script>
 {% endblock %}
@@ -766,6 +809,17 @@
                     <button type="button" class="btn btn-sm btn-success page_go" >跳转</button>
                 </li>
             </ul>
+        </div>
+
+        <div >
+            <div class="form-inline" role="form">
+                <div class="form-group">
+                    <button type="button" class="btn btn-primary import_server_list_btn" data-toggle="modal" data-target="#import_server_list_modal">批量导入</button>
+                </div>
+
+
+                </div>
+
         </div>
 
     </div>
@@ -1127,6 +1181,36 @@
 				<img src="../static/images/loading.gif"  alt="未加载" >
 		</div>
 	</div>
+</div>
+
+
+<!--上传文件模态框-->
+<div class="modal fade juzhong " id="import_server_list_modal" tabindex="-1" role="dialog" aria-labelledby="import_server_list_lable" aria-hidden="true" data-backdrop="static" >
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:70%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">导入文件选择</h4>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <input type="file" id="server_list_file">
+                    <span id="server_list_file_help" style="color: #FF0000;">　</span>
+                </div>
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox"> 是否要覆盖已存在服务器名称
+                    </label>
+                </div>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="import_server_list_submit" data-dismiss="modal" data-toggle="modal" data-target=".loading_modal"> 确定</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 
