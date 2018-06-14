@@ -646,13 +646,24 @@
 
             // 上传文件事件
             $('#import_server_list_submit').click(function () {
+                var server_list_cover_select = '';
+                 // 上传文件要先设置一个FormData对象来做的，因为它可以接受二进制文件上传
                 var file_data = new FormData();
                 var file_info =$( '#server_list_file')[0].files[0];
+                // 下面其实就是新增一个key是file，value是file_info的字典对象，传到后方就是获取的名称file
                 file_data.append('file',file_info);
+                // csrf跨站安全需要加入，不然会报错
+                file_data.append('csrfmiddlewaretoken',"{{ csrf_token }}");
                 if(file_info==undefined){
                     $('#server_list_file_help').text('你没有选择任何文件');
                     return false
                 }
+                if($('#server_list_cover_select').is(':checked')){
+                    server_list_cover_select = 'cover';
+                }else {
+                    server_list_cover_select = 'uncover';
+                }
+                file_data.append('server_list_cover_select',server_list_cover_select);
                 file_data.append('server_list_tag_key','import_server_list');
                 $.ajax({
 					url:"{% url 'server_list_ajax' %}",
@@ -672,7 +683,7 @@
                             setTimeout(function(){window.location.href=window.location.href}, 1000);
 						}else {
 						    $('.loading_modal').modal('toggle');
-						    toastr.error(result.result,'Error',{timeOut: 1500});
+						    toastr.error(JSON.stringify(result.result),'Error',{timeOut: 1500});
 						    console.log(JSON.stringify(result.result));
                         }
 					}
@@ -1200,7 +1211,7 @@
                 </div>
                 <div class="checkbox">
                     <label>
-                        <input type="checkbox"> 是否要覆盖已存在服务器名称
+                        <input type="checkbox" id="server_list_cover_select" > 是否要覆盖已存在服务器名称
                     </label>
                 </div>
             </div>

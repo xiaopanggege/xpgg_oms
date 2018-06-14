@@ -1084,7 +1084,6 @@ def server_list(request):
 
 
 # 主机管理ajax
-@csrf_exempt
 def server_list_ajax(request):
     result = {'result': None, 'status': False}
     app_log = []
@@ -1178,12 +1177,28 @@ def server_list_ajax(request):
                     result['result'] = str(e)
                 return JsonResponse(result)
             elif request.POST.get('server_list_tag_key') == 'import_server_list':
+                # 获取的数据类型如果有文件，则要像下面这么写form才能正确获取到文件
                 obj = ServerListImportForm(request.POST, request.FILES)
                 if obj.is_valid():
+                    # request.FILES['file'].read()是从内存中直接读取文件内容
+                    # openpyxl的filename除了能打开某个路径的文件，还可以接受BytesIO读取的二进制数据所以如下即可获取xlsx内容
                     wb = openpyxl.load_workbook(filename=BytesIO(request.FILES['file'].read()))
                     table = wb[wb.sheetnames[0]]
-                    data = table.cell(row=2, column=1).value
-                    result['result'] = data
+                    server_list_cover_select = request.POST.get('server_list_cover_select')
+                    if server_list_cover_select == 'uncover':
+                        for row in table.iter_rows(min_row=2, max_col=25):
+                            data = {'server_name': row[0].value, 'server_type': row[1].value, 'localhost': row[2].value,
+                                    'ip': row[3].value, 'system_issue': row[4].value, 'sn': row[5].value,
+                                    'cpu_num': row[6].value, 'cpu_model': row[7].value, 'sys_type': row[8].value,
+                                    'kernel': row[9].value, 'product_name': row[10].value, 'ipv4_address': row[11].value,
+                                    'mac_address': row[12].value, 'mem_total': row[13].value, 'mem_explain': row[14].value,
+                                    'disk_total': row[15].value, 'disk_explain': row[16].value, 'minion_id': row[17].value,
+                                    'idc_name': row[18].value, 'idc_num': row[17].value, 'login_ip': row[20].value,
+                                    'login_port': row[21].value, 'login_user': row[22].value,
+                                    'login_password': row[23].value, 'description': row[24].value}
+                            logger.error(data)
+
+                    result['result'] = '成功'
                     result['status'] = True
                 else:
                     error_str = obj.errors.as_json()

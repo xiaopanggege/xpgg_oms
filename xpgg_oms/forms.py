@@ -189,7 +189,7 @@ class ServerListUpdateForm(ServerListAddForm):
 
 
 def validate_excel(value):
-    logger.error(value.name.rsplit('.')[1])
+    # 从前端传过来的文件的文件名是可以通过.name来获取到的
     if value.name.rsplit('.')[1] != 'xlsx':
         raise ValidationError('文件类型错误，只接受xlsx类型文件')
 
