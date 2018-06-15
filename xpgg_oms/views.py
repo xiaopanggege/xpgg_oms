@@ -23,7 +23,8 @@ from django.contrib.auth.hashers import make_password  # django自带密码加�
 import ast  # 去掉字符串的一层""
 import openpyxl  # 操作excel读写
 from io import BytesIO
-from django.views.decorators.csrf import  csrf_exempt
+from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone  # 调用django的时间参数timezone.now()
 
 
 import logging
@@ -1137,30 +1138,31 @@ def server_list_ajax(request):
                 obj = ServerListUpdateForm(request.POST)
                 if obj.is_valid():
                     ServerList.objects.filter(server_name=obj.cleaned_data["server_name"]).update(
-                                              server_type=obj.cleaned_data["server_type"],
-                                              localhost=obj.cleaned_data["localhost"],
-                                              ip=obj.cleaned_data["ip"],
-                                              system_issue=obj.cleaned_data["system_issue"],
-                                              sn=obj.cleaned_data["sn"],
-                                              cpu_num=obj.cleaned_data["cpu_num"],
-                                              cpu_model=obj.cleaned_data["cpu_model"],
-                                              sys_type=obj.cleaned_data["sys_type"],
-                                              kernel=obj.cleaned_data["kernel"],
-                                              product_name=obj.cleaned_data["product_name"],
-                                              ipv4_address=obj.cleaned_data["ipv4_address"],
-                                              mac_address=obj.cleaned_data["mac_address"],
-                                              mem_total=obj.cleaned_data["mem_total"],
-                                              mem_explain=obj.cleaned_data["mem_explain"],
-                                              disk_total=obj.cleaned_data["disk_total"],
-                                              disk_explain=obj.cleaned_data["disk_explain"],
-                                              minion_id=obj.cleaned_data["minion_id"],
-                                              idc_name=obj.cleaned_data["idc_name"],
-                                              idc_num=obj.cleaned_data["idc_num"],
-                                              login_ip=obj.cleaned_data["login_ip"],
-                                              login_port=obj.cleaned_data["login_port"],
-                                              login_user=obj.cleaned_data["login_user"],
-                                              login_password=obj.cleaned_data["login_password"],
-                                              description=obj.cleaned_data["description"])
+                        server_type=obj.cleaned_data["server_type"],
+                        localhost=obj.cleaned_data["localhost"],
+                        ip=obj.cleaned_data["ip"],
+                        system_issue=obj.cleaned_data["system_issue"],
+                        sn=obj.cleaned_data["sn"],
+                        cpu_num=obj.cleaned_data["cpu_num"],
+                        cpu_model=obj.cleaned_data["cpu_model"],
+                        sys_type=obj.cleaned_data["sys_type"],
+                        kernel=obj.cleaned_data["kernel"],
+                        product_name=obj.cleaned_data["product_name"],
+                        ipv4_address=obj.cleaned_data["ipv4_address"],
+                        mac_address=obj.cleaned_data["mac_address"],
+                        mem_total=obj.cleaned_data["mem_total"],
+                        mem_explain=obj.cleaned_data["mem_explain"],
+                        disk_total=obj.cleaned_data["disk_total"],
+                        disk_explain=obj.cleaned_data["disk_explain"],
+                        minion_id=obj.cleaned_data["minion_id"],
+                        idc_name=obj.cleaned_data["idc_name"],
+                        idc_num=obj.cleaned_data["idc_num"],
+                        login_ip=obj.cleaned_data["login_ip"],
+                        login_port=obj.cleaned_data["login_port"],
+                        login_user=obj.cleaned_data["login_user"],
+                        login_password=obj.cleaned_data["login_password"],
+                        update_time=timezone.now(),
+                        description=obj.cleaned_data["description"])
                     result['result'] = '成功'
                     result['status'] = True
                 else:
@@ -1185,21 +1187,90 @@ def server_list_ajax(request):
                     wb = openpyxl.load_workbook(filename=BytesIO(request.FILES['file'].read()))
                     table = wb[wb.sheetnames[0]]
                     server_list_cover_select = request.POST.get('server_list_cover_select')
-                    if server_list_cover_select == 'uncover':
-                        for row in table.iter_rows(min_row=2, max_col=25):
-                            data = {'server_name': row[0].value, 'server_type': row[1].value, 'localhost': row[2].value,
-                                    'ip': row[3].value, 'system_issue': row[4].value, 'sn': row[5].value,
-                                    'cpu_num': row[6].value, 'cpu_model': row[7].value, 'sys_type': row[8].value,
-                                    'kernel': row[9].value, 'product_name': row[10].value, 'ipv4_address': row[11].value,
-                                    'mac_address': row[12].value, 'mem_total': row[13].value, 'mem_explain': row[14].value,
-                                    'disk_total': row[15].value, 'disk_explain': row[16].value, 'minion_id': row[17].value,
-                                    'idc_name': row[18].value, 'idc_num': row[17].value, 'login_ip': row[20].value,
-                                    'login_port': row[21].value, 'login_user': row[22].value,
-                                    'login_password': row[23].value, 'description': row[24].value}
-                            logger.error(data)
-
-                    result['result'] = '成功'
-                    result['status'] = True
+                    # 结果需要存一些内容所以修改成列表
+                    result['result'] = []
+                    for row in table.iter_rows(min_row=2, max_col=25):
+                        data = {'server_name': row[0].value, 'server_type': row[1].value, 'localhost': row[2].value,
+                                'ip': row[3].value, 'system_issue': row[4].value, 'sn': row[5].value,
+                                'cpu_num': row[6].value, 'cpu_model': row[7].value, 'sys_type': row[8].value,
+                                'kernel': row[9].value, 'product_name': row[10].value, 'ipv4_address': row[11].value,
+                                'mac_address': row[12].value, 'mem_total': row[13].value, 'mem_explain': row[14].value,
+                                'disk_total': row[15].value, 'disk_explain': row[16].value, 'minion_id': row[17].value,
+                                'idc_name': row[18].value, 'idc_num': row[17].value, 'login_ip': row[20].value,
+                                'login_port': row[21].value, 'login_user': row[22].value,
+                                'login_password': row[23].value, 'description': row[24].value}
+                        obj = ServerListAddForm(data)
+                        if obj.is_valid():
+                            ServerList.objects.create(server_name=obj.cleaned_data["server_name"],
+                                                      server_type=obj.cleaned_data["server_type"],
+                                                      localhost=obj.cleaned_data["localhost"],
+                                                      ip=obj.cleaned_data["ip"],
+                                                      system_issue=obj.cleaned_data["system_issue"],
+                                                      sn=obj.cleaned_data["sn"],
+                                                      cpu_num=obj.cleaned_data["cpu_num"],
+                                                      cpu_model=obj.cleaned_data["cpu_model"],
+                                                      sys_type=obj.cleaned_data["sys_type"],
+                                                      kernel=obj.cleaned_data["kernel"],
+                                                      product_name=obj.cleaned_data["product_name"],
+                                                      ipv4_address=obj.cleaned_data["ipv4_address"],
+                                                      mac_address=obj.cleaned_data["mac_address"],
+                                                      mem_total=obj.cleaned_data["mem_total"],
+                                                      mem_explain=obj.cleaned_data["mem_explain"],
+                                                      disk_total=obj.cleaned_data["disk_total"],
+                                                      disk_explain=obj.cleaned_data["disk_explain"],
+                                                      minion_id=obj.cleaned_data["minion_id"],
+                                                      idc_name=obj.cleaned_data["idc_name"],
+                                                      idc_num=obj.cleaned_data["idc_num"],
+                                                      login_ip=obj.cleaned_data["login_ip"],
+                                                      login_port=obj.cleaned_data["login_port"],
+                                                      login_user=obj.cleaned_data["login_user"],
+                                                      login_password=obj.cleaned_data["login_password"],
+                                                      description=obj.cleaned_data["description"])
+                        else:
+                            error_str = json.loads(obj.errors.as_json())
+                            if error_str.get('server_name') and server_list_cover_select == 'cover':
+                                if error_str['server_name'][0]['message'] == '服务器名称已存在，请检查':
+                                    obj = ServerListUpdateForm(data)
+                                    if obj.is_valid():
+                                        ServerList.objects.filter(server_name=obj.cleaned_data["server_name"]).update(
+                                            server_type=obj.cleaned_data["server_type"],
+                                            localhost=obj.cleaned_data["localhost"],
+                                            ip=obj.cleaned_data["ip"],
+                                            system_issue=obj.cleaned_data["system_issue"],
+                                            sn=obj.cleaned_data["sn"],
+                                            cpu_num=obj.cleaned_data["cpu_num"],
+                                            cpu_model=obj.cleaned_data["cpu_model"],
+                                            sys_type=obj.cleaned_data["sys_type"],
+                                            kernel=obj.cleaned_data["kernel"],
+                                            product_name=obj.cleaned_data["product_name"],
+                                            ipv4_address=obj.cleaned_data["ipv4_address"],
+                                            mac_address=obj.cleaned_data["mac_address"],
+                                            mem_total=obj.cleaned_data["mem_total"],
+                                            mem_explain=obj.cleaned_data["mem_explain"],
+                                            disk_total=obj.cleaned_data["disk_total"],
+                                            disk_explain=obj.cleaned_data["disk_explain"],
+                                            minion_id=obj.cleaned_data["minion_id"],
+                                            idc_name=obj.cleaned_data["idc_name"],
+                                            idc_num=obj.cleaned_data["idc_num"],
+                                            login_ip=obj.cleaned_data["login_ip"],
+                                            login_port=obj.cleaned_data["login_port"],
+                                            login_user=obj.cleaned_data["login_user"],
+                                            login_password=obj.cleaned_data["login_password"],
+                                            update_time=timezone.now(),
+                                            description=obj.cleaned_data["description"])
+                                    else:
+                                        error_str = json.loads(obj.errors.as_json())
+                                        result['result'].append(error_str)
+                            else:
+                                if error_str['server_name'][0]['message'] == '服务器名称已存在，请检查':
+                                    result['result'].append('服务器名称:{} 已存在'.format(data['server_name']))
+                                else:
+                                    result['result'].append(error_str)
+                    if result['result']:
+                        pass
+                    else:
+                        result['result'] = '成功'
+                        result['status'] = True
                 else:
                     error_str = obj.errors.as_json()
                     result['result'] = json.loads(error_str)
@@ -1984,15 +2055,17 @@ def salt_tool_ajax(request):
                             'startsecs=5', 'stopsignal=QUIT', 'stopasgroup=true', 'killasgroup=true'])
                 # 这是判断arg是否传输值过来，如果没有前端会传个['']过来，这是由于我前端设置了的
                 if logfile != '':
-                    arg.append('stdout_logfile=%s' % logfile)
+                    logfile_path = logfile
+                    arg.append('stdout_logfile=%s' % logfile_path)
                 else:
-                    logfile = 'stdout_logfile=/var/log/supervisor/%s.log' % program
-                    arg.append(logfile)
+                    logfile_path = '/var/log/supervisor/%s.log' % program
+                    arg.append('stdout_logfile=%s' % logfile_path)
                 if errorlogfile != '':
-                    arg.append('stderr_logfile=%s' % errorlogfile)
+                    errorlogfile_path = errorlogfile
+                    arg.append('stderr_logfile=%s' % errorlogfile_path)
                 else:
-                    errorlogfile = 'stderr_logfile=/var/log/supervisor/%s.log' % program
-                    arg.append(errorlogfile)
+                    errorlogfile_path = '/var/log/supervisor/%s.log' % program
+                    arg.append('stderr_logfile=%s' % errorlogfile_path)
                 if env != '':
                     arg.append('environment=%s' % env)
                 if directory != '':
@@ -2032,13 +2105,13 @@ def salt_tool_ajax(request):
                                         app_log.extend(response_data)
                                     # 日志文件目录创建
                                     response_data = saltapi.file_makedirs_api(tgt=success_tgt, tgt_type='list',
-                                                                              arg=logfile)
+                                                                              arg=logfile_path)
                                     if response_data is False:
                                         app_log.append('\n创建supervisor进程日志创建出错_error(3)，请联系管理员')
                                         result['result'] = app_log
                                         return JsonResponse(result)
                                     response_data = saltapi.file_makedirs_api(tgt=success_tgt, tgt_type='list',
-                                                                              arg=errorlogfile)
+                                                                              arg=errorlogfile_path)
                                     if response_data is False:
                                         app_log.append('\n创建supervisor进程日志创建出错_error(4)，请联系管理员')
                                         result['result'] = app_log
