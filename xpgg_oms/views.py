@@ -3,8 +3,9 @@
 
 from django.shortcuts import render, redirect, HttpResponse
 import json
-from django.http import JsonResponse, HttpResponseRedirect  # 1.7以后版本json数据返回方法
+from django.http import JsonResponse, HttpResponseRedirect, StreamingHttpResponse  # 1.7以后版本json数据返回方法
 import re
+import os
 import time
 from .forms import *
 from .models import *
@@ -1282,6 +1283,24 @@ def server_list_ajax(request):
         logger.error('主机管理页ajax提交处理有问题', e)
         result['result'] = '主机管理页ajax提交处理有问题'
         return JsonResponse(result)
+
+
+# 主机管理模板下载
+def server_list_template_down(request):
+    def file_iterator(file, chunk_size=1024):
+        with open(file) as f:
+            while True:
+                c = f.read(chunk_size)
+                if c:
+                    yield c
+                else:
+                    break
+
+    file = settings.STATICFILES_DIRS + "/download_files/主机模板.xlsx"
+    response = StreamingHttpResponse(file_iterator(file))
+    response['Content-Type'] = 'application/octet-stream'
+    response['Content-Disposition'] = 'attachment;filename="{0}"'.format(os.path.basename(file))
+    return response
 
 
 # minion管理
