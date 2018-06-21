@@ -1288,39 +1288,42 @@ def server_list_ajax(request):
 
 # 主机管理模板下载
 def server_list_template_down(request):
-    # 基本上django下载文件就按这个模板来就可以，更复杂的参考下面的主机管理列表导出方法
-    # FileResponse方法继承了StreamingHttpResponse并且封装了迭代方法，是django最好的大文件流传送方式了，用法直接按下面，很简单
-    file = settings.STATICFILES_DIRS[0] + "/download_files/主机模板.xlsx"
-    response = FileResponse(open(file, 'rb'))
-    response['Content-Type'] = 'application/octet-stream'
-    # 带中文的文件名需要如下用escape_uri_path和utf8才能识别
-    response['Content-Disposition'] = "attachment; filename*=utf-8''{0}".format(escape_uri_path(os.path.basename(file)))
-    return response
+    try:
+        # 基本上django下载文件就按这个模板来就可以，更复杂的参考下面的主机管理列表导出方法
+        # FileResponse方法继承了StreamingHttpResponse并且封装了迭代方法，是django最好的大文件流传送方式了，用法直接按下面，很简单
+        file = settings.STATICFILES_DIRS[0] + "/download_files/主机模板.xlsx"
+        response = FileResponse(open(file, 'rb'))
+        response['Content-Type'] = 'application/octet-stream'
+        # 带中文的文件名需要如下用escape_uri_path和utf8才能识别
+        response['Content-Disposition'] = "attachment; filename*=utf-8''{0}".format(escape_uri_path(os.path.basename(file)))
+        return response
+    except Exception as e:
+        logger.error(str(e))
+        return str(e)
 
 
 # 主机管列表理导出下载
 def server_list_down(request):
-    def file_iterator(file, chunk_size=512):
-        with open(file, 'rb') as f:
-            while True:
-                c = f.read(chunk_size)
-                if c:
-                    yield c
-                else:
-                    break
-    file = settings.STATICFILES_DIRS[0] + "/download_files/主机模板.xlsx"
-    response = StreamingHttpResponse(file_iterator(file))
-    response['Content-Type'] = 'application/octet-stream'
-    # 带中文的文件名需要如下用escape_uri_path和utf8才能识别
-    response['Content-Disposition'] = "attachment; filename*=utf-8''{0}".format(escape_uri_path(os.path.basename(file)))
+    # def file_iterator(file, chunk_size=512):
+    #     with open(file, 'rb') as f:
+    #         while True:
+    #             c = f.read(chunk_size)
+    #             if c:
+    #                 yield c
+    #             else:
+    #                 break
+    # file = settings.STATICFILES_DIRS[0] + "/download_files/主机模板.xlsx"
+    # response = StreamingHttpResponse(file_iterator(file))
+    # response['Content-Type'] = 'application/octet-stream'
+    # # 带中文的文件名需要如下用escape_uri_path和utf8才能识别
+    # response['Content-Disposition'] = "attachment; filename*=utf-8''{0}".format(escape_uri_path(os.path.basename(file)))
 
-    import openpyxl
-    from openpyxl.cell import get_column_letter
+    from openpyxl.utils import get_column_letter
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename=mymodel.xlsx'
+    response['Content-Disposition'] = "attachment; filename*=utf-8''{0}".format(escape_uri_path('主机列表.xlsx'))
     wb = openpyxl.Workbook()
     ws = wb.get_active_sheet()
-    ws.title = "MyModel"
+    ws.title = "Sheet1"
 
     row_num = 0
 
@@ -1330,24 +1333,24 @@ def server_list_down(request):
         (u"Description", 70),
     ]
 
-    for col_num in xrange(len(columns)):
+    for col_num in range(len(columns)):
         c = ws.cell(row=row_num + 1, column=col_num + 1)
         c.value = columns[col_num][0]
-        c.style.font.bold = True
+        # c.style.font.bold = True
         # set column width
         ws.column_dimensions[get_column_letter(col_num+1)].width = columns[col_num][1]
-
+    queryset = ServerList.objects.all()
     for obj in queryset:
         row_num += 1
         row = [
-            obj.pk,
-            obj.title,
-            obj.description,
+            obj.server_name,
+            obj.ip,
+            obj.server_type,
         ]
-        for col_num in xrange(len(row)):
+        for col_num in range(len(row)):
             c = ws.cell(row=row_num + 1, column=col_num + 1)
             c.value = row[col_num]
-            c.style.alignment.wrap_text = True
+            # c.style.alignment.wrap_text = True
 
     wb.save(response)
     return response
