@@ -101,9 +101,15 @@
                 if($(this).val()=='search_minion_sys'){
                     $('#minion_sys_select').removeClass('hidden');
                     $('#search_content').addClass('hidden');
-               }else {
+                    $('#minion_status_select').addClass('hidden');
+               }else if($(this).val()=='search_minion_status'){
+                    $('#minion_sys_select').addClass('hidden');
+                    $('#search_content').addClass('hidden');
+                    $('#minion_status_select').removeClass('hidden');
+                }else {
                     $('#minion_sys_select').addClass('hidden');
                     $('#search_content').removeClass('hidden');
+                    $('#minion_status_select').addClass('hidden');
                }
             });
 
@@ -112,7 +118,9 @@
                var search_field = $('#search_field').val();
                if($('#search_field').val()=='search_minion_sys'){
                     var search_content = $('#minion_sys_select').val();
-               }else {
+               }else if($('#search_field').val()=='search_minion_status'){
+                    var search_content = $('#minion_status_select').val();
+                }else {
                     var search_content = $('#search_content').val();
                }
                window.location.href=window.location.href.split("?")[0]+'?search_field='+search_field+'&search_content='+search_content;
@@ -247,6 +255,56 @@
 					}
 				});
             });
+            
+            
+//            点击删除填充模态框
+            $('.delete_minion').click(function () {
+                $('.hidden_minion_id').val($(this).parent().siblings('.minion_id').html());
+            });
+
+//            批量删除填充模态框，和单个删除一个模态框
+            $(".batch_minion_delete_btn").click(function () {
+                var minion_id = [];
+                if($('input[name="checkItem"]:checked').length > 0){
+                    $('input[name="checkItem"]:checked').each(function () {
+                    minion_id.push($(this).parent().siblings('.minion_id').html());
+                    });
+//                    这里很奇怪赋值给下面的input后发现不是一个列表而是像这样：192.168.68.50-master,192.168.68.1逗号隔开的字符串，
+//                    不过这样也方便，删除的时候数据就'minion_id':[minion_id]刚好删除单个本来就是字符串
+                    $('.hidden_minion_id').val(minion_id);
+                    $('#delete_minion_modal').modal('toggle');
+                }else {
+                    toastr.warning('未选中任何条目');
+                }
+            });
+
+//            点击确定删除应用
+            $('#delete_minion_button').click(function(){
+				var minion_id=$.trim($('.hidden_minion_id').val());
+				$('#delete_minion_modal').modal('toggle');
+				$.ajax({
+					url:"{% url 'salt_key_delete' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+//                    提交的数据要和后台form验证的变量一致，不过可以多出来，只要验证的有就行，比如这里就多了project_tag_key
+					data:{
+                        'minion_id':[minion_id],
+
+					},
+					success:function(result){
+						if(result.status){
+                            $('.loading_modal').modal('toggle');
+                            toastr.success(result.result,'Success',{timeOut: 1500});
+                            setTimeout(function(){window.location.href=window.location.href}, 1000);
+						}else {
+						    $('.loading_modal').modal('toggle');
+						    toastr.error(result.result,'Error',{timeOut: 1500});
+                        }
+					}
+				});
+			});
 
 //            搜索框回车触发查询按钮事件
             $("#search_content").keydown(function (e) {
@@ -271,6 +329,7 @@
                     <div class="form-group">
                         <button type="button" class="btn btn-success" id="update_minion_list_btn" data-toggle="modal" data-target="#update_minion_list_modal">更新列表</button>
                         <button type="button" class="btn btn-success" id="update_minion_status_btn" data-toggle="modal" data-target=".loading_modal">更新状态</button>
+                        <button type="button" class="btn btn-danger batch_minion_delete_btn">批量删除</button>
                     </div>
 
 
@@ -281,21 +340,41 @@
                             {% if search_field == 'search_minion_ip' %}
                             <option value="search_minion_ip" selected>IP地址</option>
                             <option value="search_minion_sys">系统类型</option>
+                            <option value="search_minion_status">状态</option>
                             {% elif search_field == 'search_minion_sys' %}
                             <option value="search_minion_ip">IP地址</option>
                             <option value="search_minion_sys" selected>系统类型</option>
+                            <option value="search_minion_status">状态</option>
+                            {% elif search_field == 'search_minion_status' %}
+                            <option value="search_minion_ip">IP地址</option>
+                            <option value="search_minion_sys" >系统类型</option>
+                            <option value="search_minion_status" selected>状态</option>
                             {% else %}
                             <option value="search_minion_ip">IP地址</option>
                             <option value="search_minion_sys">系统类型</option>
+                            <option value="search_minion_status">状态</option>
                             {% endif %}
                         </select>
-                          <input type="text" class="form-control {% if search_field == 'search_minion_sys' %}hidden{%endif%}" id="search_content" placeholder="请输入查询条件" value="{% if search_field != 'search_minion_sys' %}{{ search_content }}{%endif%}">
+                          <input type="text" class="form-control {% if search_field == 'search_minion_sys' or search_field == 'search_minion_status' %}hidden{%endif%}" id="search_content" placeholder="请输入查询条件" value="{% if search_field != 'search_minion_sys' and search_field != 'search_minion_status' %}{{ search_content }}{%endif%}">
                           <select class="form-control {% if search_field == 'search_minion_sys' %}{%else%}hidden{%endif%}" id="minion_sys_select">
                               <option value="Linux">Linux</option>
                               {% if search_content == 'Windows' %}
                               <option value="Windows" selected>Windows</option>
                               {% else %}
                               <option value="Windows">Windows</option>
+                              {%endif%}
+                          </select>
+                          <select class="form-control {% if search_field == 'search_minion_status' %}{%else%}hidden{%endif%}" id="minion_status_select">
+                              <option value="在线">在线</option>
+                              {% if search_content == '离线' %}
+                              <option value="离线" selected>离线</option>
+                              <option value="异常" >异常</option>
+                              {% elif search_content == '异常' %}
+                              <option value="离线" >离线</option>
+                              <option value="异常" selected>异常</option>
+                              {% else %}
+                              <option value="离线">离线</option>
+                              <option value="异常" >异常</option>
                               {%endif%}
                           </select>
                         <button type="submit" class="btn btn-primary search_btn"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
@@ -355,9 +434,11 @@
                         <td class="minion_createdate hidden">{{ minion.create_date | date:"Y年m月d日 H:i:s"}}</td>
 
                         <td><button type="button" class="btn btn-info btn-sm view_detail" data-toggle="modal" data-target="#view_minion">查询</button>
-                          <button type="button" class="btn btn-primary btn-sm update_description" data-toggle="modal" data-target="#update_minion">修改备注</button>
-                          <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#minion_operation">操作</button>
-                          </td>
+                            <button type="button" class="btn btn-primary btn-sm update_description" data-toggle="modal" data-target="#update_minion">修改备注</button>
+                            <!--操作按钮暂时还没时间开发具体啥功能还没想哈哈-->
+                            <button type="button" class="btn btn-danger btn-sm hidden" data-toggle="modal" data-target="#minion_operation">操作</button>
+                            <button type="button" class="btn btn-danger btn-sm delete_minion" data-toggle="modal" data-target="#delete_minion_modal">删除</button>
+                        </td>
                     </tr>
                     {% endfor%}
 
@@ -566,6 +647,30 @@
 		</div><!-- /.modal-content -->
 	</div><!-- /.modal -->
 </div>
+
+<!--删除提示框，也是用的模态框-->
+<div class="modal fade juzhong " id="delete_minion_modal" tabindex="-1" role="dialog" aria-labelledby="delete_minion_lable" aria-hidden="true" data-backdrop="static" >
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:50%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">操作提醒</h4>
+            </div>
+            <div class="modal-body">
+                <!--隐藏属性，用来获取触发模态框的那条记录的相关数据-->
+                <input type="hidden" class="hidden_minion_id"/>
+                <p style="color: red;">确认要删除？</p>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="delete_minion_button" data-dismiss="modal" data-toggle="modal" data-target=".loading_modal"> 确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <!--功能选项模态框-->
 <div class="modal fade juzhong " id="minion_operation" tabindex="-1" role="dialog" aria-labelledby="minion_operation_label" aria-hidden="true">

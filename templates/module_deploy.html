@@ -42,6 +42,13 @@
     		$(window).resize();
 
 
+//            minion_id搜索框回车触发查询按钮事件
+            $("#search_minion_id").keydown(function (e) {
+                if (e.keyCode == 13) {
+                    $('.search_minion_id_btn').click();
+                }
+            });
+
     		// // {#  django 跨站验证需要下面的 ajaxSetup   #}
             $.ajaxSetup({
                  data: {csrfmiddlewaretoken: '{{ csrf_token }}' },

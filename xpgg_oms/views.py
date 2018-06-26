@@ -1304,55 +1304,28 @@ def server_list_template_down(request):
 
 # 主机管列表理导出下载
 def server_list_down(request):
-    # def file_iterator(file, chunk_size=512):
-    #     with open(file, 'rb') as f:
-    #         while True:
-    #             c = f.read(chunk_size)
-    #             if c:
-    #                 yield c
-    #             else:
-    #                 break
-    # file = settings.STATICFILES_DIRS[0] + "/download_files/主机模板.xlsx"
-    # response = StreamingHttpResponse(file_iterator(file))
-    # response['Content-Type'] = 'application/octet-stream'
-    # # 带中文的文件名需要如下用escape_uri_path和utf8才能识别
-    # response['Content-Disposition'] = "attachment; filename*=utf-8''{0}".format(escape_uri_path(os.path.basename(file)))
-
     from openpyxl.utils import get_column_letter
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = "attachment; filename*=utf-8''{0}".format(escape_uri_path('主机列表.xlsx'))
-    wb = openpyxl.Workbook()
-    ws = wb.get_active_sheet()
+    from openpyxl.writer.excel import save_virtual_workbook
+    # 只写模式会加快速度，不过写法和普通读写有区别，按下面一行一行插入即可
+    wb = openpyxl.Workbook(write_only=True)
+    ws = wb.create_sheet()
     ws.title = "Sheet1"
+    columns = ("服务器名称", "服务器类型(0是物理机，1是虚拟机)", "主机名", "IP地址", "系统版本", "SN", "CPU核数", "CPU型号",
+               "系统类型", "内核", "品牌名称", "ipv4列表", "mac地址列表", "内存大小(M)", "内存说明", "磁盘大小(G)", "磁盘说明",
+               "minion_id", "机房名称", "机柜号", "远程访问IP", "远程访问端口", "远程访问用户", "远程访问密码", "描述备注")
 
-    row_num = 0
-
-    columns = [
-        (u"ID", 15),
-        (u"Title", 70),
-        (u"Description", 70),
-    ]
-
-    for col_num in range(len(columns)):
-        c = ws.cell(row=row_num + 1, column=col_num + 1)
-        c.value = columns[col_num][0]
-        # c.style.font.bold = True
-        # set column width
-        ws.column_dimensions[get_column_letter(col_num+1)].width = columns[col_num][1]
+    ws.append(columns)
     queryset = ServerList.objects.all()
     for obj in queryset:
-        row_num += 1
-        row = [
-            obj.server_name,
-            obj.ip,
-            obj.server_type,
-        ]
-        for col_num in range(len(row)):
-            c = ws.cell(row=row_num + 1, column=col_num + 1)
-            c.value = row[col_num]
-            # c.style.alignment.wrap_text = True
-
-    wb.save(response)
+        row = (obj.server_name, int(obj.server_type), obj.localhost, obj.ip, obj.system_issue, obj.sn, obj.cpu_num,
+               obj.cpu_model, obj.sys_type, obj.kernel, obj.product_name, obj.ipv4_address, obj.mac_address,
+               obj.mem_total, obj.mem_explain, obj.disk_total, obj.disk_explain, obj.minion_id, obj.idc_name,
+               obj.idc_num, obj.login_ip, obj.login_port, obj.login_user, obj.login_password, obj.update_time, obj.description)
+        ws.append(row)
+    # 用(save_virtual_workbook(wb)来保存到内存中供django调用,无法使用StreamingHttpResponse或者FileResponse在openpyxl官方例子就是这样的
+    response = HttpResponse(save_virtual_workbook(wb), content_type='application/vnd.ms-excel')
+    response['Content-Disposition'] = "attachment; filename*=utf-8''{0}".format(escape_uri_path('主机列表.xlsx'))
+    # wb.save(response)
     return response
 
 
@@ -1366,20 +1339,24 @@ def minion_manage(request):
                 search_content = request.GET.get('search_content', '')
                 if search_content is '':
                     minion_data = MinionList.objects.all().order_by('create_date')
-                    data_list = getPage(request, minion_data, 9)
+                    data_list = getPage(request, minion_data, 12)
                 else:
                     if search_field == 'search_minion_id':
                         minion_data = MinionList.objects.filter(minion_id__icontains=search_content).order_by(
                             'create_date')
-                        data_list = getPage(request, minion_data, 9)
+                        data_list = getPage(request, minion_data, 12)
                     elif search_field == 'search_minion_sys':
                         minion_data = MinionList.objects.filter(sys__icontains=search_content).order_by(
                             'create_date')
-                        data_list = getPage(request, minion_data, 9)
+                        data_list = getPage(request, minion_data, 12)
+                    elif search_field == 'search_minion_status':
+                        minion_data = MinionList.objects.filter(minion_status__icontains=search_content).order_by(
+                            'create_date')
+                        data_list = getPage(request, minion_data, 12)
                     else:
                         minion_data = MinionList.objects.filter(ip__icontains=search_content).order_by(
                             'create_date')
-                        data_list = getPage(request, minion_data, 9)
+                        data_list = getPage(request, minion_data, 12)
                 return render(request, 'minion_manage.html',
                               {'data_list': data_list, 'search_field': search_field, 'search_content': search_content})
 
@@ -1448,6 +1425,9 @@ def minion_manage_ajax(request):
                                     MinionList.objects.filter(minion_id=minion_id).delete()
                             result['result'] = '更新成功'
                             result['status'] = True
+                return JsonResponse(result)
+            else:
+                result['result'] = 'minion管理页ajax提交了错误的tag'
                 return JsonResponse(result)
     except Exception as e:
         logger.error('minion管理ajax提交处理有问题', e)
