@@ -1446,13 +1446,14 @@ def salt_cmd_manage(request):
                     data = SaltCmdInfo.objects.all().order_by('salt_cmd_type','salt_cmd')
                     data_list = getPage(request, data, 12)
                 else:
-                    if search_field == 'search_salt_cmd':
+                    if search_field == 'any':
                         data = SaltCmdInfo.objects.filter(salt_cmd__icontains=search_content).order_by('salt_cmd_type',
-                                                                                                      'salt_cmd')
+                                                                                                       'salt_cmd')
                         data_list = getPage(request, data, 12)
-                    elif search_field == 'search_salt_cmd_type':
-                        data = SaltCmdInfo.objects.filter(salt_cmd_type__icontains=search_content).order_by('salt_cmd_type',
-                                                                                                           'salt_cmd')
+                    elif search_field in ['module', 'state', 'runner']:
+                        data = SaltCmdInfo.objects.filter(salt_cmd_type__icontains=search_field,
+                                                          salt_cmd__icontains=search_content).order_by('salt_cmd_type',
+                                                                                                       'salt_cmd')
                         data_list = getPage(request, data, 12)
                     else:
                         return render(request, 'salt_cmd_manage.html')

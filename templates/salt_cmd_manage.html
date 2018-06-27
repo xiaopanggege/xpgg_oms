@@ -368,19 +368,48 @@
                     </div>
 
 
-                      <div class="form-group pull-right">
-                        <label for="search_field">查询字段</label>
-                        <select class="form-control" id="search_field">
-                            <option value="search_salt_cmd">命令</option>
-                            {% if search_field == "search_salt_cmd_type" %}
-                            <option value="search_salt_cmd_type" selected>类型</option>
-                            {% else %}
-                            <option value="search_salt_cmd_type">类型</option>
-                            {% endif %}
-                        </select>
-                        <input type="text" class="form-control" id="search_content" placeholder="请输入查询条件" value="{{ search_content }}">
+                    <div class="form-group pull-right">
+                        <label for="search_content">查询条件</label>
+                        <div class="input-group">
+                            <span class="input-group-addon" >类型</span>
+                            <select class="form-control" id="search_field">
+                                <option value="any">所有</option>
+                                {% if search_field == "module" %}
+                                <option value="module" selected>module</option>
+                                <option value="state" >state</option>
+                                <option value="runner" >runner</option>
+                                {% elif search_field == "state" %}
+                                <option value="module" >module</option>
+                                <option value="state" selected>state</option>
+                                <option value="runner" >runner</option>
+                                {% elif search_field == "runner" %}
+                                <option value="module" >module</option>
+                                <option value="state" >state</option>
+                                <option value="runner" selected>runner</option>
+                                {% else %}
+                                <option value="module" >module</option>
+                                <option value="state" >state</option>
+                                <option value="runner" >runner</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <span class="input-group-addon" >命令</span>
+                            <input type="text" class="form-control" id="search_content" placeholder="请输入查询命令" value="{{ search_content }}">
+                        </div>
                         <button type="submit" class="btn btn-primary search_btn"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
-                      </div>
+
+                        <!--<select class="form-control" id="search_field2">-->
+                            <!--<option value="search_salt_cmd">命令</option>-->
+                            <!--{% if search_field == "search_salt_cmd_type" %}-->
+                            <!--<option value="search_salt_cmd_type" selected>类型</option>-->
+                            <!--{% else %}-->
+                            <!--<option value="search_salt_cmd_type">类型</option>-->
+                            <!--{% endif %}-->
+                        <!--</select>-->
+                        <!--<input type="text" class="form-control" id="search_content" placeholder="请输入查询条件" value="{{ search_content }}">-->
+                        <!--<button type="submit" class="btn btn-primary search_btn"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>-->
+                    </div>
 
                     </div>
 
