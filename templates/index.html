@@ -211,6 +211,8 @@
             asset_allocation.setOption(asset_allocation_option);
 
             // 主机分布饼图
+            var physical_pc_count = Number('{{ physical_pc_count }}');
+            var virtual_machine = Number('{{ virtual_machine }}');
             var host_distribution_allocation = echarts.init(document.getElementById('host_distribution_allocation'));
             var host_distribution_allocation_option = {
                 title : {
@@ -244,8 +246,8 @@
                         center: ['50%', '60%'],
 
                         data:[
-                            {value:335, name:'物理机'},
-                            {value:234, name:'虚拟机'}
+                            {value:physical_pc_count, name:'物理机'},
+                            {value:virtual_machine, name:'虚拟机'}
                         ],
                         itemStyle: {
                             emphasis: {
@@ -270,6 +272,8 @@
             host_distribution_allocation.setOption(host_distribution_allocation_option);
 
             // 系统分布饼图
+            var sys_type_windows_count = Number('{{ sys_type_windows_count }}');
+            var sys_type_linux_count = Number('{{ sys_type_linux_count }}');
             var system_allocation = echarts.init(document.getElementById('system_allocation'));
             var system_allocation_option = {
                 title : {
@@ -303,8 +307,8 @@
                         center: ['50%', '60%'],
 
                         data:[
-                            {value:335, name:'windows'},
-                            {value:135, name:'linux'}
+                            {value:sys_type_windows_count, name:'windows'},
+                            {value:sys_type_linux_count, name:'linux'}
                         ],
                         itemStyle: {
                             emphasis: {
@@ -329,8 +333,11 @@
             system_allocation.setOption(system_allocation_option);
 
             // Minion信息汇总饼图
+            var saltkey_accepted_count = Number('{{saltkey_accepted_count}}');
+            var saltkey_denied_count = Number('{{saltkey_denied_count}}');
+            var saltkey_rejected_count = Number('{{saltkey_rejected_count}}');
+            var saltkey_unaccepted_count = Number('{{saltkey_unaccepted_count}}');
             var minion_allocation = echarts.init(document.getElementById('minion_allocation'));
-
             var minion_allocation_option = {
                 title : {
                     text: 'Minion信息汇总',
@@ -363,10 +370,10 @@
                         center: ['50%', '60%'],
 
                         data:[
-                            {value:335, name:'已认证'},
-                            {value:234, name:'待认证'},
-                            {value:234, name:'禁止'},
-                            {value:135, name:'已拒绝'}
+                            {value:saltkey_accepted_count, name:'已认证'},
+                            {value:saltkey_unaccepted_count, name:'待认证'},
+                            {value:saltkey_denied_count, name:'禁止'},
+                            {value:saltkey_rejected_count, name:'已拒绝'}
                         ],
                         itemStyle: {
                             emphasis: {
@@ -392,8 +399,10 @@
             minion_allocation.setOption(minion_allocation_option);
 
             // Minion状态汇总饼图
+            var minion_up_count = Number('{{minion_up_count}}');
+            var minion_down_count = Number('{{minion_down_count}}');
+            var minion_error_count = Number('{{minion_error_count}}');
             var minion_status_allocation = echarts.init(document.getElementById('minion_status_allocation'));
-
             var minion_status_allocation_option = {
                 title : {
                     text: 'Minion状态汇总',
@@ -407,7 +416,7 @@
                 legend: {
                     orient : 'vertical',
                     x : 'left',
-                    data:['在线','离线']
+                    data:['在线','离线','异常']
                 },
                 toolbox: {
                     show : true,
@@ -426,8 +435,9 @@
                         center: ['50%', '60%'],
 
                         data:[
-                            {value:335, name:'在线'},
-                            {value:234, name:'离线'}
+                            {value:minion_up_count, name:'在线'},
+                            {value:minion_down_count, name:'离线'},
+                            {value:minion_error_count, name:'异常'}
                         ],
                         itemStyle: {
                             emphasis: {
@@ -446,7 +456,7 @@
                         }
                     }
                 ],
-                color:['#00CC00', 'red']
+                color:['#00CC00', 'red', 'orange']
             };
 
             // 为Minion状态汇总饼图对象加载数据

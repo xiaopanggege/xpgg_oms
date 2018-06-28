@@ -662,7 +662,19 @@ def do_logout(request):
 
 # 首页
 def index(request):
-    return render(request, 'index.html')
+    physical_pc_count = ServerList.objects.filter(server_type='0').count()
+    virtual_machine = ServerList.objects.filter(server_type='1').count()
+    sys_type_windows_count = ServerList.objects.filter(sys_type='windows').count()
+    sys_type_linux_count = ServerList.objects.filter(sys_type='linux').count()
+    saltkey_accepted_count = SaltKeyList.objects.filter(certification_status='accepted').count()
+    saltkey_denied_count = SaltKeyList.objects.filter(certification_status='denied').count()
+    saltkey_rejected_count = SaltKeyList.objects.filter(certification_status='rejected').count()
+    saltkey_unaccepted_count = SaltKeyList.objects.filter(certification_status='unaccepted').count()
+    minion_up_count = MinionList.objects.filter(minion_status='在线').count()
+    minion_down_count = MinionList.objects.filter(minion_status='离线').count()
+    minion_error_count = MinionList.objects.filter(minion_status='异常').count()
+    data = {'physical_pc_count': physical_pc_count, 'virtual_machine': virtual_machine}
+    return render(request, 'index.html', locals())
 
 
 # salt执行state.sls的返回结果格式化，因为通过api返回的结果不怎么好看呵呵
