@@ -31,7 +31,7 @@
 {% endblock %}
 
 {% block custom_js %}
-
+<script src="{% static 'js/echarts.js'%}"></script>
 {% endblock %}
 
 {% block panel-title_content %}仪表盘{% endblock %}
@@ -145,8 +145,7 @@
 </div>
 </div>
 
-<!--echarts 单文件引入需要放在body里-->
-<script src="{% static 'js/echarts.js'%}"></script>
+<!--echarts 引入需要放在body里-->
 <script>
 
             // 资产分布饼图
@@ -188,21 +187,36 @@
                             {value:234, name:'网络设备'},
                             {value:135, name:'存储设备'}
                         ],
-                        itemStyle: {
-                            emphasis: {
+
+                        //ECharts4写法
+                        emphasis: {
                                 shadowBlur: 10,
                                 shadowOffsetX: 0,
                                 shadowColor: 'rgba(0, 0, 0, 0.5)'
                             },
-                            normal:{
-                                label:{
-                                    show: true,
-                                    textStyle : { fontFamily: 'Microsoft YaHei', fontSize : '14', fontWeight : 'bold'},
-                                    formatter: '{b}:{c}台'
+                        label:{
+                                show: true,
+                                textStyle : { fontFamily: 'Microsoft YaHei', fontSize : '14', fontWeight : 'bold'},
+                                formatter: '{b}:{c}台'
                                 },
-                                labelLine :{show:true}
-                            }
-                        }
+                        labelLine :{show:true},
+
+                        //ECharts4之前写法
+                        // itemStyle: {
+                        //     emphasis: {
+                        //         shadowBlur: 10,
+                        //         shadowOffsetX: 0,
+                        //         shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        //     },
+                        //     normal:{
+                        //         label:{
+                        //             show: true,
+                        //             textStyle : { fontFamily: 'Microsoft YaHei', fontSize : '14', fontWeight : 'bold'},
+                        //             formatter: '{b}:{c}台'
+                        //         },
+                        //         labelLine :{show:true}
+                        //     }
+                        // }
                     }
                 ]
             };
@@ -249,21 +263,34 @@
                             {value:physical_pc_count, name:'物理机'},
                             {value:virtual_machine, name:'虚拟机'}
                         ],
-                        itemStyle: {
-                            emphasis: {
+
+                        //ECharts4写法
+                        emphasis: {
                                 shadowBlur: 10,
                                 shadowOffsetX: 0,
                                 shadowColor: 'rgba(0, 0, 0, 0.5)'
                             },
-                            normal:{
-                                label:{
-                                    show: true,
-                                    textStyle : { fontFamily: 'Microsoft YaHei', fontSize : '14', fontWeight : 'bold'},
-                                    formatter: '{b}:{c}台'
+                        label:{
+                                show: true,
+                                textStyle : { fontFamily: 'Microsoft YaHei', fontSize : '14', fontWeight : 'bold'},
+                                formatter: '{b}:{c}台'
                                 },
-                                labelLine :{show:true}
-                            }
-                        }
+                        labelLine :{show:true},
+                        // itemStyle: {
+                        //     emphasis: {
+                        //         shadowBlur: 10,
+                        //         shadowOffsetX: 0,
+                        //         shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        //     },
+                        //     normal:{
+                        //         label:{
+                        //             show: true,
+                        //             textStyle : { fontFamily: 'Microsoft YaHei', fontSize : '14', fontWeight : 'bold'},
+                        //             formatter: '{b}:{c}台'
+                        //         },
+                        //         labelLine :{show:true}
+                        //     }
+                        // }
                     }
                 ]
             };
@@ -310,21 +337,35 @@
                             {value:sys_type_windows_count, name:'windows'},
                             {value:sys_type_linux_count, name:'linux'}
                         ],
-                        itemStyle: {
-                            emphasis: {
+
+                        //ECharts4写法
+                        emphasis: {
                                 shadowBlur: 10,
                                 shadowOffsetX: 0,
                                 shadowColor: 'rgba(0, 0, 0, 0.5)'
                             },
-                            normal:{
-                                label:{
-                                    show: true,
-                                    textStyle : { fontFamily: 'Microsoft YaHei', fontSize : '14', fontWeight : 'bold'},
-                                    formatter: '{b}:{c}台'
+                        label:{
+                                show: true,
+                                textStyle : { fontFamily: 'Microsoft YaHei', fontSize : '14', fontWeight : 'bold'},
+                                formatter: '{b}:{c}台'
                                 },
-                                labelLine :{show:true}
-                            }
-                        }
+                        labelLine :{show:true},
+
+                        // itemStyle: {
+                        //     emphasis: {
+                        //         shadowBlur: 10,
+                        //         shadowOffsetX: 0,
+                        //         shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        //     },
+                        //     normal:{
+                        //         label:{
+                        //             show: true,
+                        //             textStyle : { fontFamily: 'Microsoft YaHei', fontSize : '14', fontWeight : 'bold'},
+                        //             formatter: '{b}:{c}台'
+                        //         },
+                        //         labelLine :{show:true}
+                        //     }
+                        // }
                     }
                 ]
             };
@@ -375,23 +416,38 @@
                             {value:saltkey_denied_count, name:'禁止'},
                             {value:saltkey_rejected_count, name:'已拒绝'}
                         ],
-                        itemStyle: {
-                            emphasis: {
+
+                        //ECharts4写法
+                        emphasis: {
                                 shadowBlur: 10,
                                 shadowOffsetX: 0,
                                 shadowColor: 'rgba(0, 0, 0, 0.5)'
                             },
-                            normal:{
-                                label:{
-                                    show: true,
-                                    textStyle : { fontFamily: 'Microsoft YaHei', fontSize : '14', fontWeight : 'bold'},
-                                    formatter: '{b}:{c}台'
+                        label:{
+                                show: true,
+                                textStyle : { fontFamily: 'Microsoft YaHei', fontSize : '14', fontWeight : 'bold'},
+                                formatter: '{b}:{c}台'
                                 },
-                                labelLine :{show:true}
-                            }
-                        }
+                        labelLine :{show:true},
+
+                        // itemStyle: {
+                        //     emphasis: {
+                        //         shadowBlur: 10,
+                        //         shadowOffsetX: 0,
+                        //         shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        //     },
+                        //     normal:{
+                        //         label:{
+                        //             show: true,
+                        //             textStyle : { fontFamily: 'Microsoft YaHei', fontSize : '14', fontWeight : 'bold'},
+                        //             formatter: '{b}:{c}台'
+                        //         },
+                        //         labelLine :{show:true}
+                        //     }
+                        // }
                     }
                 ],
+                //全局饼图的颜色配置
                 color:['#00CC00', 'blue','#dde214','red']
             };
 
@@ -439,28 +495,118 @@
                             {value:minion_down_count, name:'离线'},
                             {value:minion_error_count, name:'异常'}
                         ],
-                        itemStyle: {
-                            emphasis: {
+
+                        //ECharts4写法
+                        emphasis: {
                                 shadowBlur: 10,
                                 shadowOffsetX: 0,
                                 shadowColor: 'rgba(0, 0, 0, 0.5)'
                             },
-                            normal:{
-                                label:{
-                                    show: true,
-                                    textStyle : { fontFamily: 'Microsoft YaHei', fontSize : '14', fontWeight : 'bold'},
-                                    formatter: '{b}:{c}台'
+                        label:{
+                                show: true,
+                                textStyle : { fontFamily: 'Microsoft YaHei', fontSize : '14', fontWeight : 'bold'},
+                                formatter: '{b}:{c}台'
                                 },
-                                labelLine :{show:true}
-                            }
-                        }
+                        labelLine :{show:true},
+
+                        // itemStyle: {
+                        //     emphasis: {
+                        //         shadowBlur: 10,
+                        //         shadowOffsetX: 0,
+                        //         shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        //     },
+                        //     normal:{
+                        //         label:{
+                        //             show: true,
+                        //             textStyle : { fontFamily: 'Microsoft YaHei', fontSize : '14', fontWeight : 'bold'},
+                        //             formatter: '{b}:{c}台'
+                        //         },
+                        //         labelLine :{show:true}
+                        //     }
+                        // }
                     }
                 ],
                 color:['#00CC00', 'red', 'orange']
             };
 
             // 为Minion状态汇总饼图对象加载数据
-            minion_status_allocation.setOption(minion_status_allocation_option);
+            // minion_status_allocation.setOption(minion_status_allocation_option);
+            setInterval(getData,5000);
+            function getData() {
+                $.ajax({
+                    url: "{% url 'index_ajax' %}",
+                    type: 'GET',
+                    dataType: 'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+                    traditional: true,
+                    data: {
+                        'index_tag_key': 'index_get_data',
+                    },
+                    success: function (result) {
+                        if (result.status) {
+                            minion_status_allocation.setOption({
+                                title: {
+                                    text: 'Minion状态汇总',
+                                    subtext: 'Minion状态',
+                                    x: 'center'
+                                },
+                                tooltip: {
+                                    trigger: 'item',
+                                    formatter: "{a} <br/>{b} : {c}台 ({d}%)"
+                                },
+                                legend: {
+                                    orient: 'vertical',
+                                    x: 'left',
+                                    data: ['在线', '离线', '异常']
+                                },
+                                toolbox: {
+                                    show: true,
+                                    feature: {
+                                        dataView: {show: true, readOnly: false},
+                                        restore: {show: true},
+                                        saveAsImage: {show: true}
+                                    }
+                                },
+                                calculable: true,
+                                series: [
+                                    {
+                                        name: 'Minion状态',
+                                        type: 'pie',
+                                        radius: '55%',
+                                        center: ['50%', '60%'],
+
+                                        data: [
+                                            {value: result.result.minion_up_count, name: '在线'},
+                                            {value: result.result.minion_down_count, name: '离线'},
+                                            {value: result.result.minion_error_count, name: '异常'}
+                                        ],
+
+                                        //ECharts4写法
+                                        emphasis: {
+                                            shadowBlur: 10,
+                                            shadowOffsetX: 0,
+                                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                        },
+                                        label: {
+                                            show: true,
+                                            textStyle: {
+                                                fontFamily: 'Microsoft YaHei',
+                                                fontSize: '14',
+                                                fontWeight: 'bold'
+                                            },
+                                            formatter: '{b}:{c}台'
+                                        },
+                                        labelLine: {show: true},
+                                    }
+                                ],
+                                color: ['#00CC00', 'red', 'orange']
+                            })
+                        } else {
+                            toastr.error(result.result, 'error', {timeOut: 1500});
+                        }
+                    }
+                });
+            }
 
 
     $(function() {

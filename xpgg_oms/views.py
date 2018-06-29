@@ -660,7 +660,7 @@ def do_logout(request):
     return redirect(settings.LOGIN_URL)#返回到登录页
 
 
-# 首页
+# 首页仪表盘
 def index(request):
     physical_pc_count = ServerList.objects.filter(server_type='0').count()
     virtual_machine = ServerList.objects.filter(server_type='1').count()
@@ -675,6 +675,213 @@ def index(request):
     minion_error_count = MinionList.objects.filter(minion_status='异常').count()
     data = {'physical_pc_count': physical_pc_count, 'virtual_machine': virtual_machine}
     return render(request, 'index.html', locals())
+
+
+# 首页仪表盘ajax
+def index_ajax(request):
+    result = {'result': None, 'status': False}
+    app_log = []
+    try:
+        if request.is_ajax():
+            # 在ajax提交时候多一个字段作为标识，来区分多个ajax提交哈，厉害！
+            if request.GET.get('index_tag_key') == 'index_get_data':
+                result['result'] = {}
+                result['result']['physical_pc_count'] = ServerList.objects.filter(server_type='0').count()
+                result['result']['virtual_machine'] = ServerList.objects.filter(server_type='1').count()
+                result['result']['sys_type_windows_count'] = ServerList.objects.filter(sys_type='windows').count()
+                result['result']['sys_type_linux_count'] = ServerList.objects.filter(sys_type='linux').count()
+                result['result']['saltkey_accepted_count'] = SaltKeyList.objects.filter(certification_status='accepted').count()
+                result['result']['saltkey_denied_count'] = SaltKeyList.objects.filter(certification_status='denied').count()
+                result['result']['saltkey_rejected_count'] = SaltKeyList.objects.filter(certification_status='rejected').count()
+                result['result']['saltkey_unaccepted_count'] = SaltKeyList.objects.filter(certification_status='unaccepted').count()
+                result['result']['minion_up_count'] = MinionList.objects.filter(minion_status='在线').count()
+                result['result']['minion_down_count'] = MinionList.objects.filter(minion_status='离线').count()
+                result['result']['minion_error_count'] = MinionList.objects.filter(minion_status='异常').count()
+                result['status'] = True
+                # 返回字典之外的需要把参数safe改成false如：JsonResponse([1, 2, 3], safe=False)
+                return JsonResponse(result)
+            elif request.POST.get('server_list_tag_key') == 'add_server_list':
+                obj = ServerListAddForm(request.POST)
+                if obj.is_valid():
+                    ServerList.objects.create(server_name=obj.cleaned_data["server_name"],
+                                              server_type=obj.cleaned_data["server_type"],
+                                              localhost=obj.cleaned_data["localhost"],
+                                              ip=obj.cleaned_data["ip"],
+                                              system_issue=obj.cleaned_data["system_issue"],
+                                              sn=obj.cleaned_data["sn"],
+                                              cpu_num=obj.cleaned_data["cpu_num"],
+                                              cpu_model=obj.cleaned_data["cpu_model"],
+                                              sys_type=obj.cleaned_data["sys_type"],
+                                              kernel=obj.cleaned_data["kernel"],
+                                              product_name=obj.cleaned_data["product_name"],
+                                              ipv4_address=obj.cleaned_data["ipv4_address"],
+                                              mac_address=obj.cleaned_data["mac_address"],
+                                              mem_total=obj.cleaned_data["mem_total"],
+                                              mem_explain=obj.cleaned_data["mem_explain"],
+                                              disk_total=obj.cleaned_data["disk_total"],
+                                              disk_explain=obj.cleaned_data["disk_explain"],
+                                              minion_id=obj.cleaned_data["minion_id"],
+                                              idc_name=obj.cleaned_data["idc_name"],
+                                              idc_num=obj.cleaned_data["idc_num"],
+                                              login_ip=obj.cleaned_data["login_ip"],
+                                              login_port=obj.cleaned_data["login_port"],
+                                              login_user=obj.cleaned_data["login_user"],
+                                              login_password=obj.cleaned_data["login_password"],
+                                              description=obj.cleaned_data["description"])
+                    result['result'] = '成功'
+                    result['status'] = True
+                else:
+                    error_str = obj.errors.as_json()
+                    result['result'] = json.loads(error_str)
+                return JsonResponse(result)
+            elif request.POST.get('server_list_tag_key') == 'update_server_list':
+                obj = ServerListUpdateForm(request.POST)
+                if obj.is_valid():
+                    ServerList.objects.filter(server_name=obj.cleaned_data["server_name"]).update(
+                        server_type=obj.cleaned_data["server_type"],
+                        localhost=obj.cleaned_data["localhost"],
+                        ip=obj.cleaned_data["ip"],
+                        system_issue=obj.cleaned_data["system_issue"],
+                        sn=obj.cleaned_data["sn"],
+                        cpu_num=obj.cleaned_data["cpu_num"],
+                        cpu_model=obj.cleaned_data["cpu_model"],
+                        sys_type=obj.cleaned_data["sys_type"],
+                        kernel=obj.cleaned_data["kernel"],
+                        product_name=obj.cleaned_data["product_name"],
+                        ipv4_address=obj.cleaned_data["ipv4_address"],
+                        mac_address=obj.cleaned_data["mac_address"],
+                        mem_total=obj.cleaned_data["mem_total"],
+                        mem_explain=obj.cleaned_data["mem_explain"],
+                        disk_total=obj.cleaned_data["disk_total"],
+                        disk_explain=obj.cleaned_data["disk_explain"],
+                        minion_id=obj.cleaned_data["minion_id"],
+                        idc_name=obj.cleaned_data["idc_name"],
+                        idc_num=obj.cleaned_data["idc_num"],
+                        login_ip=obj.cleaned_data["login_ip"],
+                        login_port=obj.cleaned_data["login_port"],
+                        login_user=obj.cleaned_data["login_user"],
+                        login_password=obj.cleaned_data["login_password"],
+                        update_time=timezone.now(),
+                        description=obj.cleaned_data["description"])
+                    result['result'] = '成功'
+                    result['status'] = True
+                else:
+                    error_str = obj.errors.as_json()
+                    result['result'] = json.loads(error_str)
+                return JsonResponse(result)
+            elif request.POST.get('server_list_tag_key') == 'delete_server_list':
+                server_name = request.POST.get('server_name')
+                try:
+                    ServerList.objects.get(server_name=server_name).delete()
+                    result['result'] = '成功'
+                    result['status'] = True
+                except Exception as e:
+                    result['result'] = str(e)
+                return JsonResponse(result)
+            elif request.POST.get('server_list_tag_key') == 'import_server_list':
+                # 获取的数据类型如果有文件，则要像下面这么写form才能正确获取到文件
+                obj = ServerListImportForm(request.POST, request.FILES)
+                if obj.is_valid():
+                    # request.FILES['file'].read()是从内存中直接读取文件内容
+                    # openpyxl的filename除了能打开某个路径的文件，还可以接受BytesIO读取的二进制数据所以如下即可获取xlsx内容
+                    wb = openpyxl.load_workbook(filename=BytesIO(request.FILES['file'].read()))
+                    table = wb[wb.sheetnames[0]]
+                    server_list_cover_select = request.POST.get('server_list_cover_select')
+                    # 结果需要存一些内容所以修改成列表
+                    result['result'] = []
+                    for row in table.iter_rows(min_row=2, max_col=25):
+                        data = {'server_name': row[0].value, 'server_type': row[1].value, 'localhost': row[2].value,
+                                'ip': row[3].value, 'system_issue': row[4].value, 'sn': row[5].value,
+                                'cpu_num': row[6].value, 'cpu_model': row[7].value, 'sys_type': row[8].value,
+                                'kernel': row[9].value, 'product_name': row[10].value, 'ipv4_address': row[11].value,
+                                'mac_address': row[12].value, 'mem_total': row[13].value, 'mem_explain': row[14].value,
+                                'disk_total': row[15].value, 'disk_explain': row[16].value, 'minion_id': row[17].value,
+                                'idc_name': row[18].value, 'idc_num': row[17].value, 'login_ip': row[20].value,
+                                'login_port': row[21].value, 'login_user': row[22].value,
+                                'login_password': row[23].value, 'description': row[24].value}
+                        obj = ServerListAddForm(data)
+                        if obj.is_valid():
+                            ServerList.objects.create(server_name=obj.cleaned_data["server_name"],
+                                                      server_type=obj.cleaned_data["server_type"],
+                                                      localhost=obj.cleaned_data["localhost"],
+                                                      ip=obj.cleaned_data["ip"],
+                                                      system_issue=obj.cleaned_data["system_issue"],
+                                                      sn=obj.cleaned_data["sn"],
+                                                      cpu_num=obj.cleaned_data["cpu_num"],
+                                                      cpu_model=obj.cleaned_data["cpu_model"],
+                                                      sys_type=obj.cleaned_data["sys_type"],
+                                                      kernel=obj.cleaned_data["kernel"],
+                                                      product_name=obj.cleaned_data["product_name"],
+                                                      ipv4_address=obj.cleaned_data["ipv4_address"],
+                                                      mac_address=obj.cleaned_data["mac_address"],
+                                                      mem_total=obj.cleaned_data["mem_total"],
+                                                      mem_explain=obj.cleaned_data["mem_explain"],
+                                                      disk_total=obj.cleaned_data["disk_total"],
+                                                      disk_explain=obj.cleaned_data["disk_explain"],
+                                                      minion_id=obj.cleaned_data["minion_id"],
+                                                      idc_name=obj.cleaned_data["idc_name"],
+                                                      idc_num=obj.cleaned_data["idc_num"],
+                                                      login_ip=obj.cleaned_data["login_ip"],
+                                                      login_port=obj.cleaned_data["login_port"],
+                                                      login_user=obj.cleaned_data["login_user"],
+                                                      login_password=obj.cleaned_data["login_password"],
+                                                      description=obj.cleaned_data["description"])
+                        else:
+                            error_str = json.loads(obj.errors.as_json())
+                            if error_str.get('server_name') and server_list_cover_select == 'cover':
+                                if error_str['server_name'][0]['message'] == '服务器名称已存在，请检查':
+                                    obj = ServerListUpdateForm(data)
+                                    if obj.is_valid():
+                                        ServerList.objects.filter(server_name=obj.cleaned_data["server_name"]).update(
+                                            server_type=obj.cleaned_data["server_type"],
+                                            localhost=obj.cleaned_data["localhost"],
+                                            ip=obj.cleaned_data["ip"],
+                                            system_issue=obj.cleaned_data["system_issue"],
+                                            sn=obj.cleaned_data["sn"],
+                                            cpu_num=obj.cleaned_data["cpu_num"],
+                                            cpu_model=obj.cleaned_data["cpu_model"],
+                                            sys_type=obj.cleaned_data["sys_type"],
+                                            kernel=obj.cleaned_data["kernel"],
+                                            product_name=obj.cleaned_data["product_name"],
+                                            ipv4_address=obj.cleaned_data["ipv4_address"],
+                                            mac_address=obj.cleaned_data["mac_address"],
+                                            mem_total=obj.cleaned_data["mem_total"],
+                                            mem_explain=obj.cleaned_data["mem_explain"],
+                                            disk_total=obj.cleaned_data["disk_total"],
+                                            disk_explain=obj.cleaned_data["disk_explain"],
+                                            minion_id=obj.cleaned_data["minion_id"],
+                                            idc_name=obj.cleaned_data["idc_name"],
+                                            idc_num=obj.cleaned_data["idc_num"],
+                                            login_ip=obj.cleaned_data["login_ip"],
+                                            login_port=obj.cleaned_data["login_port"],
+                                            login_user=obj.cleaned_data["login_user"],
+                                            login_password=obj.cleaned_data["login_password"],
+                                            update_time=timezone.now(),
+                                            description=obj.cleaned_data["description"])
+                                    else:
+                                        error_str = json.loads(obj.errors.as_json())
+                                        result['result'].append(error_str)
+                            else:
+                                if error_str['server_name'][0]['message'] == '服务器名称已存在，请检查':
+                                    result['result'].append('服务器名称:{} 已存在'.format(data['server_name']))
+                                else:
+                                    result['result'].append(error_str)
+                    if result['result']:
+                        pass
+                    else:
+                        result['result'] = '成功'
+                        result['status'] = True
+                else:
+                    error_str = obj.errors.as_json()
+                    result['result'] = json.loads(error_str)
+                return JsonResponse(result)
+            else:
+                result['result'] = '主机管理页ajax提交了错误的tag'
+                return JsonResponse(result)
+    except Exception as e:
+        logger.error('主机管理页ajax提交处理有问题', e)
+        result['result'] = '主机管理页ajax提交处理有问题'
+        return JsonResponse(result)
 
 
 # salt执行state.sls的返回结果格式化，因为通过api返回的结果不怎么好看呵呵
