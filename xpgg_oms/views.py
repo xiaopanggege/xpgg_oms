@@ -662,18 +662,18 @@ def do_logout(request):
 
 # 首页仪表盘
 def index(request):
-    physical_pc_count = ServerList.objects.filter(server_type='0').count()
-    virtual_machine = ServerList.objects.filter(server_type='1').count()
-    sys_type_windows_count = ServerList.objects.filter(sys_type='windows').count()
-    sys_type_linux_count = ServerList.objects.filter(sys_type='linux').count()
-    saltkey_accepted_count = SaltKeyList.objects.filter(certification_status='accepted').count()
-    saltkey_denied_count = SaltKeyList.objects.filter(certification_status='denied').count()
-    saltkey_rejected_count = SaltKeyList.objects.filter(certification_status='rejected').count()
-    saltkey_unaccepted_count = SaltKeyList.objects.filter(certification_status='unaccepted').count()
-    minion_up_count = MinionList.objects.filter(minion_status='在线').count()
-    minion_down_count = MinionList.objects.filter(minion_status='离线').count()
-    minion_error_count = MinionList.objects.filter(minion_status='异常').count()
-    data = {'physical_pc_count': physical_pc_count, 'virtual_machine': virtual_machine}
+    # physical_pc_count = ServerList.objects.filter(server_type='0').count()
+    # virtual_machine = ServerList.objects.filter(server_type='1').count()
+    # sys_type_windows_count = ServerList.objects.filter(sys_type='windows').count()
+    # sys_type_linux_count = ServerList.objects.filter(sys_type='linux').count()
+    # saltkey_accepted_count = SaltKeyList.objects.filter(certification_status='accepted').count()
+    # saltkey_denied_count = SaltKeyList.objects.filter(certification_status='denied').count()
+    # saltkey_rejected_count = SaltKeyList.objects.filter(certification_status='rejected').count()
+    # saltkey_unaccepted_count = SaltKeyList.objects.filter(certification_status='unaccepted').count()
+    # minion_up_count = MinionList.objects.filter(minion_status='在线').count()
+    # minion_down_count = MinionList.objects.filter(minion_status='离线').count()
+    # minion_error_count = MinionList.objects.filter(minion_status='异常').count()
+    # data = {'physical_pc_count': physical_pc_count, 'virtual_machine': virtual_machine}
     return render(request, 'index.html', locals())
 
 
@@ -697,6 +697,8 @@ def index_ajax(request):
                 result['result']['minion_up_count'] = MinionList.objects.filter(minion_status='在线').count()
                 result['result']['minion_down_count'] = MinionList.objects.filter(minion_status='离线').count()
                 result['result']['minion_error_count'] = MinionList.objects.filter(minion_status='异常').count()
+                result['result']['minion_windows_count'] = MinionList.objects.filter(sys='Windows').count()
+                result['result']['minion_linux_count'] = MinionList.objects.filter(sys='Linux').count()
                 result['status'] = True
                 # 返回字典之外的需要把参数safe改成false如：JsonResponse([1, 2, 3], safe=False)
                 return JsonResponse(result)
@@ -1269,7 +1271,7 @@ def minion_client_install(request):
         logger.error('minion安装部署报错：', e)
 
 
-# 主机管理
+# 主机资源列表
 def server_list(request):
     try:
         # 这里主要是担心通过ajax提交了get请求，其实多此一举因为这个页面没有ajax的get请求哈哈
@@ -1305,7 +1307,7 @@ def server_list(request):
         return render(request, 'server_list.html')
 
 
-# 主机管理ajax
+# 主机资源列表ajax
 def server_list_ajax(request):
     result = {'result': None, 'status': False}
     app_log = []
@@ -1505,7 +1507,7 @@ def server_list_ajax(request):
         return JsonResponse(result)
 
 
-# 主机管理模板下载
+# 主机资源管理模板下载
 def server_list_template_down(request):
     try:
         # 基本上django下载文件就按这个模板来就可以，更复杂的参考下面的主机管理列表导出方法
@@ -1521,7 +1523,7 @@ def server_list_template_down(request):
         return str(e)
 
 
-# 主机管列表理导出下载
+# 主机资源列表理导出下载
 def server_list_down(request):
     from openpyxl.utils import get_column_letter
     from openpyxl.writer.excel import save_virtual_workbook
@@ -1544,6 +1546,220 @@ def server_list_down(request):
     # 用(save_virtual_workbook(wb)来保存到内存中供django调用,无法使用StreamingHttpResponse或者FileResponse在openpyxl官方例子就是这样的
     response = HttpResponse(save_virtual_workbook(wb), content_type='application/vnd.ms-excel')
     response['Content-Disposition'] = "attachment; filename*=utf-8''{0}".format(escape_uri_path('主机列表.xlsx'))
+    # wb.save(response)
+    return response
+
+
+# 网络设备列表
+def network_list(request):
+    try:
+        # 这里主要是担心通过ajax提交了get请求，其实多此一举因为这个页面没有ajax的get请求
+        if request.is_ajax() is not True:
+            if request.method == 'GET':
+                search_field = request.GET.get('search_field', '')
+                search_content = request.GET.get('search_content', '')
+                if search_content is '':
+                    device_data = NetworkList.objects.all().order_by('create_date')
+                    data_list = getPage(request, device_data, 9)
+                else:
+                    if search_field == 'search_device_name':
+                        device_data = NetworkList.objects.filter(device_name__icontains=search_content).order_by(
+                            'create_date')
+                        data_list = getPage(request, device_data, 9)
+                    elif search_field == 'search_manage_ip':
+                        device_data = NetworkList.objects.filter(manage_ip__icontains=search_content).order_by(
+                            'create_date')
+                        data_list = getPage(request, device_data, 9)
+                    elif search_field == 'search_device_type':
+                        device_data = NetworkList.objects.filter(device_type__icontains=search_content).order_by(
+                            'create_date')
+                        data_list = getPage(request, device_data, 9)
+                    else:
+                        device_data = NetworkList.objects.filter(server_type__icontains=search_content).order_by(
+                            'create_date')
+                        data_list = getPage(request, device_data, 9)
+                return render(request, 'network_list.html',
+                              {'data_list': data_list, 'search_field': search_field, 'search_content': search_content})
+
+    except Exception as e:
+        logger.error('网络设备列表管理页面有问题', e)
+        return render(request, 'network_list.html')
+
+
+# 网络设备列表ajax
+def network_list_ajax(request):
+    result = {'result': None, 'status': False}
+    app_log = []
+    try:
+        if request.is_ajax():
+            # 在ajax提交时候多一个字段作为标识，来区分多个ajax提交哈，厉害！
+            if request.POST.get('network_list_tag_key') == 'add_network_list':
+                obj = NetworkListAddForm(request.POST)
+                if obj.is_valid():
+                    NetworkList.objects.create(device_name=obj.cleaned_data["device_name"],
+                                               device_type=obj.cleaned_data["device_type"],
+                                               manage_ip=obj.cleaned_data["manage_ip"],
+                                               product_name=obj.cleaned_data["product_name"],
+                                               product_type=obj.cleaned_data["product_type"],
+                                               sn=obj.cleaned_data["sn"],
+                                               idc_name=obj.cleaned_data["idc_name"],
+                                               idc_num=obj.cleaned_data["idc_num"],
+                                               login_ip=obj.cleaned_data["login_ip"],
+                                               login_port=obj.cleaned_data["login_port"],
+                                               login_user=obj.cleaned_data["login_user"],
+                                               login_password=obj.cleaned_data["login_password"],
+                                               description=obj.cleaned_data["description"])
+                    result['result'] = '成功'
+                    result['status'] = True
+                else:
+                    error_str = obj.errors.as_json()
+                    result['result'] = json.loads(error_str)
+                return JsonResponse(result)
+            elif request.POST.get('network_list_tag_key') == 'update_network_list':
+                obj = NetworkListUpdateForm(request.POST)
+                if obj.is_valid():
+                    NetworkList.objects.filter(device_name=obj.cleaned_data["device_name"]).update(
+                        device_type=obj.cleaned_data["device_type"],
+                        manage_ip=obj.cleaned_data["manage_ip"],
+                        product_name=obj.cleaned_data["product_name"],
+                        product_type=obj.cleaned_data["product_type"],
+                        sn=obj.cleaned_data["sn"],
+                        idc_name=obj.cleaned_data["idc_name"],
+                        idc_num=obj.cleaned_data["idc_num"],
+                        login_ip=obj.cleaned_data["login_ip"],
+                        login_port=obj.cleaned_data["login_port"],
+                        login_user=obj.cleaned_data["login_user"],
+                        login_password=obj.cleaned_data["login_password"],
+                        update_time=timezone.now(),
+                        description=obj.cleaned_data["description"])
+                    result['result'] = '成功'
+                    result['status'] = True
+                else:
+                    error_str = obj.errors.as_json()
+                    result['result'] = json.loads(error_str)
+                return JsonResponse(result)
+            elif request.POST.get('network_list_tag_key') == 'delete_server_list':
+                device_name = request.POST.get('device_name')
+                try:
+                    NetworkList.objects.get(device_name=device_name).delete()
+                    result['result'] = '成功'
+                    result['status'] = True
+                except Exception as e:
+                    result['result'] = str(e)
+                return JsonResponse(result)
+            elif request.POST.get('network_list_tag_key') == 'import_server_list':
+                # 获取的数据类型如果有文件，则要像下面这么写form才能正确获取到文件
+                obj = NetworkListImportForm(request.POST, request.FILES)
+                if obj.is_valid():
+                    # request.FILES['file'].read()是从内存中直接读取文件内容
+                    # openpyxl的filename除了能打开某个路径的文件，还可以接受BytesIO读取的二进制数据所以如下即可获取xlsx内容
+                    wb = openpyxl.load_workbook(filename=BytesIO(request.FILES['file'].read()))
+                    table = wb[wb.sheetnames[0]]
+                    network_list_cover_select = request.POST.get('network_list_cover_select')
+                    # 结果需要存一些内容所以修改成列表
+                    result['result'] = []
+                    for row in table.iter_rows(min_row=2, max_col=25):
+                        data = {'device_name': row[0].value, 'device_type': row[1].value, 'manage_ip': row[2].value,
+                                'product_name': row[3].value, 'product_type': row[4].value, 'sn': row[5].value,
+                                'idc_name': row[18].value, 'idc_num': row[17].value, 'login_ip': row[20].value,
+                                'login_port': row[21].value, 'login_user': row[22].value,
+                                'login_password': row[23].value, 'description': row[24].value}
+                        obj = NetworkListAddForm(data)
+                        if obj.is_valid():
+                            NetworkList.objects.create(device_name=obj.cleaned_data["device_name"],
+                                                       device_type=obj.cleaned_data["device_type"],
+                                                       manage_ip=obj.cleaned_data["manage_ip"],
+                                                       product_name=obj.cleaned_data["product_name"],
+                                                       product_type=obj.cleaned_data["product_type"],
+                                                       sn=obj.cleaned_data["sn"],
+                                                       idc_name=obj.cleaned_data["idc_name"],
+                                                       idc_num=obj.cleaned_data["idc_num"],
+                                                       login_ip=obj.cleaned_data["login_ip"],
+                                                       login_port=obj.cleaned_data["login_port"],
+                                                       login_user=obj.cleaned_data["login_user"],
+                                                       login_password=obj.cleaned_data["login_password"],
+                                                       description=obj.cleaned_data["description"])
+                        else:
+                            error_str = json.loads(obj.errors.as_json())
+                            if error_str.get('device_name') and network_list_cover_select == 'cover':
+                                if error_str['device_name'][0]['message'] == '设备名称已存在，请检查':
+                                    obj = NetworkListUpdateForm(data)
+                                    if obj.is_valid():
+                                        NetworkList.objects.filter(device_name=obj.cleaned_data["device_name"]).update(
+                                            device_type=obj.cleaned_data["device_type"],
+                                            manage_ip=obj.cleaned_data["manage_ip"],
+                                            product_name=obj.cleaned_data["product_name"],
+                                            product_type=obj.cleaned_data["product_type"],
+                                            sn=obj.cleaned_data["sn"],
+                                            idc_name=obj.cleaned_data["idc_name"],
+                                            idc_num=obj.cleaned_data["idc_num"],
+                                            login_ip=obj.cleaned_data["login_ip"],
+                                            login_port=obj.cleaned_data["login_port"],
+                                            login_user=obj.cleaned_data["login_user"],
+                                            login_password=obj.cleaned_data["login_password"],
+                                            update_time=timezone.now(),
+                                            description=obj.cleaned_data["description"])
+                                    else:
+                                        error_str = json.loads(obj.errors.as_json())
+                                        result['result'].append(error_str)
+                            else:
+                                if error_str['device_name'][0]['message'] == '设备名称已存在，请检查':
+                                    result['result'].append('设备名称:{} 已存在'.format(data['device_name']))
+                                else:
+                                    result['result'].append(error_str)
+                    if result['result']:
+                        pass
+                    else:
+                        result['result'] = '成功'
+                        result['status'] = True
+                else:
+                    error_str = obj.errors.as_json()
+                    result['result'] = json.loads(error_str)
+                return JsonResponse(result)
+            else:
+                result['result'] = '网络设备管理页ajax提交了错误的tag'
+                return JsonResponse(result)
+    except Exception as e:
+        logger.error('网络设备管理页ajax提交处理有问题', e)
+        result['result'] = '网络设备管理页ajax提交处理有问题'
+        return JsonResponse(result)
+
+
+# 网络设备列表模板下载
+def network_list_template_down(request):
+    try:
+        # 基本上django下载文件就按这个模板来就可以，更复杂的参考下面的主机管理列表导出方法
+        # FileResponse方法继承了StreamingHttpResponse并且封装了迭代方法，是django最好的大文件流传送方式了，用法直接按下面，很简单
+        file = settings.STATICFILES_DIRS[0] + "/download_files/网络设备模板.xlsx"
+        response = FileResponse(open(file, 'rb'))
+        response['Content-Type'] = 'application/octet-stream'
+        # 带中文的文件名需要如下用escape_uri_path和utf8才能识别
+        response['Content-Disposition'] = "attachment; filename*=utf-8''{0}".format(escape_uri_path(os.path.basename(file)))
+        return response
+    except Exception as e:
+        logger.error(str(e))
+        return str(e)
+
+
+# 网络设备列表理导出下载
+def network_list_down(request):
+    from openpyxl.utils import get_column_letter
+    from openpyxl.writer.excel import save_virtual_workbook
+    # 只写模式会加快速度，不过写法和普通读写有区别，按下面一行一行插入即可
+    wb = openpyxl.Workbook(write_only=True)
+    ws = wb.create_sheet()
+    ws.title = "Sheet1"
+    columns = ("设备名称", "设备类型", "主机名", "管理IP", "设备厂家", "产品型号", "序列号",
+               "机房名称", "机柜号", "远程管理IP", "远程管理端口", "远程管理用户", "远程管理密码", "描述备注")
+    ws.append(columns)
+    queryset = NetworkList.objects.all()
+    for obj in queryset:
+        row = (obj.device_name, obj.server_type, obj.manage_ip, obj.product_name, obj.product_type, obj.sn, obj.idc_name,
+               obj.idc_num, obj.login_ip, obj.login_port, obj.login_user, obj.login_password, obj.update_time, obj.description)
+        ws.append(row)
+    # 用(save_virtual_workbook(wb)来保存到内存中供django调用,无法使用StreamingHttpResponse或者FileResponse在openpyxl官方例子就是这样的
+    response = HttpResponse(save_virtual_workbook(wb), content_type='application/vnd.ms-excel')
+    response['Content-Disposition'] = "attachment; filename*=utf-8''{0}".format(escape_uri_path('网络设备列表.xlsx'))
     # wb.save(response)
     return response
 
@@ -2840,6 +3056,11 @@ def app_release(request):
                     elif search_field == 'search_minion_id':
                         app_data = AppRelease.objects.filter(
                             minion_id__icontains=search_content).order_by(
+                            'create_time')
+                        data_list = getPage(request, app_data, 15)
+                    elif search_field == 'search_svn_url':
+                        app_data = AppRelease.objects.filter(
+                            app_svn_url__icontains=search_content).order_by(
                             'create_time')
                         data_list = getPage(request, app_data, 15)
                     else:

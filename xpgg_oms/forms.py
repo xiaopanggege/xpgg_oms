@@ -197,3 +197,59 @@ def validate_excel(value):
 # 资源管理 主机列表  导入主机验证 主
 class ServerListImportForm(forms.Form):
     file = forms.FileField(validators=[validate_excel])
+
+
+# 资源管理 网络设备列表 表单验证 验证服务器名称是否重复
+def device_name_exist_validate(value):
+    is_device_name_exist = NetworkList.objects.filter(device_name=value).exists()
+    if is_device_name_exist:
+        raise ValidationError('设备名称已存在，请检查')
+
+
+# 资源管理 网络设备列表  新增网络设备表单验证 主
+class NetworkListAddForm(forms.Form):
+    Device_Type = (
+        ('0', '二层交换机'),
+        ('1', '三层交换机'),
+        ('2', '防火墙'),
+        ('3', '路由器'),
+        ('4', 'WAF'),
+        ('5', '网闸')
+    )
+    Product_name = (
+        ('0', 'H3C'),
+        ('1', '华为'),
+        ('2', '思科'),
+        ('3', '中兴')
+    )
+    device_name = forms.CharField(max_length=50, error_messages={'required': '设备名称不能为空', 'max_length': '最多50位'}, validators=[device_name_exist_validate])
+    device_type = forms.ChoiceField(required=False, choices=Device_Type, error_messages={'invalid_choice': '无效的设备类型'})
+    manage_ip = forms.CharField(required=False, max_length=200, error_messages={'max_length': '最多50位'})
+    product_name = forms.ChoiceField(required=False, choices=Product_name, error_messages={'invalid_choice': '无效的设备厂家'})
+    product_type = forms.CharField(required=False, max_length=50, error_messages={'max_length': '最多50位'})
+    sn = forms.CharField(required=False, max_length=100, error_messages={'max_length': '最多50位'})
+    idc_name = forms.CharField(required=False, max_length=50, error_messages={'max_length': '最多50位'})
+    idc_num = forms.CharField(required=False, max_length=50, error_messages={'max_length': '最多50位'})
+    login_ip = forms.CharField(required=False, max_length=20, error_messages={'max_length': '最多50位'})
+    login_port = forms.IntegerField(required=False, max_value=65535, min_value=1, error_messages={'invalid': '无效的参数','min_value': '从1开始', 'max_value': '最大65535'})
+    login_user = forms.CharField(required=False, max_length=50, error_messages={'max_length': '最多50位'})
+    login_password = forms.CharField(required=False, max_length=20, error_messages={'max_length': '最多50位'})
+    description = forms.CharField(required=False, max_length=200, error_messages={'max_length': '最多50位'})
+
+
+# 资源管理 网络设备列表 表单验证 验证设备名称是否重复
+def device_name_not_exist_validate(value):
+    is_device_name_exist = ServerList.objects.filter(device_name=value).exists()
+    if not is_device_name_exist:
+        raise ValidationError('设备名称不存在，请检查')
+
+
+# 资源管理 网络设备列表  更新网络设备表单验证 主
+class NetworkListUpdateForm(ServerListAddForm):
+    device_name = forms.CharField(max_length=50, error_messages={'required': '设备名称不能为空', 'max_length': '最多50位'},
+                                  validators=[device_name_not_exist_validate])
+
+
+# 资源管理 网络设备列表  导入网络设备验证 主
+class NetworkListImportForm(forms.Form):
+    file = forms.FileField(validators=[validate_excel])

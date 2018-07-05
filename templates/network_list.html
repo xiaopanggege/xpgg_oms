@@ -1,0 +1,897 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% block title %}网络设备列表{% endblock %}
+{% block custom_css %}
+	<style type="text/css">
+
+        /*设置表格的宽度固定，不会因为内容过长而出现换行*/
+        table{
+            table-layout:fixed;
+        }
+        /*设置表格内容过长出现滚动条*/
+        /*td{*/
+            /*overflow:auto;*/
+            /*text-overflow:clmanage_ip;white-space:nowrap;*/
+        /*}*/
+
+        tbody tr:hover{
+        background-color:#9b9b9b !important;
+            color: #000;
+        }
+        /*让列表内的信息上下居中,默认是换行的，但是词内默认没换行要设置word-break实现词内换行*/
+        td{
+            vertical-align:middle !important;
+            text-align: center;
+            word-break:break-all;
+        }
+
+        th{
+            text-align: center;
+        }
+
+        /*添加表单滚动*/
+        .overflow_set{
+        	overflow: auto;
+        }
+    </style>
+
+{% endblock %}
+
+{% block custom_js %}
+<script>
+    	$(function() {
+
+    	    // 响应式调整页面高度
+    		$(window).resize(function() {
+
+                // 表单的大小自适应窗口，不能设置100%，因为除了表单以外其他东西也会占用高度
+                $('.overflow_set').css(
+                    "height", $('.hall').height() * 0.9);
+            });
+    		$(window).resize();
+
+//    	    复选框选中操作
+            /*“全选/反选”复选框*/
+                $('#checkAll').click(function(event){
+                    /*将所有行的选中状态设成全选框的选中状态*/
+                    $('input[name="checkItem"]').prop('checked',$(this).prop('checked'));
+                    /*并调整所有选中行的CSS样式*/
+                    if ($(this).prop('checked')) {
+                        $('input[name="checkItem"]').parent().parent().addClass('warning');
+                    } else{
+                        $('input[name="checkItem"]').parent().parent().removeClass('warning');
+                    }
+                    /*阻止向上冒泡，以防再次触发点击操作*/
+                    event.stopPropagation();
+                });
+                /*点击全选框所在单元格时也触发全选框的点击操作*/
+                var $checkAllTh = $('#checkAll').parent();
+                $checkAllTh.click(function(){
+                    $('#checkAll').click();
+                });
+
+                /*点击每一行的选中复选框时*/
+                var $tbr = $('table tbody tr');
+                $('input[name="checkItem"]').click(function(event){
+                    /*调整选中行的CSS样式*/
+                    $(this).parent().parent().toggleClass('warning');
+                    /*如果已经被选中行的行数等于表格的数据行数，将全选框设为选中状态，否则设为未选中状态*/
+                    $('#checkAll').prop('checked',$('input[name="checkItem"]:checked').length == $tbr.length ? true : false);
+                    /*阻止向上冒泡，以防再次触发点击操作*/
+                    event.stopPropagation();
+                });
+                /*点击复选框的父框也触发选中*/
+                $('input[name="checkItem"]').parent().click(function(){
+                    $(this).find('input').click();
+                });
+
+//           bootstrap的提示工具jq
+            $("[data-toggle='tooltmanage_ip']").tooltmanage_ip();
+
+
+//            分页页面跳转
+            $('.page_go').click(function () {
+                window.location.href = window.location.href.split("?")[0]+'?search_field='+'{{ search_field }}'+'&search_content='+'{{ search_content }}'+'&page='+$("#page_index").val();
+            });
+
+//            查询按钮事件
+            $('.search_btn').click(function () {
+               var search_field = $('#search_field').val();
+               var search_content = $('#search_content').val();
+               window.location.href=window.location.href.split("?")[0]+'?search_field='+search_field+'&search_content='+search_content;
+            });
+
+//            搜索框回车触发查询按钮事件
+            $("#search_content").keydown(function (e) {
+                if (e.keyCode == 13) {
+                    $('.search_btn').click();
+                }
+            });
+
+//            添加设备模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
+            $('#add_network_list_modal').on('shown.bs.modal', function () {
+                $("#add_device_name").focus();
+            });
+
+
+//           添加设备模态框 隐藏时数据清除,更新编辑也是共用这个模态框
+            $("#add_network_list_modal").on("hidden.bs.modal", function() {
+                $(this).removeData("bs.modal");
+//                select恢复原状挺麻烦的，我这用最蠢的清空掉2个select然后重新添加。。
+                $('#add_device_name').val('');
+                $("input[name='add_device_type']").eq(0).click();
+                $('#add_product_name').val('');
+                $('#add_manage_ip').val('');
+                $("input[name='add_product_type']").eq(0).click();
+				$('#add_sn').val('');
+                $('#add_idc_name').val('');
+                $('#add_idc_num').val('');
+                $('#add_login_ip').val('');
+                $('#add_login_port').val('');
+                $('#add_login_user').val('');
+                $('#add_login_password').val('');
+				$('#add_description').val('');
+
+
+				$('#add_device_name_help').text('　');
+				$('#add_product_name_help').text('　');
+                $('#add_manage_ip_help').text('　');
+				$('#add_sn_help').text('　');
+                $('#add_idc_name_help').text('　');
+                $('#add_idc_num_help').text('　');
+                $('#add_login_ip_help').text('　');
+                $('#add_login_port_help').text('　');
+                $('#add_login_user_help').text('　');
+                $('#add_login_password_help').text('　');
+				$('#add_description_help').text('　');
+
+            });
+
+//           模态框 错误提示恢复
+            $('#add_device_name').keyup(function(){
+	    		$('#add_device_name_help').text('　');
+	    	});
+            $('#add_product_name').keyup(function(){
+	    		$('#add_product_name_help').text('　');
+	    	});
+            $('#add_manage_ip').keyup(function(){
+	    		$('#add_manage_ip_help').text('　');
+	    	});
+            $('#add_sn').keyup(function(){
+	    		$('#add_sn_help').text('　');
+	    	});
+            $('#add_idc_name').keyup(function(){
+	    		$('#add_idc_name_help').text('　');
+	    	});
+            $('#add_idc_num').keyup(function(){
+	    		$('#add_idc_num_help').text('　');
+	    	});
+            $('#add_login_ip').keyup(function(){
+	    		$('#add_login_ip_help').text('　');
+	    	});
+            $('#add_login_port').keyup(function(){
+	    		$('#add_login_port_help').text('　');
+	    	});
+            $('#add_login_user').keyup(function(){
+	    		$('#add_login_user_help').text('　');
+	    	});
+            $('#add_login_password').keyup(function(){
+	    		$('#add_login_password_help').text('　');
+	    	});
+            $('#add_description').keyup(function(){
+	    		$('#add_description_help').text('　');
+	    	});
+
+
+            // // {#  django 跨站验证需要下面的 ajaxSetup   #}
+            $.ajaxSetup({
+                 data: {csrfmiddlewaretoken: '{{ csrf_token }}' }
+            });
+
+//          点击页面添加设备按钮时，隐藏模态框提交更新的按钮
+            $('.add_network_list_btn').click(function () {
+                $("#add_network_list_submit").removeClass("hidden");
+                $("#update_network_list_submit").addClass("hidden");
+                $("#clone_network_list_submit").addClass("hidden");
+                $('#network_list_add_lable').html('新增设备');
+                $("#add_device_name").removeAttr("readonly");
+            });
+
+    
+
+
+//           添加设备模态框 点击克隆按钮事件
+            $("#clone_network_list_submit").click(function () {
+                $("#clone_network_list_submit").addClass("hidden");
+                $("#add_network_list_submit").removeClass("hidden");
+                $("#update_network_list_submit").addClass("hidden");
+                $('#network_list_add_lable').html('新增设备');
+                $("#add_device_name").removeAttr("readonly");
+                $("#add_device_name").focus();
+                $("#add_device_name_help").html('请修改设备名称');
+            });
+
+
+
+//          新增设备表单提交
+            $('#add_network_list_submit').click(function(){
+                var device_name = $.trim($('#add_device_name').val());
+                var device_type = $("input[name='add_device_type']:checked").val();
+                var manage_ip = $.trim($('#add_manage_ip').val());
+                var product_name = $.trim($('#add_product_name').val());
+                var product_type = $.trim($('#add_product_type').val());
+                var sn = $.trim($('#add_sn').val());
+                var idc_name = $.trim($('#add_idc_name').val());
+                var idc_num = $.trim($('#add_idc_num').val());
+                var login_ip = $.trim($('#add_login_ip').val());
+                var login_port = $.trim($('#add_login_port').val());
+				var login_user = $.trim($('#add_login_user').val());
+				var login_password = $.trim($('#add_login_password').val());
+				var description = $.trim($('#add_description').val());
+
+                //提交之前清空密码框防止提示保存密码
+                $('#add_login_password').val("");
+
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'network_list_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+//                    由于有密码字段要加下面的cache不然老提示保存密码
+                    cache:false,
+					data:{
+					    'device_name' : device_name,
+                        'device_type' : device_type,
+                        'manage_ip' : manage_ip,
+                        'product_name' : product_name,
+                        'product_type' : product_type,
+                        'sn' : sn,
+                        'idc_name' : idc_name,
+                        'idc_num' : idc_num,
+                        'login_ip' : login_ip,
+                        'login_port' : login_port,
+                        'login_user' : login_user,
+                        'login_password' : login_password,
+                        'description' : description,
+                        'network_list_tag_key':'add_network_list'
+
+					},
+					success:function(result){
+						if(result.status){
+                            $('#add_network_list_modal').modal('toggle');
+                            toastr.success(result.result,'Success',{timeOut: 1500});
+                            setTimeout(function(){window.location.href=window.location.href}, 1000);
+						}else {
+//						    通过表单验证返回的错误是多层嵌套字典加列表，一层key是对应提交数据的key，二层有2个key一个是code一个是message，错误信息在message里
+						    $.each(result.result, function (k,v) {
+//						        把错误信息插入到对应的错误help位子
+                                $('#add_'+k+'_help').text(v[0].message);
+                            });
+						    // 如果提交失败要把提交前清空的密码框填充回去
+						    $('#add_login_password').val(login_password);
+                           // console.log(JSON.stringify(result.result));
+                        }
+					}
+				});
+
+			});
+
+
+//            查看应用明细
+            $('.view_detail').click(function () {
+                //  隐藏新增按钮和显示更新按钮的显示
+                $("#add_network_list_submit").addClass("hidden");
+                $("#update_network_list_submit").addClass("hidden");
+                $("#clone_network_list_submit").addClass("hidden");
+                // 模态框标题修改
+                $('#network_list_add_lable').html('查看设备信息');
+
+                $('#add_device_name').val($.trim($(this).parent().siblings('.data_device_name').html()));
+                $("#add_device_name").attr('readonly','readonly');
+
+                var view_device_type = $(this).parent().siblings('.data_device_type').html();
+                if(view_device_type=='虚拟机'){
+                    $("input[name='add_device_type']").eq(1).click();
+                }else{
+                    $("input[name='add_device_type']").eq(0).click();
+                }
+
+                $('#add_manage_ip').val($.trim($(this).parent().siblings('.data_manage_ip').html()));
+                $('#add_product_name').val($.trim($(this).parent().siblings('.data_product_name').html()));
+                $('#add_product_type').val($.trim($(this).parent().siblings('.data_product_type').html()));
+				$('#add_sn').val($.trim($(this).parent().siblings('.data_sn').html()));
+                $('#add_idc_name').val($.trim($(this).parent().siblings('.data_idc_name').html()));
+                $('#add_idc_num').val($.trim($(this).parent().siblings('.data_idc_num').html()));
+                $('#add_login_ip').val($.trim($(this).parent().siblings('.data_login_ip').html()));
+                $('#add_login_port').val($.trim($(this).parent().siblings('.data_login_port').html()));
+                $('#add_login_user').val($.trim($(this).parent().siblings('.data_login_user').html()));
+                $('#add_login_password').val($.trim($(this).parent().siblings('.data_login_password').html()));
+				$('#add_description').val($.trim($(this).parent().siblings('.data_description').html()));
+            });
+
+
+//            编辑按钮触发内容填充模态框
+            $('.edit_detail').click(function () {
+                //  隐藏新增按钮和显示更新按钮的显示
+                $("#add_network_list_submit").addClass("hidden");
+                $("#update_network_list_submit").removeClass("hidden");
+                $("#clone_network_list_submit").removeClass("hidden");
+                // 模态框标题修改
+                $('#network_list_add_lable').html('编辑设备信息');
+
+                $('#add_device_name').val($.trim($(this).parent().siblings('.data_device_name').html()));
+                $("#add_device_name").attr('readonly','readonly');
+
+                var view_device_type = $(this).parent().siblings('.data_device_type').html();
+                if(view_device_type=='虚拟机'){
+                    $("input[name='add_device_type']").eq(1).click();
+                }else{
+                    $("input[name='add_device_type']").eq(0).click();
+                }
+
+                $('#add_manage_ip').val($.trim($(this).parent().siblings('.data_manage_ip').html()));
+                $('#add_product_name').val($.trim($(this).parent().siblings('.data_product_name').html()));
+                $('#add_product_type').val($.trim($(this).parent().siblings('.data_product_type').html()));
+				$('#add_sn').val($.trim($(this).parent().siblings('.data_sn').html()));
+                $('#add_idc_name').val($.trim($(this).parent().siblings('.data_idc_name').html()));
+                $('#add_idc_num').val($.trim($(this).parent().siblings('.data_idc_num').html()));
+                $('#add_login_ip').val($.trim($(this).parent().siblings('.data_login_ip').html()));
+                $('#add_login_port').val($.trim($(this).parent().siblings('.data_login_port').html()));
+                $('#add_login_user').val($.trim($(this).parent().siblings('.data_login_user').html()));
+                $('#add_login_password').val($.trim($(this).parent().siblings('.data_login_password').html()));
+				$('#add_description').val($.trim($(this).parent().siblings('.data_description').html()));
+
+            });
+
+
+//          编辑应用更新按钮触发提交更新
+            $('#update_network_list_submit').click(function(){
+                var device_name = $.trim($('#add_device_name').val());
+                var device_type = $("input[name='add_device_type']:checked").val();
+                var manage_ip = $.trim($('#add_manage_ip').val());
+                var product_name = $.trim($('#add_product_name').val());
+                var product_type = $.trim($('#add_product_type').val());
+                var sn = $.trim($('#add_sn').val());
+                var idc_name = $.trim($('#add_idc_name').val());
+                var idc_num = $.trim($('#add_idc_num').val());
+                var login_ip = $.trim($('#add_login_ip').val());
+                var login_port = $.trim($('#add_login_port').val());
+				var login_user = $.trim($('#add_login_user').val());
+				var login_password = $.trim($('#add_login_password').val());
+				var description = $.trim($('#add_description').val());
+
+                //提交之前清空密码框防止提示保存密码
+                $('#add_login_password').val("");
+
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'network_list_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+//                    由于有密码字段要加下面的cache不然老提示保存密码
+                    cache:false,
+					data:{
+					    'device_name' : device_name,
+                        'device_type' : device_type,
+                        'manage_ip' : manage_ip,
+                        'product_name' : product_name,
+                        'product_type' : product_type,
+                        'sn' : sn,
+                        'idc_name' : idc_name,
+                        'idc_num' : idc_num,
+                        'login_ip' : login_ip,
+                        'login_port' : login_port,
+                        'login_user' : login_user,
+                        'login_password' : login_password,
+                        'description' : description,
+                        'network_list_tag_key':'update_network_list'
+
+					},
+					success:function(result){
+						if(result.status){
+                            $('#add_network_list_modal').modal('toggle');
+                            toastr.success(result.result,'Success',{timeOut: 1500});
+                            setTimeout(function(){window.location.href=window.location.href}, 1000);
+						}else {
+//						    通过表单验证返回的错误是多层嵌套字典加列表，一层key是对应提交数据的key，二层有2个key一个是code一个是message，错误信息在message里
+						    $.each(result.result, function (k,v) {
+//						        把错误信息插入到对应的错误help位子
+                                $('#add_'+k+'_help').text(v[0].message);
+                            });
+						    // 如果提交失败要把提交前清空的密码框填充回去
+						    $('#add_login_password').val(login_password);
+                           console.log(JSON.stringify(result.result));
+                        }
+					}
+				});
+			});
+
+
+//            点击删除填充模态框
+            $('.delete_network').click(function () {
+                $('.hidden_device_name').val($(this).parent().siblings('.data_device_name').html());
+            });
+
+
+//            点击确定删除应用
+            $('#delete_network_button').click(function(){
+				var device_name=$.trim($('.hidden_device_name').val());
+				$('#delete_network_modal').modal('toggle');
+				$.ajax({
+					url:"{% url 'network_list_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+//                    提交的数据要和后台form验证的变量一致，不过可以多出来，只要验证的有就行，比如这里就多了project_tag_key
+					data:{
+                        'device_name':device_name,
+                        'network_list_tag_key':'delete_network_list'
+
+					},
+					success:function(result){
+						if(result.status){
+                            $('.loading_modal').modal('toggle');
+                            toastr.success(result.result,'Success',{timeOut: 1500});
+                            setTimeout(function(){window.location.href=window.location.href}, 1000);
+						}else {
+						    $('.loading_modal').modal('toggle');
+						    toastr.error(result.result,'Error',{timeOut: 1500});
+                        }
+					}
+				});
+			});
+
+
+            //点击选择文件，清除help提示框
+            $('#network_list_file').click(function () {
+                $('#network_list_file_help').text('　');
+            });
+
+            // 上传文件事件
+            $('#import_network_list_submit').click(function () {
+                var network_list_cover_select = '';
+                 // 上传文件要先设置一个FormData对象来做的，因为它可以接受二进制文件上传
+                var file_data = new FormData();
+                var file_info =$( '#network_list_file')[0].files[0];
+                // 下面其实就是新增一个key是file，value是file_info的字典对象，传到后方就是获取的名称file
+                file_data.append('file',file_info);
+                // csrf跨站安全需要加入，不然会报错
+                file_data.append('csrfmiddlewaretoken',"{{ csrf_token }}");
+                if(file_info==undefined){
+                    $('#network_list_file_help').text('你没有选择任何文件');
+                    return false
+                }
+                if($('#network_list_cover_select').is(':checked')){
+                    network_list_cover_select = 'cover';
+                }else {
+                    network_list_cover_select = 'uncover';
+                }
+                file_data.append('network_list_cover_select',network_list_cover_select);
+                file_data.append('network_list_tag_key','import_network_list');
+                $.ajax({
+					url:"{% url 'network_list_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+                    //提交的数据要和后台form验证的变量一致，不过可以多出来，只要验证的有就行，比如这里就多了project_tag_key
+					data:file_data,
+                    // 上传文件需要加下面2个来使http能正确传输文件
+                    processData: false,
+                    contentType: false,
+					success:function(result){
+						if(result.status){
+                            $('.loading_modal').modal('toggle');
+                            toastr.success(result.result,'Success',{timeOut: 1500});
+                            setTimeout(function(){window.location.href=window.location.href}, 1000);
+						}else {
+						    $('.loading_modal').modal('toggle');
+						    toastr.error(JSON.stringify(result.result),'Error',{timeOut: 1500});
+						    console.log(JSON.stringify(result.result));
+                        }
+					}
+				});
+
+            });
+
+        });
+</script>
+{% endblock %}
+
+{% block panel-title_content %}网络设备列表{% endblock %}
+
+{% block panel_body_content %}
+
+<div class="row-fluid ">
+    <div class="col-xs-12 overflow_set"  >
+        <div style="margin-bottom: 5px;">
+            <div class="form-inline" role="form">
+                <div class="form-group">
+                    <button type="button" class="btn btn-success add_network_list_btn" data-toggle="modal" data-target="#add_network_list_modal">添加设备</button>
+                </div>
+
+
+                  <div class="form-group pull-right">
+                        <label for="search_field">查询字段</label>
+                        <select class="form-control" id="search_field">
+                            <option value="search_device_name">设备名称</option>
+                            {% if search_field == "search_manage_ip" %}
+                            <option value="search_manage_ip" selected>管理IP</option>
+                            {% else %}
+                            <option value="search_manage_ip">管理IP</option>
+                            {% endif %}
+                        </select>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="search_content" placeholder="请输入查询条件" value="{{ search_content }}">
+                              <span class="input-group-btn">
+                                <button type="submit" class="btn btn-primary search_btn"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
+                              </span>
+                        </div>
+                  </div>
+
+                </div>
+
+        </div>
+
+        <table class="table table-hover  table-bordered table-strmanage_iped table-responsive table-condensed" >
+            <!--<caption>网络设备列表</caption>-->
+            <thead>
+            <!--给下面tr加个success是bootstrap的一个类颜色会改变下呵呵-->
+              <tr class="success">
+                  <th width="4%"><input type="checkbox" id="checkAll" name="checkAll" /></th>
+                <th width="11%">设备名称</th>
+                  <th width="8%">设备类型</th>
+                  <th width="11%">管理IP</th>
+                <th width="11%">设备厂家</th>
+                <th width="8%">产品型号</th>
+                  <th width="10%">序列号</th>
+                  <th width="10%">机房</th>
+                  <th width="10%">机柜号</th>
+                  <th width="16%">最近一次更新</th>
+                  <!--<th width="6%">Minion</th>-->
+                  <th width="10%">描述备注</th>
+                  <th width="28%">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+                {% for device_data in data_list%}
+                <tr>
+                    <td><input type="checkbox" name="checkItem" /></td>
+                    <td class="data_device_name">{{ device_data.device_name }}</td>
+                    <td class="data_device_type">{{ device_data.get_device_type_display }}</td>
+                    <td class="data_manage_ip">{{ device_data.manage_ip }}</td>
+                    <td class="data_product_name">{{ device_data.product_name }}</td>
+                    <td class="data_product_type">{{ device_data.product_type }}</td>
+                    <td class="data_sn">{{ device_data.sn }}</td>
+                    <td class="data_idc_name">{{ device_data.idc_name }}</td>
+                    <td class="data_idc_num">{{ device_data.idc_num }}</td>
+                    <td class="data_updatetime">{{ device_data.update_time }}</td>
+                    {% if  device_data.description  %}
+                    <td class="description">{{ device_data.description }}</td>
+                    {% else %}
+                    <td class="description"></td>
+                    {% endif %}
+
+                    <!--隐藏内容-->
+                    <td class="data_login_ip hidden">{{ device_data.login_ip }}</td>
+                    <td class="data_login_port hidden">{% if device_data.login_port %}{{ device_data.login_port }}{% endif %}</td>
+                    <td class="data_login_user hidden">{{ device_data.login_user }}</td>
+                    <td class="data_create_date hidden">{{ device_data.create_date | date:"Y-m-d H:i:s"}}</td>
+
+                    <td>
+                        <button type="button" class="btn btn-info btn-sm view_detail" data-toggle="modal" data-target="#add_network_list_modal">查看</button>
+                        <button type="button" class="btn btn-info btn-sm edit_detail " data-toggle="modal" data-target="#add_network_list_modal">编辑</button>
+                        <button type="button" class="btn btn-danger btn-sm delete_network" data-toggle="modal" data-target="#delete_network_modal">删除</button>
+
+                    </td>
+                </tr>
+                {% endfor%}
+
+            </tbody>
+          </table>
+        <div>
+            <ul class="pager">
+                {% if data_list.has_previous %}
+                <!--注意如果url中已经有参数了比如http://192.168.68.50:8000/saltkey_manage/?status=denied那么需要把这个status加上，不然跳转错了哈哈-->
+                    <li><a href="?search_field={{ search_field }}&search_content={{ search_content }}&page={{ data_list.previous_page_number }}">上一页</a></li>
+                {% else %}
+                    <li class="disabled"><a href="">上一页</a></li>
+                {% endif %}
+
+                <li class="current">
+                    页数 {{ data_list.number }} / {{ data_list.paginator.num_pages }}
+                </li>
+
+                {% if data_list.has_next %}
+                    <li><a href="?search_field={{ search_field }}&search_content={{ search_content }}&page={{ data_list.next_page_number }}">下一页</a></li>
+                {% else %}
+                    <li class="disabled"><a href="">下一页</a></li>
+                {% endif %}
+                <li>
+                    &nbsp;&nbsp;<input type="text"  style="width: 30px;border-radius: 30%;" id="page_index">/{{ data_list.paginator.num_pages }}页
+                    <button type="button" class="btn btn-sm btn-success page_go" >跳转</button>
+                </li>
+            </ul>
+        </div>
+
+        <div >
+            <div class="form-inline" role="form">
+                <div class="form-group">
+                    <button type="button" class="btn btn-primary import_network_list_btn" data-toggle="modal" data-target="#import_network_list_modal">批量导入</button>
+                    <a href="{% url 'network_list_template_down'%}" class="btn btn-primary download_template_file_btn" >模板下载</a>
+                    <a href="{% url 'network_list_down'%}" class="btn btn-primary download_template_file_btn" >导出列表</a>
+                </div>
+
+
+                </div>
+
+        </div>
+
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block another_content %}
+
+<!-- 添加设备模态框 -->
+<div class="modal fade juzhong" id="add_network_list_modal" tabindex="-1" role="dialog" aria-labelledby="network_list_add_lable" aria-hidden="true" data-backdrop="static" >
+	<div class="modal-dialog" style="width: 900px;">
+		<div class="modal-content">
+			<div class="modal-header" style="padding: 5px;">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+				<h4 class="modal-title" id="network_list_add_lable">
+					新增设备
+				</h4>
+                <!--<span id="xxxxxx" style="color: #FF0000;">　</span>-->
+
+			</div>
+			<div class="modal-body" style="padding-bottom: 0;">
+
+                <div class="row" >
+                    <div class="col-sm-6">
+                        <form class="form-horizontal " role="form"  >
+                            <div class="form-group" style="margin-bottom: 0;">
+										<label class="control-label col-sm-4 " for="add_device_name">设备名称:</label>
+                                <div class="col-sm-7">
+										<input type="text" class="form-control" id="add_device_name"
+									    style="font-size: 14px;"  >
+									    <span id="add_device_name_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+							</div>
+
+                            <div class="form-group">
+                                    <label class="control-label col-sm-4 " >设备类型:</label>
+                                <div class="col-sm-7">
+                                <label class="radio-inline">
+                                <input type="radio" class="add_device_type" name="add_device_type"  value="0" checked> 物理机
+                                 </label>
+                                <label class="radio-inline">
+                                <input type="radio" class="add_device_type" name="add_device_type"   value="1"> 虚拟机
+                                </label>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group" style="margin-bottom: 0;">
+										<label class="control-label col-sm-4 " for="add_manage_ip">管理IP:</label>
+                                <div class="col-sm-7">
+										<input type="text" class="form-control" id="add_manage_ip"
+									    style="font-size: 14px;"  >
+									    <span id="add_manage_ip_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" ></label>
+							</div>
+
+                            <div class="form-group" style="margin-bottom: 0;">
+										<label class="control-label col-sm-4 " for="add_product_name">设备厂家:</label>
+                                <div class="col-sm-7">
+										<input type="text" class="form-control" id="add_product_name"
+									    style="font-size: 14px;"  >
+									    <span id="add_product_name_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" ></label>
+							</div>
+                            
+
+                            <div class="form-group" >
+                                    <label class="control-label col-sm-4 " >产品型号:</label>
+                                <div class="col-sm-7">
+                                <label class="radio-inline">
+                                <input type="radio" class="add_product_type" name="add_product_type"  value="linux" checked> Linux
+                                 </label>
+                                <label class="radio-inline">
+                                <input type="radio" class="add_product_type" name="add_product_type"   value="windows"> Windows
+                                </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 0;">
+										<label class="control-label col-sm-4 " for="add_product_type">系统版本:</label>
+                                <div class="col-sm-7">
+										<input type="text" class="form-control" id="add_product_type"
+									    style="font-size: 14px;"  >
+									    <span id="add_product_type_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" ></label>
+							</div>
+                            
+
+							<div class="form-group" style="margin-bottom: 0;">
+										<label class="control-label col-sm-4 " for="add_sn">序列号:</label>
+                                <div class="col-sm-7">
+										<input type="text" class="form-control" id="add_sn"
+									    style="font-size: 14px;"  required="required" >
+                                        <span class="" id="add_sn_help" style="color: #FF0000;">　</span>
+                                </div>
+                                <label class="control-label  " style="color: #FF0000;" ></label>
+							</div>
+
+                    </form>
+                    </div>
+                    <div class="col-sm-6">
+                        <form class="form-horizontal " role="form"  >
+                            <div class="form-group" style="margin-bottom: 0;">
+										<label class="control-label col-sm-4 " for="add_idc_name">机房名称:</label>
+                                <div class="col-sm-7">
+										<input type="text" class="form-control" id="add_idc_name"
+									   style="font-size: 14px;" >
+                                        <span  id="add_idc_name_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" ></label>
+							</div>
+
+                            <div class="form-group" style="margin-bottom: 0;">
+										<label class="control-label col-sm-4 " for="add_idc_num">机柜号:</label>
+                                <div class="col-sm-7">
+										<input type="text" class="form-control" id="add_idc_num"
+									   style="font-size: 14px;" >
+                                        <span  id="add_idc_num_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" ></label>
+							</div>
+
+                            <div class="form-group" style="margin-bottom: 0;">
+										<label class="control-label col-sm-4 " for="add_login_ip">远程管理IP:</label>
+                                <div class="col-sm-7">
+										<input type="text" class="form-control" id="add_login_ip"
+									   style="font-size: 14px;" >
+                                        <span  id="add_login_ip_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" ></label>
+							</div>
+
+                            <div class="form-group" style="margin-bottom: 0;">
+										<label class="control-label col-sm-4 " for="add_login_port">远程管理端口:</label>
+                                <div class="col-sm-7">
+										<input type="text" class="form-control" id="add_login_port"
+									   style="font-size: 14px;" >
+                                        <span  id="add_login_port_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" ></label>
+							</div>
+
+                            <div class="form-group" style="margin-bottom: 0;">
+										<label class="control-label col-sm-4 " for="add_login_user">远程管理用户:</label>
+                                <div class="col-sm-7">
+										<input type="text" class="form-control" id="add_login_user"
+									   style="font-size: 14px;" >
+                                        <span  id="add_login_user_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" ></label>
+							</div>
+
+                            <div class="form-group" style="margin-bottom: 0;">
+										<label class="control-label col-sm-4 " for="add_login_password">远程管理密码:</label>
+                                <div class="col-sm-7">
+										<input type="text" class="form-control" id="add_login_password"
+									   style="font-size: 14px;" >
+                                        <span  id="add_login_password_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" ></label>
+							</div>
+
+                            <div class="form-group" style="margin-bottom: 0;">
+										<label class="control-label col-sm-4 " for="add_description">备注:</label>
+                                <div class="col-sm-7">
+										<input type="text" class="form-control" id="add_description"
+									   style="font-size: 14px;" >
+                                        <span  id="add_description_help" style="color: #FF0000;">　</span>
+								</div>
+							</div>
+
+                        </form>
+				    </div>
+                </div>
+
+			</div>
+			<div class="modal-footer" style="padding: 5px;">
+                <button type="button" class="btn btn-sm btn-primary pull-left" id="clone_network_list_submit">
+					克隆设备
+				</button>
+				<button type="button" class="btn btn-sm btn-default" data-dismiss="modal">取消
+				</button>
+                <button type="button" class="btn btn-sm btn-primary" id="add_network_list_submit">
+					确认提交
+				</button>
+                <button type="button" class="btn btn-sm btn-primary" id="update_network_list_submit">
+					提交更新
+				</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+
+
+<!--删除提示框，也是用的模态框-->
+<div class="modal fade juzhong " id="delete_network_modal" tabindex="-1" role="dialog" aria-labelledby="delete_network_lable" aria-hidden="true" data-backdrop="static" >
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:50%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">操作提醒</h4>
+            </div>
+            <div class="modal-body">
+                <!--隐藏属性，用来获取触发模态框的那条记录的相关数据-->
+                <input type="hidden" class="hidden_device_name"/>
+                <p style="color: red;">确认要删除？</p>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="delete_network_button" data-dismiss="modal" data-toggle="modal" data-target=".loading_modal"> 确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- loading模态框 -->
+<div class="modal fade juzhong loading_modal " data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog"  aria-hidden="true" >
+	<div class="modal-dialog" style="width:100px;">
+		<div class="modal-content" style="background-color: rgba(255,255,255,0.5);">
+				<img src="../static/images/loading.gif"  alt="未加载" >
+		</div>
+	</div>
+</div>
+
+
+<!--上传文件模态框-->
+<div class="modal fade juzhong " id="import_network_list_modal" tabindex="-1" role="dialog" aria-labelledby="import_network_list_lable" aria-hidden="true" data-backdrop="static" >
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:70%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">导入文件选择</h4>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <input type="file" id="network_list_file">
+                    <span id="network_list_file_help" style="color: #FF0000;">　</span>
+                </div>
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" id="network_list_cover_select" > 是否要覆盖已存在设备名称
+                    </label>
+                </div>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="import_network_list_submit" data-dismiss="modal" data-toggle="modal" data-target=".loading_modal"> 确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

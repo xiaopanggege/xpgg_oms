@@ -1542,8 +1542,13 @@
                             <option value="search_app_name">应用名称</option>
                             {% if search_field == "search_minion_id" %}
                             <option value="search_minion_id" selected>Minion_ID</option>
+                            <option value="search_svn_url" >svn地址</option>
+                            {% elif search_field == "search_svn_url" %}
+                            <option value="search_minion_id">Minion_ID</option>
+                            <option value="search_svn_url" selected>svn地址</option>
                             {% else %}
                             <option value="search_minion_id">Minion_ID</option>
+                            <option value="search_svn_url">svn地址</option>
                             {% endif %}
                         </select>
                         <div class="input-group">

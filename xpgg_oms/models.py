@@ -95,7 +95,7 @@ class AppRelease(models.Model):
     minion_id = models.CharField(max_length=200, verbose_name='minion_id', blank=True, null=True)
     app_path = models.CharField(max_length=200, verbose_name='应用目录', blank=True, null=True)
     app_path_owner = models.CharField(max_length=20, verbose_name='应用目录属主', blank=True, null=True)
-    app_svn_url = models.CharField(max_length=200, verbose_name='SVN路径', blank=True, null=True)
+    app_svn_url = models.CharField(max_length=200, verbose_name='SVN地址', blank=True, null=True)
     app_svn_user = models.CharField(max_length=20, verbose_name='SVN账户', blank=True, null=True)
     app_svn_password = models.CharField(max_length=20, verbose_name='SVN密码', blank=True, null=True)
     app_svn_co_path = models.CharField(max_length=200, verbose_name='SVN检出目录', blank=True, null=True)
@@ -220,14 +220,56 @@ class ServerList(models.Model):
     minion_id = models.CharField(max_length=20, verbose_name='minion_id', blank=True, null=True)
     idc_name = models.CharField(max_length=50, verbose_name='机房名称', blank=True, null=True)
     idc_num = models.CharField(max_length=50, verbose_name='机柜号', blank=True, null=True)
-    login_ip = models.CharField(max_length=20, verbose_name='远程访问IP', blank=True, null=True)
-    login_port = models.IntegerField(verbose_name='远程访问端口', blank=True, null=True)
-    login_user = models.CharField(max_length=50, verbose_name='远程访问用户', blank=True, null=True)
-    login_password = models.CharField(max_length=20, verbose_name='远程访问密码', blank=True, null=True)
+    login_ip = models.CharField(max_length=20, verbose_name='远程管理IP', blank=True, null=True)
+    login_port = models.IntegerField(verbose_name='远程管理端口', blank=True, null=True)
+    login_user = models.CharField(max_length=50, verbose_name='远程管理用户', blank=True, null=True)
+    login_password = models.CharField(max_length=20, verbose_name='远程管理密码', blank=True, null=True)
     description = models.CharField(max_length=200, verbose_name='描述备注', blank=True, null=True)
 
     class Meta:
         verbose_name = '主机列表'
+        verbose_name_plural = verbose_name
+        ordering = ['id']
+
+    def __str__(self):
+        return str(self.id)
+
+
+# 网络资源表 精力有限，这块本来是要设置非常多个表单的，以后如果有时间专门做CMDB的话，再来重构
+class NetworkList(models.Model):
+    Device_Type = (
+        ('0', '二层交换机'),
+        ('1', '三层交换机'),
+        ('2', '防火墙'),
+        ('3', '路由器'),
+        ('4', 'WAF'),
+        ('5', '网闸')
+    )
+    Product_name = (
+        ('0', 'H3C'),
+        ('1', '华为'),
+        ('2', '思科'),
+        ('3', '中兴')
+    )
+
+    device_name = models.CharField(max_length=50, verbose_name='设备名称', unique=True)
+    device_type = models.CharField(choices=Device_Type, max_length=20, verbose_name='设备类型', blank=True, null=True)
+    manage_ip = models.CharField(max_length=200, verbose_name='管理IP', blank=True, null=True)
+    product_name = models.CharField(choices=Product_name, max_length=20, verbose_name='设备厂家', blank=True, null=True)
+    product_type = models.CharField(max_length=100, verbose_name='产品型号', blank=True, null=True)
+    sn = models.CharField(max_length=100, verbose_name='序列号', blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+    update_time = models.DateTimeField(auto_now=True, verbose_name='最近一次更新时间')
+    idc_name = models.CharField(max_length=50, verbose_name='机房名称', blank=True, null=True)
+    idc_num = models.CharField(max_length=50, verbose_name='机柜号', blank=True, null=True)
+    login_ip = models.CharField(max_length=20, verbose_name='远程管理IP', blank=True, null=True)
+    login_port = models.IntegerField(verbose_name='远程管理端口', blank=True, null=True)
+    login_user = models.CharField(max_length=50, verbose_name='远程管理用户', blank=True, null=True)
+    login_password = models.CharField(max_length=20, verbose_name='远程管理密码', blank=True, null=True)
+    description = models.CharField(max_length=200, verbose_name='描述备注', blank=True, null=True)
+
+    class Meta:
+        verbose_name = '网络设备列表'
         verbose_name_plural = verbose_name
         ordering = ['id']
 
