@@ -5,9 +5,13 @@ dill==0.2.7.1
 Django==2.0.5
 django-crontab==0.7.1
 django-guardian==1.4.9
+et-xmlfile==1.0.1
 idna==2.6
+jdcal==1.4
+lxml==4.2.2
 multiprocess==0.70.5
 olefile==0.45.1
+openpyxl==2.5.3
 pexpect==4.5.0
 Pillow==5.1.0
 psutil==5.4.5

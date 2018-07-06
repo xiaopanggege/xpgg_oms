@@ -27,7 +27,7 @@ saltstack version 2017.7.3
 `pip3 install -r /tmp/requirements.txt`  
 2. 进入想要创建项目的文件夹，假设：`cd /usr/local/django/`  
 3. 创建django项目，项目名xiaopgg：`django-admin.py startproject xiaopgg_project`  #django-admin.py在python3.5.2安装的bin目录下      
-4. 创建app，app名autoyunwei：`python3 manage.py startapp xpgg_oms` #python3也是在python3.安装的bin目录下，最好加入环境变量方便使用  
+4. 创建app，app名xpgg_oms：`python3 manage.py startapp xpgg_oms` #python3也是在python3.安装的bin目录下，最好加入环境变量方便使用  
 5. 然后把git的文件覆盖到项目下即`/usr/local/django/xiaopgg_project/`下面  
 6. `mkdir /usr/local/django/xiaopgg_project/logs` 日志目录创建必须提前创建不然项目启动会提示没有logs目录，如果需要修改日志目录则自行在settings.py里修改日志相关的配置
 
