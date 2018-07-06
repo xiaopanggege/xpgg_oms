@@ -52,6 +52,14 @@ DATABASES = {
         'HOST': '', #你的数据库主机，留空默认为localhost
         'PORT': '3306', #你的数据库端口,
 ```
+>salt-master的配置文件添加svn同步文件临时目录
+``` conf
+vi /etc/salt/master 添加如下内容：
+file_roots:
+  svn:
+    - /data/svn_symlink
+```
+
 
 ***
 ## 初始化

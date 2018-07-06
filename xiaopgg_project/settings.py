@@ -111,7 +111,8 @@ SITE_SALT_MASTER_IP = '192.168.68.50'
 # 发布系统中随机生成svn目录的路径和名字前缀，这里是xiaopgg作为前缀嘿嘿
 # 在views.py里后面加上当前时间来组成完整的目录路径，千万别出现中文因为py2版salt中文支持不好，出现中文后同步文件时目录可以同步文件不同步过去反而全被删除！！
 SITE_BASE_SVN_PATH = '/data/svn/xiaopgg'
-# 在用salt同步文件过程中发如果file_roots定义的目录内文件太多会非常的慢，所以使用的软连接的方式同步完删除软连接来保持file_roots目录的整洁
+# 在用salt同步文件过程中发如果salt的master配置文件中的file_roots定义的svn目录内文件太多会非常的慢
+# 所以使用的软连接的方式同步完删除软连接来保持file_roots目录的整洁，这个目录要在master配置文件中也定义名称为svn指定目录和下面一样
 SITE_BASE_SVN_SYMLINK_PATH = '/data/svn_symlink/'
 
 ###
