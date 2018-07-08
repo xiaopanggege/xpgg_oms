@@ -210,18 +210,18 @@ def device_name_exist_validate(value):
 # 资源管理 网络设备列表  新增网络设备表单验证 主
 class NetworkListAddForm(forms.Form):
     Device_Type = (
-        (0, '二层交换机'),
-        (1, '三层交换机'),
-        (2, '防火墙'),
-        (3, '路由器'),
-        (4, 'WAF'),
-        (5, '网闸')
+        ('0', '二层交换机'),
+        ('1', '三层交换机'),
+        ('2', '防火墙'),
+        ('3', '路由器'),
+        ('4', 'WAF'),
+        ('5', '网闸')
     )
     Product_name = (
-        (0, 'H3C'),
-        (1, '华为'),
-        (2, '思科'),
-        (3, '中兴')
+        ('0', 'H3C'),
+        ('1', '华为'),
+        ('2', '思科'),
+        ('3', '中兴')
     )
     device_name = forms.CharField(max_length=50, error_messages={'required': '设备名称不能为空', 'max_length': '最多50位'}, validators=[device_name_exist_validate])
     device_type = forms.ChoiceField(required=False, choices=Device_Type, widget=widgets.Select(attrs={'id': 'add_device_type', 'class': 'form-control'}), error_messages={'invalid_choice': '无效的设备类型'})
@@ -240,13 +240,13 @@ class NetworkListAddForm(forms.Form):
 
 # 资源管理 网络设备列表 表单验证 验证设备名称是否重复
 def device_name_not_exist_validate(value):
-    is_device_name_exist = ServerList.objects.filter(device_name=value).exists()
+    is_device_name_exist = NetworkList.objects.filter(device_name=value).exists()
     if not is_device_name_exist:
         raise ValidationError('设备名称不存在，请检查')
 
 
 # 资源管理 网络设备列表  更新网络设备表单验证 主
-class NetworkListUpdateForm(ServerListAddForm):
+class NetworkListUpdateForm(NetworkListAddForm):
     device_name = forms.CharField(max_length=50, error_messages={'required': '设备名称不能为空', 'max_length': '最多50位'},
                                   validators=[device_name_not_exist_validate])
 

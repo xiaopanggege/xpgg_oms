@@ -238,18 +238,18 @@ class ServerList(models.Model):
 # 网络资源表 精力有限，这块本来是要设置非常多个表单的，以后如果有时间专门做CMDB的话，再来重构
 class NetworkList(models.Model):
     Device_Type = (
-        (0, '二层交换机'),
-        (1, '三层交换机'),
-        (2, '防火墙'),
-        (3, '路由器'),
-        (4, 'WAF'),
-        (5, '网闸')
+        ('0', '二层交换机'),
+        ('1', '三层交换机'),
+        ('2', '防火墙'),
+        ('3', '路由器'),
+        ('4', 'WAF'),
+        ('5', '网闸')
     )
     Product_name = (
-        (0, 'H3C'),
-        (1, '华为'),
-        (2, '思科'),
-        (3, '中兴')
+        ('0', 'H3C'),
+        ('1', '华为'),
+        ('2', '思科'),
+        ('3', '中兴')
     )
 
     device_name = models.CharField(max_length=50, verbose_name='设备名称', unique=True)

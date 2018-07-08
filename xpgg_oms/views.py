@@ -686,8 +686,10 @@ def index_ajax(request):
             # 在ajax提交时候多一个字段作为标识，来区分多个ajax提交哈，厉害！
             if request.GET.get('index_tag_key') == 'index_get_data':
                 result['result'] = {}
+                result['result']['server_list_count'] = ServerList.objects.all().count()
+                result['result']['network_list_count'] = NetworkList.objects.all().count()
                 result['result']['physical_pc_count'] = ServerList.objects.filter(server_type='0').count()
-                result['result']['virtual_machine'] = ServerList.objects.filter(server_type='1').count()
+                result['result']['virtual_machine_count'] = ServerList.objects.filter(server_type='1').count()
                 result['result']['sys_type_windows_count'] = ServerList.objects.filter(sys_type='windows').count()
                 result['result']['sys_type_linux_count'] = ServerList.objects.filter(sys_type='linux').count()
                 result['result']['saltkey_accepted_count'] = SaltKeyList.objects.filter(certification_status='accepted').count()
@@ -1560,24 +1562,24 @@ def network_list(request):
                 search_content = request.GET.get('search_content', '')
                 if search_content is '':
                     device_data = NetworkList.objects.all().order_by('create_date')
-                    data_list = getPage(request, device_data, 9)
+                    data_list = getPage(request, device_data, 15)
                 else:
                     if search_field == 'search_device_name':
                         device_data = NetworkList.objects.filter(device_name__icontains=search_content).order_by(
                             'create_date')
-                        data_list = getPage(request, device_data, 9)
+                        data_list = getPage(request, device_data, 15)
                     elif search_field == 'search_manage_ip':
                         device_data = NetworkList.objects.filter(manage_ip__icontains=search_content).order_by(
                             'create_date')
-                        data_list = getPage(request, device_data, 9)
+                        data_list = getPage(request, device_data, 15)
                     elif search_field == 'search_device_type':
                         device_data = NetworkList.objects.filter(device_type__icontains=search_content).order_by(
                             'create_date')
-                        data_list = getPage(request, device_data, 9)
+                        data_list = getPage(request, device_data, 15)
                     else:
                         device_data = NetworkList.objects.filter(server_type__icontains=search_content).order_by(
                             'create_date')
-                        data_list = getPage(request, device_data, 9)
+                        data_list = getPage(request, device_data, 15)
                 data_form = NetworkListAddForm()
                 return render(request, 'network_list.html',
                               {'data_list': data_list, 'search_field': search_field,
@@ -1640,7 +1642,7 @@ def network_list_ajax(request):
                     error_str = obj.errors.as_json()
                     result['result'] = json.loads(error_str)
                 return JsonResponse(result)
-            elif request.POST.get('network_list_tag_key') == 'delete_server_list':
+            elif request.POST.get('network_list_tag_key') == 'delete_network_list':
                 device_name = request.POST.get('device_name')
                 try:
                     NetworkList.objects.get(device_name=device_name).delete()
@@ -1649,7 +1651,7 @@ def network_list_ajax(request):
                 except Exception as e:
                     result['result'] = str(e)
                 return JsonResponse(result)
-            elif request.POST.get('network_list_tag_key') == 'import_server_list':
+            elif request.POST.get('network_list_tag_key') == 'import_network_list':
                 # 获取的数据类型如果有文件，则要像下面这么写form才能正确获取到文件
                 obj = NetworkListImportForm(request.POST, request.FILES)
                 if obj.is_valid():
@@ -1751,13 +1753,13 @@ def network_list_down(request):
     wb = openpyxl.Workbook(write_only=True)
     ws = wb.create_sheet()
     ws.title = "Sheet1"
-    columns = ("设备名称", "设备类型", "主机名", "管理IP", "设备厂家", "产品型号", "序列号",
+    columns = ("设备名称", "设备类型", "管理IP", "设备厂家", "产品型号", "序列号",
                "机房名称", "机柜号", "远程管理IP", "远程管理端口", "远程管理用户", "远程管理密码", "描述备注")
     ws.append(columns)
     queryset = NetworkList.objects.all()
     for obj in queryset:
-        row = (obj.device_name, obj.server_type, obj.manage_ip, obj.product_name, obj.product_type, obj.sn, obj.idc_name,
-               obj.idc_num, obj.login_ip, obj.login_port, obj.login_user, obj.login_password, obj.update_time, obj.description)
+        row = (obj.device_name, obj.device_type, obj.manage_ip, obj.product_name, obj.product_type, obj.sn, obj.idc_name,
+               obj.idc_num, obj.login_ip, obj.login_port, obj.login_user, obj.login_password, obj.description)
         ws.append(row)
     # 用(save_virtual_workbook(wb)来保存到内存中供django调用,无法使用StreamingHttpResponse或者FileResponse在openpyxl官方例子就是这样的
     response = HttpResponse(save_virtual_workbook(wb), content_type='application/vnd.ms-excel')

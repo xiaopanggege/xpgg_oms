@@ -119,10 +119,10 @@
                 $(this).removeData("bs.modal");
 //                select恢复原状挺麻烦的，我这用最蠢的清空掉2个select然后重新添加。。
                 $('#add_device_name').val('');
-                $("input[name='add_device_type']").eq(0).click();
-                $('#add_product_name').val('');
+                $('#add_device_type_div option:first').prop("selected", 'selected');
                 $('#add_manage_ip').val('');
-                $("input[name='add_product_type']").eq(0).click();
+                $('#add_product_name_div option:first').prop("selected", 'selected');
+                $('#add_product_type').val('');
 				$('#add_sn').val('');
                 $('#add_idc_name').val('');
                 $('#add_idc_num').val('');
@@ -134,7 +134,7 @@
 
 
 				$('#add_device_name_help').text('　');
-				$('#add_product_name_help').text('　');
+				$('#add_product_type').text('　');
                 $('#add_manage_ip_help').text('　');
 				$('#add_sn_help').text('　');
                 $('#add_idc_name_help').text('　');
@@ -151,8 +151,8 @@
             $('#add_device_name').keyup(function(){
 	    		$('#add_device_name_help').text('　');
 	    	});
-            $('#add_product_name').keyup(function(){
-	    		$('#add_product_name_help').text('　');
+            $('#add_product_type').keyup(function(){
+	    		$('#add_product_type_help').text('　');
 	    	});
             $('#add_manage_ip').keyup(function(){
 	    		$('#add_manage_ip_help').text('　');
@@ -216,7 +216,7 @@
 //          新增设备表单提交
             $('#add_network_list_submit').click(function(){
                 var device_name = $.trim($('#add_device_name').val());
-                var device_type = $("input[name='add_device_type']:checked").val();
+                var device_type = $.trim($('#add_device_type').val());
                 var manage_ip = $.trim($('#add_manage_ip').val());
                 var product_name = $.trim($('#add_product_name').val());
                 var product_type = $.trim($('#add_product_type').val());
@@ -290,14 +290,7 @@
 
                 $('#add_device_name').val($.trim($(this).parent().siblings('.data_device_name').html()));
                 $("#add_device_name").attr('readonly','readonly');
-
-                var view_device_type = $(this).parent().siblings('.data_device_type').html();
-                if(view_device_type=='虚拟机'){
-                    $("input[name='add_device_type']").eq(1).click();
-                }else{
-                    $("input[name='add_device_type']").eq(0).click();
-                }
-
+                $('#add_device_type').val($(this).parent().siblings('.data_device_type').html());
                 $('#add_manage_ip').val($.trim($(this).parent().siblings('.data_manage_ip').html()));
                 $('#add_product_name').val($.trim($(this).parent().siblings('.data_product_name').html()));
                 $('#add_product_type').val($.trim($(this).parent().siblings('.data_product_type').html()));
@@ -323,14 +316,7 @@
 
                 $('#add_device_name').val($.trim($(this).parent().siblings('.data_device_name').html()));
                 $("#add_device_name").attr('readonly','readonly');
-
-                var view_device_type = $(this).parent().siblings('.data_device_type').html();
-                if(view_device_type=='虚拟机'){
-                    $("input[name='add_device_type']").eq(1).click();
-                }else{
-                    $("input[name='add_device_type']").eq(0).click();
-                }
-
+                $('#add_device_type').val($(this).parent().siblings('.data_device_type').html());
                 $('#add_manage_ip').val($.trim($(this).parent().siblings('.data_manage_ip').html()));
                 $('#add_product_name').val($.trim($(this).parent().siblings('.data_product_name').html()));
                 $('#add_product_type').val($.trim($(this).parent().siblings('.data_product_type').html()));
@@ -348,8 +334,8 @@
 
 //          编辑应用更新按钮触发提交更新
             $('#update_network_list_submit').click(function(){
-                var device_name = $.trim($('#add_device_name').val());
-                var device_type = $("input[name='add_device_type']:checked").val();
+				var device_name = $.trim($('#add_device_name').val());
+                var device_type = $.trim($('#add_device_type').val());
                 var manage_ip = $.trim($('#add_manage_ip').val());
                 var product_name = $.trim($('#add_product_name').val());
                 var product_type = $.trim($('#add_product_type').val());
@@ -563,9 +549,11 @@
                 <tr>
                     <td><input type="checkbox" name="checkItem" /></td>
                     <td class="data_device_name">{{ device_data.device_name }}</td>
-                    <td class="data_device_type">{{ device_data.get_device_type_display }}</td>
+                    <td class="data_device_type_display">{{ device_data.get_device_type_display }}</td>
+                    <td class="data_device_type hidden">{{ device_data.device_type }}</td>
                     <td class="data_manage_ip">{{ device_data.manage_ip }}</td>
-                    <td class="data_product_name">{{ device_data.get_product_name_display }}</td>
+                    <td class="data_product_name_display">{{ device_data.get_product_name_display }}</td>
+                    <td class="data_product_name hidden">{{ device_data.product_name }}</td>
                     <td class="data_product_type">{{ device_data.product_type }}</td>
                     <td class="data_sn">{{ device_data.sn }}</td>
                     <td class="data_idc_name">{{ device_data.idc_name }}</td>
@@ -671,7 +659,7 @@
 
                             <div class="form-group">
                                     <label class="control-label col-sm-4 " >设备类型:</label>
-                                <div class="col-sm-7">
+                                <div class="col-sm-7" id="add_device_type_div">
                                     {{ data_form.device_type }}
                                 </div>
                             </div>
@@ -688,7 +676,7 @@
 
                             <div class="form-group" >
 										<label class="control-label col-sm-4 " >设备厂家:</label>
-                                <div class="col-sm-7">
+                                <div class="col-sm-7" id="add_product_name_div">
                                     {{ data_form.product_name }}
 								</div>
                                 <label class="control-label  " style="color: #FF0000;" ></label>
