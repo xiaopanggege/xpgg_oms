@@ -86,7 +86,7 @@
                 });
 
 //           bootstrap的提示工具jq
-            $("[data-toggle='tooltmanage_ip']").tooltmanage_ip();
+            $("[data-toggle='tooltmanage_ip']").tooltip();
 
 
 //            分页页面跳转
@@ -565,7 +565,7 @@
                     <td class="data_device_name">{{ device_data.device_name }}</td>
                     <td class="data_device_type">{{ device_data.get_device_type_display }}</td>
                     <td class="data_manage_ip">{{ device_data.manage_ip }}</td>
-                    <td class="data_product_name">{{ device_data.product_name }}</td>
+                    <td class="data_product_name">{{ device_data.get_product_name_display }}</td>
                     <td class="data_product_type">{{ device_data.product_type }}</td>
                     <td class="data_sn">{{ device_data.sn }}</td>
                     <td class="data_idc_name">{{ device_data.idc_name }}</td>
@@ -672,12 +672,7 @@
                             <div class="form-group">
                                     <label class="control-label col-sm-4 " >设备类型:</label>
                                 <div class="col-sm-7">
-                                <label class="radio-inline">
-                                <input type="radio" class="add_device_type" name="add_device_type"  value="0" checked> 物理机
-                                 </label>
-                                <label class="radio-inline">
-                                <input type="radio" class="add_device_type" name="add_device_type"   value="1"> 虚拟机
-                                </label>
+                                    {{ data_form.device_type }}
                                 </div>
                             </div>
                             
@@ -691,39 +686,24 @@
                                 <label class="control-label  " style="color: #FF0000;" ></label>
 							</div>
 
-                            <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-4 " for="add_product_name">设备厂家:</label>
+                            <div class="form-group" >
+										<label class="control-label col-sm-4 " >设备厂家:</label>
                                 <div class="col-sm-7">
-										<input type="text" class="form-control" id="add_product_name"
-									    style="font-size: 14px;"  >
-									    <span id="add_product_name_help" style="color: #FF0000;">　</span>
+                                    {{ data_form.product_name }}
 								</div>
                                 <label class="control-label  " style="color: #FF0000;" ></label>
 							</div>
                             
 
-                            <div class="form-group" >
+                            <div class="form-group" style="margin-bottom: 0;">
                                     <label class="control-label col-sm-4 " >产品型号:</label>
                                 <div class="col-sm-7">
-                                <label class="radio-inline">
-                                <input type="radio" class="add_product_type" name="add_product_type"  value="linux" checked> Linux
-                                 </label>
-                                <label class="radio-inline">
-                                <input type="radio" class="add_product_type" name="add_product_type"   value="windows"> Windows
-                                </label>
+                                    <input type="text" class="form-control" id="add_product_type"
+									    style="font-size: 14px;"  >
+                                    <span id="add_product_type_help" style="color: #FF0000;">　</span>
                                 </div>
                             </div>
 
-                            <div class="form-group" style="margin-bottom: 0;">
-										<label class="control-label col-sm-4 " for="add_product_type">系统版本:</label>
-                                <div class="col-sm-7">
-										<input type="text" class="form-control" id="add_product_type"
-									    style="font-size: 14px;"  >
-									    <span id="add_product_type_help" style="color: #FF0000;">　</span>
-								</div>
-                                <label class="control-label  " style="color: #FF0000;" ></label>
-							</div>
-                            
 
 							<div class="form-group" style="margin-bottom: 0;">
 										<label class="control-label col-sm-4 " for="add_sn">序列号:</label>
@@ -735,10 +715,6 @@
                                 <label class="control-label  " style="color: #FF0000;" ></label>
 							</div>
 
-                    </form>
-                    </div>
-                    <div class="col-sm-6">
-                        <form class="form-horizontal " role="form"  >
                             <div class="form-group" style="margin-bottom: 0;">
 										<label class="control-label col-sm-4 " for="add_idc_name">机房名称:</label>
                                 <div class="col-sm-7">
@@ -759,6 +735,10 @@
                                 <label class="control-label  " style="color: #FF0000;" ></label>
 							</div>
 
+                    </form>
+                    </div>
+                    <div class="col-sm-6">
+                        <form class="form-horizontal " role="form">
                             <div class="form-group" style="margin-bottom: 0;">
 										<label class="control-label col-sm-4 " for="add_login_ip">远程管理IP:</label>
                                 <div class="col-sm-7">

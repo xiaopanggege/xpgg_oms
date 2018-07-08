@@ -1578,8 +1578,10 @@ def network_list(request):
                         device_data = NetworkList.objects.filter(server_type__icontains=search_content).order_by(
                             'create_date')
                         data_list = getPage(request, device_data, 9)
+                data_form = NetworkListAddForm()
                 return render(request, 'network_list.html',
-                              {'data_list': data_list, 'search_field': search_field, 'search_content': search_content})
+                              {'data_list': data_list, 'search_field': search_field,
+                               'search_content': search_content, 'data_form': data_form})
 
     except Exception as e:
         logger.error('网络设备列表管理页面有问题', e)

@@ -1,4 +1,5 @@
 from django import forms
+from django.forms import widgets
 from .models import *
 from django.core.exceptions import ValidationError
 import re
@@ -209,23 +210,23 @@ def device_name_exist_validate(value):
 # 资源管理 网络设备列表  新增网络设备表单验证 主
 class NetworkListAddForm(forms.Form):
     Device_Type = (
-        ('0', '二层交换机'),
-        ('1', '三层交换机'),
-        ('2', '防火墙'),
-        ('3', '路由器'),
-        ('4', 'WAF'),
-        ('5', '网闸')
+        (0, '二层交换机'),
+        (1, '三层交换机'),
+        (2, '防火墙'),
+        (3, '路由器'),
+        (4, 'WAF'),
+        (5, '网闸')
     )
     Product_name = (
-        ('0', 'H3C'),
-        ('1', '华为'),
-        ('2', '思科'),
-        ('3', '中兴')
+        (0, 'H3C'),
+        (1, '华为'),
+        (2, '思科'),
+        (3, '中兴')
     )
     device_name = forms.CharField(max_length=50, error_messages={'required': '设备名称不能为空', 'max_length': '最多50位'}, validators=[device_name_exist_validate])
-    device_type = forms.ChoiceField(required=False, choices=Device_Type, error_messages={'invalid_choice': '无效的设备类型'})
+    device_type = forms.ChoiceField(required=False, choices=Device_Type, widget=widgets.Select(attrs={'id': 'add_device_type', 'class': 'form-control'}), error_messages={'invalid_choice': '无效的设备类型'})
     manage_ip = forms.CharField(required=False, max_length=200, error_messages={'max_length': '最多50位'})
-    product_name = forms.ChoiceField(required=False, choices=Product_name, error_messages={'invalid_choice': '无效的设备厂家'})
+    product_name = forms.ChoiceField(required=False, choices=Product_name, widget=widgets.Select(attrs={'id': 'add_product_name', 'class': 'form-control'}), error_messages={'invalid_choice': '无效的设备厂家'})
     product_type = forms.CharField(required=False, max_length=50, error_messages={'max_length': '最多50位'})
     sn = forms.CharField(required=False, max_length=100, error_messages={'max_length': '最多50位'})
     idc_name = forms.CharField(required=False, max_length=50, error_messages={'max_length': '最多50位'})
