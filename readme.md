@@ -100,9 +100,19 @@ python3 manage.py migrate
 ![login.png](https://github.com/xiaopanggege/xpgg_oms/raw/master/static/screenshot/login.png) 
 
 ***
-### 仪表盘：
->用来显示资产汇总、minion汇总等信息，也准备把操作记录滚动页设置在这里，不过目前功能还没有实现因为数据没地方获取，资产和日志那块还没做  
+### 仪表盘
+>用来显示资产汇总、minion汇总等信息，统计信息  
 ![dashbord.png](https://github.com/xiaopanggege/xpgg_oms/raw/master/static/screenshot/dashboard.png)  
+
+***
+### 资源管理
+>简单的cmdb功能，支持批量导入导出，通过下载模板把信息批量导入模板上传  
+主机资源
+![server_list.png](https://github.com/xiaopanggege/xpgg_oms/raw/master/static/screenshot/server_list.png)
+导入功能
+![server_list_manage](https://github.com/xiaopanggege/xpgg_oms/raw/master/static/screenshot/server_list_manage.png)
+网络资源
+![network_list](https://github.com/xiaopanggege/xpgg_oms/raw/master/static/screenshot/network_list.png)
 
 ***
 ### Minion管理
@@ -131,13 +141,22 @@ minion详情
 >这个功能页面暂时没有开发，不过和minion客户端安装是执行类似的代码，这是为了那些不允许安装salt客户端准备的页面
 
 ***
-### 远程维护
->取消改成Salt命令执行
-
-***
 ### Salt命令集
 >自动收集salt命令，提供官方的使用帮助查看，自定义选择要收集的salt主机，因为windows和linux命令有不同  
 ![salt_cmd_manage.png](https://github.com/xiaopanggege/xpgg_oms/raw/master/static/screenshot/salt_cmd_manage.png)
+
+***
+### Salt命令执行
+>强大的salt命令执行页面，直接把CLI的salt迁移到页面来，并且支持模块自动补全，命令自动补全，命令使用帮助自动加载  
+![salt_cmd_exe.png](https://github.com/xiaopanggege/xpgg_oms/raw/master/static/screenshot/salt_cmd_exe.png)  
+命令帮助
+![salt_cmd_exe_help.png](https://github.com/xiaopanggege/xpgg_oms/raw/master/static/screenshot/salt_cmd_exe_help.png)  
+
+
+***
+### Salt工具
+>sal命令的快捷通道，按需封装常用的salt命令，无限扩展，方便使用
+![salt_tool.png](https://github.com/xiaopanggege/xpgg_oms/raw/master/static/screenshot/salt_tool.png)  
 
 ***
 ### 应用发布
@@ -151,6 +170,11 @@ minion详情
 >创建应用组，添加成员，对应用进行分组，方便各自管理各自的应用，后期会添加用户权限管理
 ![app_group.png](https://github.com/xiaopanggege/xpgg_oms/raw/master/static/screenshot/app_group.png)  
 ![app_group_member.png](https://github.com/xiaopanggege/xpgg_oms/raw/master/static/screenshot/app_group_member.png)  
+
+***
+### 发布授权
+>对登录用户进行权限控制，按需分配可执行的发布应用
+![app_auth.png](https://github.com/xiaopanggege/xpgg_oms/raw/master/static/screenshot/app_auth.png)  
 
 ***
 ### 网络扫描
