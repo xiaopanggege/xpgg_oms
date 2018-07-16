@@ -22,7 +22,7 @@ def create_minion_list(sender, instance, created, update_fields, **kwargs):
 
 
 # 在操作saltkey表的删除时候同时对minion管理表做删除操作
-@receiver(post_delete, sender=SaltKeyList, dispatch_uid="saltkey_list_post_save")
+@receiver(post_delete, sender=SaltKeyList, dispatch_uid="saltkey_list_post_delete")
 def delete_minion_list(sender, instance, **kwargs):
     if instance.certification_status == 'accepted':
         MinionList.objects.filter(minion_id=instance.minion_id).delete()

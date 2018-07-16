@@ -256,7 +256,36 @@
 				});
             });
             
-            
+
+//            单条刷新minion的状态
+            $(".update_minion_id").click(function () {
+                var update_minion_id= $(this).parent().siblings('.minion_id').html();
+                $.ajax({
+					url:"{% url 'minion_manage_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+//                    提交的数据要和后台form验证的变量一致，不过可以多出来，只要验证的有就行，比如这里就多了project_tag_key
+					data:{
+					    'minion_id':update_minion_id,
+                        'minion_manage_key':'update_minion_id'
+
+					},
+					success:function(result){
+						if(result.status){
+//						    关闭加载图片的模态框
+						    $('.loading_modal').modal('toggle');
+                            toastr.success(result.result,'Success',{timeOut: 1500});
+                            setTimeout(function(){window.location.href=window.location.href}, 1000);
+						}else {
+						        $('.loading_modal').modal('toggle');
+						        toastr.error(result.result,'Error',{timeOut: 1500});
+                        }
+					}
+				});
+            });
+
 //            点击删除填充模态框
             $('.delete_minion').click(function () {
                 $('.hidden_minion_id').val($(this).parent().siblings('.minion_id').html());
@@ -433,7 +462,9 @@
                         <td class="minion_mem_total hidden">{{ minion.mem_total }}</td>
                         <td class="minion_createdate hidden">{{ minion.create_date | date:"Y年m月d日 H:i:s"}}</td>
 
-                        <td><button type="button" class="btn btn-info btn-sm view_detail" data-toggle="modal" data-target="#view_minion">查询</button>
+                        <td>
+                            <button type="button" class="btn btn-info btn-sm update_minion_id" data-toggle="modal" data-target=".loading_modal">更新</button>
+                            <button type="button" class="btn btn-info btn-sm view_detail" data-toggle="modal" data-target="#view_minion">查询</button>
                             <button type="button" class="btn btn-primary btn-sm update_description" data-toggle="modal" data-target="#update_minion">修改备注</button>
                             <!--操作按钮暂时还没时间开发具体啥功能还没想哈哈-->
                             <button type="button" class="btn btn-danger btn-sm hidden" data-toggle="modal" data-target="#minion_operation">操作</button>

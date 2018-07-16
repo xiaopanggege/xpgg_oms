@@ -1865,6 +1865,82 @@ def minion_manage_ajax(request):
                             result['result'] = '更新成功'
                             result['status'] = True
                 return JsonResponse(result)
+            elif request.POST.get('minion_manage_key') == 'update_minion_id':
+                minion_id = request.POST.get('minion_id')
+                with requests.Session() as s:
+                    saltapi = SaltAPI(session=s)
+                    if saltapi.get_token() is False:
+                        logger.error('minion管理更新操作获取SaltAPI调用get_token请求出错')
+                        result['result'] = 'minion管理更新操作获取SaltAPI调用get_token请求出错'
+                        return JsonResponse(result)
+                    else:
+                        response_data = saltapi.test_api(tgt=minion_id)
+                        # 当调用api失败的时候比如salt-api服务stop了会返回false
+                        if response_data is False:
+                            logger.error('minion管理更新test.ping失败可能代入的参数有问题，SaltAPI调用test_api请求出错')
+                            result['result'] = 'minion管理更新test.ping失败可能代入的参数有问题，SaltAPI调用test_api请求出错'
+                            return JsonResponse(result)
+                        # 判断返回值如果为[{}]表明没有这个minion_id
+                        elif response_data['return'] != [{}]:
+                            # 正常结果类似这样：{'return': [{'192.168.68.51': False, '192.168.68.1': True, '192.168.68.50-master': True}]}
+                            if response_data['return'][0][minion_id]:
+                                try:
+                                    grains_data = saltapi.grains_itmes_api(tgt=minion_id)
+                                    # 这里获取了所有minion的grains内容，如果以后表字段有增加就从这里取方便
+                                    value = grains_data['return'][0][minion_id]
+                                    try:
+                                        value['ipv4'].remove('127.0.0.1')
+                                    except Exception as e:
+                                        pass
+                                    try:
+                                        # 下面这段代码之前都是直接用cpu_model = value['cpu_model'] 后面发现centos6和7有的有这个key有的没有导致会
+                                        # 报错，所以改成用get来获取key安全哈哈
+                                        ip = value.get('ipv4')
+                                        os = value.get('os') + value.get('osrelease')
+                                        saltversion = value.get('saltversion')
+                                        sn = value.get('serialnumber')
+                                        cpu_num = value.get('num_cpus')
+                                        cpu_model = value.get('cpu_model')
+                                        sys = value.get('kernel')
+                                        kernel = value.get('kernelrelease')
+                                        productname = value.get('productname')
+                                        ipv4_addr = value.get('ip4_interfaces')
+                                        mac_addr = value.get('hwaddr_interfaces')
+                                        localhost = value.get('localhost')
+                                        mem_total = value.get('mem_total')
+                                    except Exception as e:
+                                        # 有出现过某个minion的依赖文件被删除了但是minion进程还在，导致grains.items没有结果返回
+                                        # 这样就会出现vlaue不是一个字典而是是一个str正常value内容是{'ipv4':'xxxxx'}异常时候会是'grains.items is false'
+                                        # 具体是什么str没记住哈哈，不过由于不少字典而又用了get来获取字典值所以会触发try的错误，也就有了下面的操作
+                                        MinionList.objects.filter(minion_id=minion_id).update(minion_status='异常',
+                                                                                        update_time=time.strftime('%Y年%m月%d日 %X'))
+                                    else:
+                                        MinionList.objects.filter(minion_id=minion_id).update(minion_status='在线', ip=ip,
+                                                          sn=sn, cpu_num=cpu_num, cpu_model=cpu_model, sys=sys,
+                                                          kernel=kernel, product_name=productname, ipv4_address=ipv4_addr,
+                                                          mac_address=mac_addr, localhost=localhost, mem_total=mem_total,
+                                                          minion_version=saltversion, system_issue=os,
+                                                          update_time=time.strftime('%Y年%m月%d日 %X'))
+                                except Exception as e:
+                                    logger.error('minion更新数据出错1，请检查'+ str(e))
+                                    result['result'] = 'minion更新数据出错1，请检查'+ str(e)
+                                    return JsonResponse(result)
+                            else:
+                                try:
+                                    # minion离线
+                                    MinionList.objects.filter(minion_id=minion_id).update(minion_status='离线',
+                                                                                            update_time=time.strftime('%Y年%m月%d日 %X'))
+                                except Exception as e:
+                                    logger.error('minion更新数据出错2，请检查' + str(e))
+                                    result['result'] = 'minion更新数据出错2，请检查' + str(e)
+                                    return JsonResponse(result)
+                        else:
+                            logger.error('minion更新test.ping检测失败，请确认minion是否存在。。')
+                            result['result'] = 'minion更新test.ping检测失败，请确认minion是否存在。。'
+                            return JsonResponse(result)
+                result['result'] = '更新成功'
+                result['status'] = True
+                return JsonResponse(result)
             else:
                 result['result'] = 'minion管理页ajax提交了错误的tag'
                 return JsonResponse(result)
