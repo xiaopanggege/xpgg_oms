@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load staticfiles %}
-{% block title %}模块部署{% endblock %}
+{% block title %}文件管理{% endblock %}
 {% block custom_css %}
 	<style type="text/css">
         .he10{
@@ -68,7 +68,7 @@
 	    	$('#tgt_pcre').keyup(function(){
 	    		$('#tgt_pcre_help').text('　');
 	    	});
-	    	
+
 	    	$("input[type='checkbox']").focus(function(){
 	    		$('#select_arg_help').text('　');
 	    	});
@@ -113,10 +113,9 @@
             });
 
 //          查找minion_id 后期要准备些一个公共的view方法存这个经常用到查询minion的调用，不然每次都要在views.py写一遍
-            $('.search_minion_id_btn').click(function(){
-                 $('#search_select_minion_id').empty();
-                 var minion_id=$.trim($('#search_minion_id').val());
-                 var selected_minion_id=$('#search_selected_minion_id option');
+             $('.search_minion_id_btn').click(function(){
+                 $('#select_minion_id_radio').empty();
+                 var minion_id=$.trim($('#search_minion_id_input').val());
 
 //				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
 				$.ajax({
@@ -131,14 +130,10 @@
 					},
 					success:function(result){
 						if(result.status){
-						    $.each(result.result,function (index,content) {
-						        $("<option value='"+content+"'>"+content+"</option>").appendTo("#search_select_minion_id");
-                                selected_minion_id.each(function () {
-                                    if($(this).val()==content){
-                                        $("#search_select_minion_id option[value='" +content+ "']").remove();
-                                    }
-                                });
-                            })
+						    $.each(result.result, function (index,content) {
+                                $("<label><input type='radio' name='radio_minion_id'  value='"+content+"'> "+content+"</label><br>").appendTo("#select_minion_id_radio");
+                                $("input[name='radio_minion_id']:first").attr("checked",true);
+						    });
 						}else {
 						    toastr.error(result.result,'error',{timeOut: 1500});
                         }
@@ -338,149 +333,62 @@
 	</script>
 {% endblock %}
 
-{% block panel-title_content %}模块部署{% endblock %}
+{% block panel-title_content %}文件管理{% endblock %}
 
 {% block panel_body_content %}
 
 <div class="row-fluid ">
 	<div class="col-xs-6 overflow_set">
-		<div class="he10"></div>
-		<form class="form-horizontal" role="form" >
-            <div  style="font-size: 15px;border: 1px #756F71 solid;border-radius: 5px;padding:0 10px 0 0;" >
-                <label class="label label-info " style="font-size: 17px;">模块部署操作</label>
-                <div class="he20"></div>
-                <div class="form-group tgt_div" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;margin-left: 10px;margin-right: 10px;" >
-				<label class="label label-info " style="font-size: 17px;">执行对象选择</label>
-				<div class="he10"></div>
-				<div class="container-fluid" style="font-size: 14px;">
-					<div class="row-fluid">
-						<div class="col-sm-3 col-md-3">
-							<label class="radio-inline" >
-								<input type="radio" name="select_tgt"  value="any" checked>所有
-							</label>
-						 </div>
-						<div class="col-sm-3 col-md-3">
-							<label class="radio-inline" >
-								<input type="radio" name="select_tgt"  value="minion_list">Minion_ID
-							</label>
-						 </div>
-                        <div class="col-sm-3 col-md-3">
-							<label class="radio-inline" >
-								<input type="radio" name="select_tgt"  value="pcre">Minion正则
-							</label>
-						</div>
-						<div class="col-sm-3 col-md-3">
-							<label class="radio-inline" >
-								<input type="radio" name="select_tgt"  value="custom_group">自定义组
-							</label>
-						</div>
-                        <div class="col-sm-3 col-md-3">
-							<label class="radio-inline" >
-								<input type="radio" name="select_tgt"  value="grain">Grain
-							</label>
-						</div>
-                        <div class="col-sm-3 col-md-3">
-							<label class="radio-inline" >
-								<input type="radio" name="select_tgt"  value="grain_pcre">Grain正则
-							</label>
-						</div>
-                        <div class="col-sm-3 col-md-3">
-							<label class="radio-inline" >
-								<input type="radio" name="select_tgt"  value="ip_address">IP
-							</label>
-						</div>
-
-					</div>
-				</div>
-				<div class="he10"></div>
-                <div class="select_tgt_list select_tgt_minion_list_class hidden">
+		<form class="form-horizontal" role="form" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;margin-left: -15px;margin-right: 15px;" >
+            <div class="he10"></div>
+            <div class="form-group tgt_div" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;margin-left: 10px;margin-right: 10px;" >
+                <label class="label label-info " style="font-size: 17px;">查询选项</label>
+                <div class="he10"></div>
+                <div class="form-group " style="margin-bottom: 0;">
                     <label class="control-label col-sm-2 " >Minion_ID:</label>
                     <div class="panel panel-default col-sm-4" style="padding: 0;margin-left: 15px;margin-bottom: 0;">
                         <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
                             <div class="input-group">
-                                <input type="text" class="form-control input-sm" id="search_minion_id" placeholder="查询Minion_ID">
-                                <span class="input-group-btn">
-                                    <button type="button" class="btn btn-primary search_minion_id_btn btn-sm"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
-                                </span>
+                            <input type="text" class="form-control input-sm" id="search_minion_id_input" placeholder="查询Minion_ID">
+                              <span class="input-group-btn">
+                                <button type="button" class="btn btn-primary search_minion_id_btn btn-sm"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
+                              </span>
 
                             </div>
                         </div>
-                        <select size=5  multiple class="form-control panel-body" id="search_select_minion_id" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
-                        </select>
-                    </div>
+                        <!--<select size=5  multiple class="form-control panel-body" id="select_minion_id_radio" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">-->
+                        <!--</select>-->
 
-                    <div class="col-sm-1" style="padding: 0 10px 0 10px;">
-                        <div style="margin-top: 30px;">
-                            <button type="button" class="btn btn-xs btn-info " id="search_select_minion_id_btn" disabled="true">&gt;&gt;</button>
-                            <button type="button" class="btn btn-xs btn-info " style="margin-top: 1px;" id="add_delete_minion_id_btn" disabled="true">&lt;&lt;</button>
+                        <div id="select_minion_id_radio" class="radio panel-body" style="height:90px;overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+
                         </div>
-                    </div>
 
-                    <div class="panel panel-info col-sm-4" style="padding: 0;margin-bottom: 0;">
-                        <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
-                            <h3 class="panel-title " style="font-size: 12px;padding: 5px 10px;height: 30px;line-height: 1.5;">选中的Minion_ID 可多选</h3>
-                        </div>
-                        <select size=5 multiple class="form-control panel-body" id="search_selected_minion_id" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+                    </div>
+                    <label class="control-label  " style="color: #FF0000;" ></label>
 
-                        </select>
+                    <div class="col-sm-6 col-sm-offset-4">
+                            <span id="add_minion_id_help" style="color: #FF0000;">　</span>
                     </div>
+                </div>
 
-                    <label class="control-label  " style="color: #FF0000;" >*</label>
+                <div class="form-group">
+                    <label class="control-label col-sm-2 " for="extra_arg_data">查询目录:</label>
+                    <div class="col-sm-7">
+                        <input type="text"  class="form-control" id="extra_arg_data" >
+                        <span class="" id="extra_arg_data_help" style="color: #FF0000;">　</span>
+                    </div>
+                    <label class="control-label  " style="font-weight: normal;color: #3FB8AF;font-size: 13px;" >提示：输入要查询的目录</label>
+                </div>
 
-                    <div class="col-sm-6 col-sm-offset-3">
-                        <span id="minion_list_help" style="color: #FF0000;">　</span>
-                </div>
-                </div>
-                <div class="select_tgt_list tgt_pcre_class hidden">
-                    <label class="control-label col-sm-2 " for="tgt_pcre">M正则:</label>
-                    <div class="col-sm-8">
-                        <input type="text" class="form-control" id="tgt_pcre"
-                        style="font-size: 14px;"  required="required" placeholder="正则匹配minion id">
-                        <span class="" id="tgt_pcre_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label  " style="color: #FF0000;" >*</label>
-                </div>
-                <div class="select_tgt_list select_tgt_custom_group_class hidden">
-                    <label class="control-label col-sm-2 " for="tgt_custom_group">Custom_group:</label>
-                    <div class="col-sm-8">
-                        <input type="text" class="form-control" id="tgt_custom_group"
-                        style="font-size: 14px;"  required="required" value="自定义组功能开发中。。尽请等待">
-                        <span class="" id="tgt_custom_group_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label  " style="color: #FF0000;" >*</label>
-                </div>
-                <div class="select_tgt_list tgt_grain_class hidden">
-                    <label class="control-label col-sm-2 " for="tgt_grain">Grain:</label>
-                    <div class="col-sm-8">
-                        <input type="text" class="form-control" id="tgt_grain"
-                        style="font-size: 14px;"  required="required" >
-                        <span class="" id="tgt_grain_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label  " style="color: #FF0000;" >*</label>
-                </div>
-                <div class="select_tgt_list tgt_grain_pcre_class hidden">
-                    <label class="control-label col-sm-2 " for="tgt_grain_pcre">Grain正则:</label>
-                    <div class="col-sm-8">
-                        <input type="text" class="form-control" id="tgt_grain_pcre"
-                        style="font-size: 14px;"  required="required" >
-                        <span class="" id="tgt_grain_pcre_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label  " style="color: #FF0000;" >*</label>
-                </div>
-                <div class="select_tgt_list tgt_ip_address_class hidden">
-                    <label class="control-label col-sm-2 " for="tgt_ip_address">IP:</label>
-                    <div class="col-sm-8">
-                        <input type="text" class="form-control" id="tgt_ip_address"
-                        style="font-size: 14px;"  required="required" placeholder="ip/ip段，例：192.168.1.1 or 192.168.1.0/24">
-                        <span class="" id="tgt_ip_address_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label  " style="color: #FF0000;" >*</label>
-                </div>
+                <div class="form-group " style="margin-left: 10px;">
+				<button type="button" class="btn btn-success" id="state_exe_sumbit" data-loading-text="正在查询...">查询</button>
+				<!-- <label class="text-danger ">提交数据验证合法性提示栏</label> -->
+			</div>
 
 			</div>
-                
+
 			<div class="he20"></div>
-                
+
 			<div class="form-group" style="font-size: 14px;border: 1px #CCCCCC solid;border-radius: 5px;margin-left: 10px;margin-right: 10px;" >
 				<label class="label label-info " style="font-size: 17px;">模块选择</label>
 				<div class="he10"></div>
@@ -527,14 +435,6 @@
 				<div class="he10"></div>
 			</div>
 
-            <div class="form-group">
-                <label class="control-label col-sm-2 " for="extra_arg_data">附加参数:</label>
-                <div class="col-sm-7">
-                    <input type="text"  class="form-control" id="extra_arg_data" >
-                    <span class="" id="extra_arg_data_help" style="color: #FF0000;">　</span>
-                </div>
-                <label class="control-label  " style="font-weight: normal;color: #3FB8AF;font-size: 13px;" >提示：模块之外的参数</label>
-            </div>
 
             <div class="form-group  " style="font-size: 14px;border: 1px #CCCCCC solid;border-radius: 5px;padding: 0;margin: 0 15px 0 15px;">
 				<!--<div class="container-fluid" style="font-size: 14px;">-->
@@ -545,31 +445,10 @@
                 </pre>
             </div>
 
-			<div class="he20"></div>
-			<div class="form-group " style="margin-left: 10px;">
-				<button type="button" class="btn btn-success" id="state_exe_sumbit" data-loading-text="正在执行...">执行部署</button>
-				<!-- <label class="text-danger ">提交数据验证合法性提示栏</label> -->
-			</div>
-                <div class="he20"></div>
-            </div>
-            <div class="he20"></div>
-
-            <!--查看部署日志  -->
-            <!--<div  style="font-size: 15px;border: 1px #756F71 solid;border-radius: 5px;padding:0 10px 0 0;" >-->
-                    <!--<label class="label label-info " style="font-size: 17px;">模块部署日志查询</label>-->
-
-                    <!--<div class="he10"></div>-->
-                    <!--<label class="form-group" for="minion_id" style="margin-left: 10px;">请输入主机ID:</label>-->
-                    <!--<input type="text" class="form-control" id="minion_id"-->
-                   <!--placeholder="请输入主机minion ID" style="font-size: 14px;width: 200px;"  required="required">-->
-                    <!--<button type="button" class="btn btn-success  search_log" data-toggle="modal" data-target="#search_minion_id_log" style="margin-left: 10px;">查询</button>-->
-
-                   <!--<div class="he10"></div>-->
-                <!--</div>-->
 		</form>
 	</div>
 	<div class="form-group col-xs-6 overflow_result" style="padding-top: 5px;">
-		<label class="label label-danger " style="font-size: 17px;">结果打印</label>
+		<label class="label label-danger " style="font-size: 17px;">文件内容打印</label>
 		<!-- 结果打印 -->
 		<!-- 下面这个列数cols弄100%比较大，高度我用h45来按浏览器调整，style是禁止拉伸 -->
 		<!--注意如果使用标签textarea的字体一定要设置等宽字体，因为普通的字体在输出的时候无法和在linux下面一样，想要输出程序代码的
@@ -591,7 +470,7 @@
 					&times;
 				</button>
 				<h4 class="modal-title" id="minion_id_log_lable">
-					<span class="minion_id_log"></span>模块部署日志<button type="button" class="btn btn-primary minion_id_log_btn pull-right" style="margin-right: 10px;">
+					<span class="minion_id_log"></span>文件管理日志<button type="button" class="btn btn-primary minion_id_log_btn pull-right" style="margin-right: 10px;">
 					刷新日志
 				    </button>
 				</h4>

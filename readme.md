@@ -53,7 +53,7 @@ DATABASES = {
         'HOST': '', #你的数据库主机，留空默认为localhost
         'PORT': '3306', #你的数据库端口,
 ```
->salt-master的配置文件添加svn同步文件临时目录
+>salt-master的配置文件添加svn同步文件临时目录，目录等于上面settings.py文件中`SITE_BASE_SVN_SYMLINK_PATH`的值，假设为`/data/svn_symlink`
 ``` conf
 vi /etc/salt/master 添加如下内容：
 file_roots:
