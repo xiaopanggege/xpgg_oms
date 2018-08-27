@@ -72,11 +72,16 @@
 	    	$('#search_jid_result').keyup(function(){
 	    		$('#search_jid_result_help').text('　');
 	    	});
+	    	$('#cmd_select').keyup(function(){
+	    		$('#cmd_select_help').text('　');
+	    	});
             
             
 
 			// 执行对象选择触发输入框的隐藏显示
 			$('input[name="select_tgt"]').click(function () {
+			    //告警消失
+			    $('#tgt_help').text('　');
                if($.trim($(this).val())=="any"){
                    $('.select_tgt_list').addClass('hidden');
                }else if($.trim($(this).val())=="custom_group"){
@@ -347,6 +352,16 @@
                     }
                     tgt_type = 'pcre';
                 }
+                else {
+                    $('#tgt_help').text('请选择执行对象');
+                    return false
+                }
+
+                if(fun.length==0){
+                    $('#cmd_select_help').text('请输入Fun');
+                    return false
+                }
+
                 var $btn = $(this).button('loading');
                 $("#salt_exe_result").text("正在执行.....");
                 $.ajax({
@@ -525,12 +540,13 @@
             <div class="he10"></div>
             <div class="form-group tgt_div" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;margin-left: 10px;margin-right: 10px;" >
 				<label class="label label-info " style="font-size: 17px;">执行对象选择</label>
+                <label class="label" id="tgt_help" style="color: #FF0000;font-size: 15px;"></label>
 				<div class="he10"></div>
 				<div class="container-fluid" style="font-size: 14px;">
 					<div class="row-fluid">
 						<div class="col-sm-3 col-md-3">
 							<label class="radio-inline" >
-								<input type="radio" name="select_tgt"  value="any" checked>所有
+								<input type="radio" name="select_tgt"  value="any" >所有
 							</label>
 						 </div>
 						<div class="col-sm-3 col-md-3">
@@ -708,7 +724,9 @@
             <div class="form-group " style="margin-left: 5px;margin-bottom: 5px;">
                 <div class="col-sm-2">
                 <button type="button" class="btn btn-success " id="salt_exe_sumbit" data-loading-text="正在执行...">执行命令</button>
-
+                </div>
+                <div class="col-sm-6">
+                    <p class="form-control-static" id="salt_exe_help" style="color: #FF0000;">　</p>
                 </div>
             </div>
         </div>

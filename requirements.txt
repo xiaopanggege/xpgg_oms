@@ -2,7 +2,7 @@ bypy==1.6.4
 certifi==2018.4.16
 chardet==3.0.4
 dill==0.2.7.1
-Django==2.0.5
+Django==2.0.7
 django-crontab==0.7.1
 django-guardian==1.4.9
 et-xmlfile==1.0.1

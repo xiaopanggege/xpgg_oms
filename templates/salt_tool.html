@@ -90,6 +90,8 @@
 
 			// 执行对象选择触发输入框的隐藏显示
 			$('input[name="select_tgt"]').click(function () {
+			    //告警消失
+			    $('#tgt_help').text('　');
                if($.trim($(this).val())=="any"){
                    $('.select_tgt_list').addClass('hidden');
                }else if($.trim($(this).val())=="custom_group"){
@@ -263,6 +265,10 @@
                         return false
                     }
                     tgt_type = 'pcre';
+                }
+                else {
+                    $('#tgt_help').text('请选择执行对象');
+                    return false
                 }
 
                 if($.trim(task_name).length == 0){
@@ -439,6 +445,10 @@
                     }
                     tgt_type = 'pcre';
                 }
+                else {
+                    $('#tgt_help').text('请选择执行对象');
+                    return false
+                }
 
                 if($.trim(program).length == 0){
                     $('#supervisor_program_data_help').text('请输入进程名称');
@@ -555,12 +565,13 @@
 
             <div class="form-group " style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;padding-bottom: 5px;" >
 				<label class="label label-info " style="font-size: 17px;">执行对象选择</label>
+                <label class="label" id="tgt_help" style="color: #FF0000;font-size: 15px;"></label>
 				<div class="he10"></div>
 				<div class="container-fluid" style="font-size: 14px;">
 					<div class="row-fluid">
 						<div class="col-sm-3 col-md-3">
 							<label class="radio-inline" >
-								<input type="radio" name="select_tgt"  value="any" checked>所有
+								<input type="radio" name="select_tgt"  value="any" >所有
 							</label>
 						 </div>
 						<div class="col-sm-3 col-md-3">
@@ -593,6 +604,7 @@
 								<input type="radio" name="select_tgt"  value="ip_address">IP
 							</label>
 						</div>
+
 
 					</div>
 				</div>
