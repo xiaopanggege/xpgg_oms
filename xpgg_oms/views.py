@@ -4569,3 +4569,63 @@ def app_auth_ajax(request):
         logger.error('应用发布组ajax提交处理有问题', e)
         result['result'] = '应用发布组ajax提交处理有问题'
         return JsonResponse(result)
+
+
+# 发布系统 应用发布 主
+def app_release_test(request):
+    try:
+        if request.method == 'GET':
+            # 默认如果没有get到的话值为None，这里我需要为空''，所以下面修改默认值为''
+            search_field = request.GET.get('search_field', '')
+            search_content = request.GET.get('search_content', '')
+            if search_content is '':
+                app_data = AppRelease.objects.all().order_by('create_time')
+                data_list = getPage(request, app_data, 15)
+            else:
+                if search_field == 'search_app_name':
+                    app_data = AppRelease.objects.filter(
+                        app_name__icontains=search_content).order_by(
+                        'create_time')
+                    data_list = getPage(request, app_data, 15)
+                elif search_field == 'search_minion_id':
+                    app_data = AppRelease.objects.filter(
+                        minion_id__icontains=search_content).order_by(
+                        'create_time')
+                    data_list = getPage(request, app_data, 15)
+                elif search_field == 'search_svn_url':
+                    app_data = AppRelease.objects.filter(
+                        app_svn_url__icontains=search_content).order_by(
+                        'create_time')
+                    data_list = getPage(request, app_data, 15)
+                else:
+                    data_list = ""
+            return render(request, 'app_release_test.html',
+                      {'data_list': data_list, 'search_field': search_field,
+                       'search_content': search_content})
+    except Exception as e:
+        logger.error('应用发布页面有问题:'+str(e))
+        return render(request, 'app_release_test.html')
+
+
+from rest_framework.pagination import PageNumberPagination
+from rest_framework import viewsets
+from rest_framework import mixins
+from .serializers import AppReleaseListSerializer
+
+
+class StandardPagination(PageNumberPagination):
+    # 每页显示个数
+    page_size = 1
+    # url中默认修改每页个数的参数名
+    # 比如http://127.0.0.1:8000/api/snippets/?page=1&page_size=4
+    # 就是显示第一页并且显示个数是4个
+    page_size_query_param = 'page_size'
+    page_query_param = "page"
+    # 每页最大个数不超过100
+    max_page_size = 100
+
+
+class AppReleaseListViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    queryset = AppRelease.objects.all()
+    serializer_class = AppReleaseListSerializer
+    pagination_class = StandardPagination

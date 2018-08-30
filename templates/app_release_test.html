@@ -1,0 +1,2441 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% load custom_filter %}
+{% block title %}发布系统{% endblock %}
+{% block custom_css %}
+<style type="text/css">
+    /*设置表格的宽度固定，不会因为内容过长而出现换行*/
+    table{
+        table-layout:fixed;
+    }
+    /*设置表格内容过长出现滚动条*/
+    /*td{*/
+        /*overflow:auto;*/
+        /*text-overflow:clip;white-space:nowrap;*/
+    /*}*/
+
+
+
+    tbody tr:hover{
+    background-color:#9b9b9b !important;
+        color: #000;
+    }
+    /*让列表内的信息上下居中,默认是换行的，但是词内默认没换行要设置word-break实现词内换行*/
+    td{
+        vertical-align:middle !important;
+        text-align: center;
+        word-break:break-all;
+    }
+
+    th{
+        text-align: center;
+    }
+
+    /*pre标签不会自动换行第二个是换行，第一个是滚动条*/
+    #modal_app_log{
+        overflow-y: auto;
+        white-space: pre-wrap;
+    }
+
+    /*添加表单滚动*/
+    .overflow_set{
+        overflow: auto;
+    }
+
+    /*解决谷歌自动填充把input框底色变成黄色问题*/
+    input:-webkit-autofill,textarea:-webkit-autofill,select:-webkit-autofill {
+        -webkit-box-shadow: 0 0 0 1000px white inset !important;
+    }
+
+
+</style>
+
+{% endblock %}
+
+{% block custom_js %}
+<script>
+    	$(function(){
+
+    	    // 响应式调整页面高度
+    		$(window).resize(function() {
+
+                // 表单的大小自适应窗口，不能设置100%，因为除了表单以外其他东西也会占用高度
+                $('.overflow_set').css(
+                    "height", $('.hall').height() * 0.9);
+            });
+    		$(window).resize();
+
+//    	    复选框选中操作
+                /*“全选/反选”复选框*/
+                $('#checkAll').click(function(event){
+                    /*将所有行的选中状态设成全选框的选中状态*/
+                    $('input[name="checkItem"]').prop('checked',$(this).prop('checked'));
+                    /*并调整所有选中行的CSS样式*/
+                    if ($(this).prop('checked')) {
+                        $('input[name="checkItem"]').parent().parent().addClass('warning');
+                    } else{
+                        $('input[name="checkItem"]').parent().parent().removeClass('warning');
+                    }
+                    /*阻止向上冒泡，以防再次触发点击操作*/
+                    event.stopPropagation();
+                });
+                /*点击全选框所在单元格时也触发全选框的点击操作*/
+                var $checkAllTh = $('#checkAll').parent();
+                $checkAllTh.click(function(){
+                    $('#checkAll').click();
+                });
+
+                /*点击每一行的选中复选框时*/
+                var $tbr = $('table tbody tr');
+                $('input[name="checkItem"]').click(function(event){
+                    /*调整选中行的CSS样式*/
+                    $(this).parent().parent().toggleClass('warning');
+                    /*如果已经被选中行的行数等于表格的数据行数，将全选框设为选中状态，否则设为未选中状态*/
+                    $('#checkAll').prop('checked',$('input[name="checkItem"]:checked').length == $tbr.length ? true : false);
+                    /*阻止向上冒泡，以防再次触发点击操作*/
+                    event.stopPropagation();
+                });
+                /*点击复选框的父框也触发选中*/
+                $('input[name="checkItem"]').parent().click(function(){
+                    $(this).find('input').click();
+                });
+
+//           bootstrap的提示工具jq
+            $("[data-toggle='tooltip']").tooltip();
+
+//            分页页面跳转
+            $('.page_go').click(function () {
+                window.location.href = window.location.href.split("?")[0]+'?search_field='+'{{ search_field }}'+'&search_content='+'{{ search_content }}'+'&page='+$("#page_index").val();
+            });
+
+//            查询按钮事件
+            $('.search_btn').click(function () {
+               var search_field = $('#search_field').val();
+               var search_content = $('#search_content').val();
+               window.location.href=window.location.href.split("?")[0]+'?search_field='+search_field+'&search_content='+search_content;
+            });
+
+//            新增发布模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
+            $('#app_add_modal').on('shown.bs.modal', function () {
+                $("#add_app_name").focus();
+            });
+
+
+//           新增发布模态框 隐藏时数据清除,更新编辑也是共用这个模态框
+            $("#app_add_modal").on("hidden.bs.modal", function() {
+                $(this).removeData("bs.modal");
+//                select恢复原状挺麻烦的，我这用最蠢的清空掉2个select然后重新添加。。
+                $('#add_app_name').val('');
+                $("input[name='add_sys_type']").eq(0).click();
+                $('#add_search_minion_id').val('');
+				$('#add_select_minion_id').empty();
+				$('#add_selected_minion_id').empty();
+				$('#add_app_path').val('');
+				$('#add_app_path_owner').val('root');
+				$('#add_app_svn_url').val('');
+				$('#add_app_svn_user').val('');
+				$('#add_app_svn_password').val('');
+				$("input[name='add_execution_style']").eq(0).click();
+				$("#add_select_operation").empty();
+                $("#add_selected_operation").empty();
+                $('<option value="SVN更新">SVN更新</option><option value="同步文件">同步文件</option><option value="应用停止">应用停止</option><option value="应用启动">应用启动</option><option value="执行命令1">执行命令1</option><option value="执行命令2">执行命令2</option>').appendTo("#add_select_operation");
+                $("#add_sync_file_div").addClass("hidden");
+                $("#add_sync_file_method_div").addClass("hidden");
+                $("input[name='add_sync_file_style']").eq(0).click();
+                $("input[name='add_sync_file_method']").eq(0).click();
+                $("#add_rsync_server_content_div").addClass("hidden");
+                $('#add_rsync_server_ip').val('192.168.18.18');
+                $('#add_rsync_server_port').val('873');
+                $("#add_server_stop_div").addClass("hidden");
+                $("input[name='add_server_stop_style']").eq(0).click();
+                $('#add_server_stop_cmd').val('');
+                $("#add_server_start_div").addClass("hidden");
+                $("input[name='add_server_start_style']").eq(0).click();
+                $('#add_server_start_cmd').val('');
+                $("#add_execute_command_1_div").addClass("hidden");
+                $('#add_execute_command_1_cmd').val('');
+                $("#add_execute_command_2_div").addClass("hidden");
+                $('#add_execute_command_2_cmd').val('');
+                $('#add_app_backup_path').val('');
+				$('#add_description').val('');
+
+
+				$('#add_app_name_help').text('　');
+				$('#add_minion_id_help').text('　');
+				$('#add_app_path_help').text('　');
+				$('#add_app_path_owner_help').text('　');
+				$('#add_app_svn_url_help').text('　');
+				$('#add_app_svn_user_help').text('　');
+				$('#add_app_svn_password_help').text('　');
+				$('#add_rsync_server_ip_help').text('　');
+				$('#add_rsync_server_port_help').text('　');
+				$('#add_operation_content_help').text('　');
+				$('#add_server_stop_cmd_help').text('　');
+				$('#add_server_start_cmd_help').text('　');
+				$('#add_execute_command_1_cmd_help').text('　');
+				$('#add_execute_command_2_cmd_help').text('　');
+				$('#add_app_backup_path_help').text('　');
+				$('#add_description_help').text('　');
+
+            });
+
+//           应用发布模态框 错误提示恢复，minion_id和操作步骤在》事件中恢复
+            $('#add_app_name').keyup(function(){
+	    		$('#add_app_name_help').text('　');
+	    	});
+            $('#add_app_path').keyup(function(){
+	    		$('#add_app_path_help').text('　');
+	    	});
+            $('#add_app_path_owner').keyup(function(){
+	    		$('#add_app_path_owner_help').text('　');
+	    	});
+            $('#add_app_svn_url').keyup(function(){
+	    		$('#add_app_svn_url_help').text('　');
+	    	});
+            $('#add_app_svn_user').keyup(function(){
+	    		$('#add_app_svn_user_help').text('　');
+	    	});
+            $('#add_app_svn_password').keyup(function(){
+	    		$('#add_app_svn_password_help').text('　');
+	    	});
+            $('#add_rsync_server_ip').keyup(function(){
+	    		$('#add_rsync_server_ip_help').text('　');
+	    	});
+            $('#add_rsync_server_port').keyup(function(){
+	    		$('#add_rsync_server_port_help').text('　');
+	    	});
+            $('#add_server_stop_cmd').keyup(function(){
+	    		$('#add_server_stop_cmd_help').text('　');
+	    	});
+            $('#add_server_start_cmd').keyup(function(){
+	    		$('#add_server_start_cmd_help').text('　');
+	    	});
+            $('#add_app_backup_path').keyup(function(){
+	    		$('#add_app_backup_path_help').text('　');
+	    	});
+            $('#add_execute_command_1_cmd').keyup(function(){
+	    		$('#add_execute_command_1_cmd_help').text('　');
+	    	});
+            $('#add_execute_command_2_cmd').keyup(function(){
+	    		$('#add_execute_command_2_cmd_help').text('　');
+	    	});
+            $('#add_description').keyup(function(){
+	    		$('#add_description_help').text('　');
+	    	});
+
+
+//          点击页面新增发布按钮时，隐藏模态框提交更新的按钮
+            $('.app_add_button').click(function () {
+                $("#add_app_submit").removeClass("hidden");
+                $("#update_app_submit").addClass("hidden");
+                $("#clone_app_submit").addClass("hidden");
+                $('#app_add_lable').html('新增应用发布');
+                $("#add_app_name").removeAttr("readonly");
+            });
+
+//    	    新增发布和编辑应用模态框里系统类型切换操作
+            $('.add_sys_type').click(function () {
+               if($(this).val()=='windows'){
+                    $('.add_app_path_owner_div').addClass('hidden');
+               }else {
+                   $('.add_app_path_owner_div').removeClass('hidden');
+               }
+               $("#add_select_minion_id").empty();
+               $("#add_selected_minion_id").empty();
+            });
+
+
+//            新增发布模态框，查找minion_id,按系统类型和minion_id来查询minion
+             $('.add_search_minion_id_btn').click(function(){
+                 $('#add_select_minion_id').empty();
+                 var minion_id=$.trim($('#add_search_minion_id').val());
+                 var sys_type=$("input[name='add_sys_type']:checked").val();
+                 var selected_minion_id=$('#add_selected_minion_id option');
+
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'app_release_ajax' %}",
+					type:'GET',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+                        'minion_id':minion_id,
+                        'app_tag_key':'modal_search_minion_id',
+                        'sys_type':sys_type
+					},
+					success:function(result){
+						if(result.status){
+						    for(var i = 0; i < result.result.length; i++){
+						       $("<option value='"+result.result[i]+"'>"+result.result[i]+"</option>").appendTo("#add_select_minion_id");
+                               selected_minion_id.each(function () {
+                                    if($(this).val()==result.result[i]){
+                                        $("#add_select_minion_id option[value='" +result.result[i]+ "']").remove();
+                                    }
+                                });
+						    }
+						}else {
+						    toastr.error(result.result,'error',{timeOut: 1500});
+                        }
+					}
+				});
+			});
+
+//           新增发布模态框 minion_id选中 操作触发中间的》按钮可用
+            $('#add_select_minion_id').click(function () {
+                var minion_id_list=$('#add_select_minion_id option:selected').map(function(){return $(this).val();}).get().join(",");
+                if(minion_id_list.length != 0){
+                    $("#add_select_minion_id_btn").attr("disabled",false);
+                }
+
+            });
+
+//           新增发布模态框 minion_id选中 操作触发中间的《按钮可用
+            $("#add_selected_minion_id").click(function () {
+                var minion_id_list=$('#add_selected_minion_id option:selected').map(function(){return $(this).val();}).get().join(",");
+                if(minion_id_list.length != 0) {
+                    $("#add_delete_minion_id_btn").attr("disabled",false);
+                }
+            });
+
+//           新增发布模态框 minion_id》按钮触发选中值移动到右边
+            $("#add_select_minion_id_btn").click(function () {
+//                在这里触发清空如果没选择minion_id的错误提示,嘿嘿
+                $('#add_minion_id_help').text('　');
+                $("#add_select_minion_id option:selected").each(function () {
+                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#add_selected_minion_id");
+                    $(this).remove();
+                    $("#add_select_minion_id_btn").attr("disabled",true);
+                })
+            });
+
+//           新增发布模态框 minion_id《按钮触发选中值移动到左边
+            $("#add_delete_minion_id_btn").click(function () {
+                $("#add_selected_minion_id option:selected").each(function () {
+                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#add_select_minion_id");
+                    $(this).remove();
+                    $("#add_delete_minion_id_btn").attr("disabled",true);
+                })
+            });
+
+
+//           新增发布模态框 操作选择 可选触发中间的》按钮可用
+            $("#add_select_operation").click(function () {
+                var operation_list=$('#add_select_operation option:selected').map(function(){return $(this).val();}).get().join(",");
+                if(operation_list.length != 0) {
+                    $("#add_select_operation_btn").attr("disabled",false);
+                }
+
+            });
+
+//           新增发布模态框 操作选择 选中操作触发中间的《按钮可用
+            $("#add_selected_operation").click(function () {
+                var operation_list=$('#add_selected_operation option:selected').map(function(){return $(this).val();}).get().join(",");
+                if(operation_list.length != 0) {
+                    $("#add_delete_operation_btn").attr("disabled",false);
+                }
+            });
+
+//           新增发布模态框 操作选择 》按钮触发选中值移动到右边
+            $("#add_select_operation_btn").click(function () {
+//                在这里触发清空如果没选择minion_id的错误提示,嘿嘿
+                $('#add_operation_content_help').text('　');
+                $("#add_select_operation option:selected").each(function () {
+                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#add_selected_operation");
+                    $(this).remove();
+                    if($.trim($(this).val())=="应用启动"){
+                        $("#add_server_start_div").removeClass("hidden");
+                    }
+                    else if($.trim($(this).val())=="应用停止"){
+                        $("#add_server_stop_div").removeClass("hidden");
+                    }
+                    else if($.trim($(this).val())=="同步文件"){
+                        $("#add_sync_file_div").removeClass("hidden");
+                        $("#add_sync_file_method_div").removeClass("hidden");
+                    }
+                    else if($.trim($(this).val())=="执行命令1"){
+                        $("#add_execute_command_1_div").removeClass("hidden");
+                    }
+                    else if($.trim($(this).val())=="执行命令2"){
+                        $("#add_execute_command_2_div").removeClass("hidden");
+                    }
+                    $("#add_select_operation_btn").attr("disabled",true);
+                })
+            });
+
+//           新增发布模态框 操作选择《按钮触发选中值移动到左边
+            $("#add_delete_operation_btn").click(function () {
+                $("#add_selected_operation option:selected").each(function () {
+                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#add_select_operation");
+                    $(this).remove();
+                    if($.trim($(this).val())=="应用启动"){
+                        $("#add_server_start_div").addClass("hidden");
+                    }
+                    else if($.trim($(this).val())=="应用停止"){
+                        $("#add_server_stop_div").addClass("hidden");
+                    }
+                    else if($.trim($(this).val())=="同步文件"){
+                        $("#add_sync_file_div").addClass("hidden");
+                        $("#add_sync_file_method_div").addClass("hidden");
+                    }
+                    else if($.trim($(this).val())=="执行命令1"){
+                        $("#add_execute_command_1_div").addClass("hidden");
+                    }
+                    else if($.trim($(this).val())=="执行命令2"){
+                        $("#add_execute_command_2_div").addClass("hidden");
+                    }
+                    $("#add_delete_operation_btn").attr("disabled",true);
+                })
+            });
+
+            // 新增发布模态框 同步文件方法选择rsync时候显示rsync配置内容
+            $('[name="add_sync_file_method"]').click(function () {
+               if($.trim($(this).val())=="salt"){
+                   $('#add_rsync_server_content_div').addClass('hidden');
+               }
+               else if($.trim($(this).val())=="rsync"){
+                        $('#add_rsync_server_content_div').removeClass('hidden');
+                    }
+            });
+
+//          新增发布模态框 操作选择 点击应用停止的单选按钮时候改变输入框提示内容
+            $('[name="add_server_stop_style"]').click(function () {
+               if($.trim($(this).val())=="停止服务名"){
+                   $('#add_server_stop_cmd').attr('placeholder',"填写服务名");
+               }
+               else if($.trim($(this).val())=="停止命令"){
+                        $('#add_server_stop_cmd').attr('placeholder',"填写停止命令");
+                    }
+               else if($.trim($(this).val())=="任务计划停止"){
+                        $('#add_server_stop_cmd').attr('placeholder',"填写windows任务计划名称");
+                    }
+               else if($.trim($(this).val())=="映像名称和命令行"){
+                        $('#add_server_stop_cmd').attr('placeholder',"格式:映像名称 | 命令行 忽略windows命令行中的冒号");
+                    }
+               else if($.trim($(this).val())=="supervisor_stop"){
+                        $('#add_server_stop_cmd').attr('placeholder',"填写supervisor守护程序名");
+                    }
+            });
+
+//          新增发布模态框 操作选择 点击应用启动的单选按钮时候改变输入框提示内容
+            $('[name="add_server_start_style"]').click(function () {
+               if($.trim($(this).val())=="启动服务名"){
+                   $('#add_server_start_cmd').attr('placeholder',"填写服务名");
+               }
+               else if($.trim($(this).val())=="启动命令"){
+                        $('#add_server_start_cmd').attr('placeholder',"填写启动命令");
+                    }
+               else if($.trim($(this).val())=="任务计划启动"){
+                        $('#add_server_start_cmd').attr('placeholder',"填写windows任务计划名称");
+                    }
+               else if($.trim($(this).val())=="supervisor_start"){
+                        $('#add_server_start_cmd').attr('placeholder',"填写supervisor守护程序名");
+                    }
+            });
+
+
+//           新增发布模态框 点击克隆按钮事件
+            $("#clone_app_submit").click(function () {
+                $("#clone_app_submit").addClass("hidden");
+                $("#add_app_submit").removeClass("hidden");
+                $("#update_app_submit").addClass("hidden");
+                $('#app_add_lable').html('新增应用发布');
+                $("#add_app_name").removeAttr("readonly");
+                $("#add_app_name").focus();
+                $("#add_app_name_help").html('请修改应用名称');
+            });
+
+            // // {#  django 跨站验证需要下面的 ajaxSetup   #}
+            $.ajaxSetup({
+                 data: {csrfmiddlewaretoken: '{{ csrf_token }}' }
+            });
+
+
+//          新增应用发布表单提交
+            $('#add_app_submit').click(function(){
+                var app_name = $.trim($('#add_app_name').val());
+				var sys_type = $("input[name='add_sys_type']:checked").val();
+				var minion_id=$('#add_selected_minion_id option').map(function(){return $(this).val();}).get().join(",");
+				var app_path=$.trim($('#add_app_path').val());
+				var app_path_owner=$.trim($('#add_app_path_owner').val());
+				var app_svn_url=$.trim($('#add_app_svn_url').val());
+				var app_svn_user=$.trim($('#add_app_svn_user').val());
+				var app_svn_password=$.trim($('#add_app_svn_password').val());
+				var execution_style = $("input[name='add_execution_style']:checked").val();
+				var operation_content=$('#add_selected_operation option').map(function(){return $.trim($(this).val());}).get().join(",");
+				var server_stop_style= "";
+				var server_stop_cmd= "";
+				var server_start_style= "";
+				var server_start_cmd= "";
+//				妈的因为不知道怎么传字典到后端，所以最后用拼接的方式把字典变成字符串的方式赋值给operation_arguments然后传递到后端eval解开一层字符串
+				var operation_arguments = "";
+				var sync_file_style_key = "文件同步方式";
+				var sync_file_style = "";
+				var sync_file_method_key = "文件同步方法";
+				var sync_file_method = "";
+				var sync_rsync_server_ip_key = "rsync源IP";
+				var sync_rsync_server_ip = $.trim($('#add_rsync_server_ip').val());
+				var sync_rsync_server_port_key = "rsync源端口";
+				var sync_rsync_server_port = $.trim($('#add_rsync_server_port').val());
+				var execute_command_1_key= "执行命令1";
+				var execute_command_1_cmd= "";
+				var execute_command_2_key= "执行命令2";
+				var execute_command_2_cmd= "";
+				if(operation_content.indexOf("同步文件")>-1){
+					sync_file_style = $("input[name='add_sync_file_style']:checked").val();
+                    operation_arguments = operation_arguments+'"' + sync_file_style_key +'":r"'+ sync_file_style +'",' ;
+                    sync_file_method = $("input[name='add_sync_file_method']:checked").val();
+                    operation_arguments = operation_arguments+'"' + sync_file_method_key +'":r"'+ sync_file_method +'",' ;
+                    if(sync_file_method=='rsync'){
+                        var reg1 = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/;
+                        // 判断rsync的IP输入是否为空
+                        if(sync_rsync_server_ip==""){
+                            $('#add_rsync_server_ip_help').text('请输入ip');
+                            //让输入框获取焦点用下面的,当输入内容时候取消告警提示的方法我全部放在xiaopggyunwei.js里了
+                            $("#add_rsync_server_ip")[0].focus();
+                            //清空输入框内容，因为有时候输入很多空格，我判断他为空
+                            $('#add_rsync_server_ip').val("");
+                            return false;
+                        }
+                        //判断ip格式是否正确
+                        else if(sync_rsync_server_ip.match(reg1)==null){
+                            $('#add_rsync_server_ip_help').text('IP格式不合法');
+                            $('#add_rsync_server_ip')[0].focus();
+                            return false;
+                        }
+
+                        // 判断rsync的端口是否正确
+                        var reg2 =/^([0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-5]{2}[0-3][0-5])$/;
+                        if(sync_rsync_server_port==""){
+                            $('#add_rsync_server_port_help').text('请输入端口');
+                            //让输入框获取焦点用下面的,当输入内容时候取消告警提示的方法我全部放在xiaopggyunwei.js里了
+                            $("#add_rsync_server_port")[0].focus();
+                            //清空输入框内容，因为有时候输入很多空格，我判断他为空
+                            $('#add_rsync_server_port').val("");
+                            return false;
+                        }
+                        //判断端口格式是否正确
+                        else if(sync_rsync_server_port.match(reg2)==null){
+                            $('#add_rsync_server_port_help').text('端口不合法');
+                            $('#add_rsync_server_port')[0].focus();
+                            return false;
+                        }
+                        operation_arguments = operation_arguments+'"' + sync_rsync_server_ip_key +'":r"'+ sync_rsync_server_ip +'",' ;
+                        operation_arguments = operation_arguments+'"' + sync_rsync_server_port_key +'":r"'+ sync_rsync_server_port +'",' ;
+                    }
+
+				}
+				if(operation_content.indexOf("应用停止")>-1){
+					server_stop_style = $("input[name='add_server_stop_style']:checked").val();
+                    server_stop_cmd = $.trim($("#add_server_stop_cmd").val());
+                    if(server_stop_cmd.length < 1){
+                        $('#add_server_stop_cmd_help').text('该项不能为空');
+                        $('#add_server_stop_cmd')[0].focus();
+					    return false;
+                    }
+                    if(server_stop_cmd.length >500){
+                        $('#add_server_stop_cmd_help').text('长度不能超过500');
+                        $('#add_server_stop_cmd')[0].focus();
+                        return false;
+				    }
+				    if(server_stop_style == '映像名称和命令行'){
+                        // 映像名称中出现双引号或者单引号要去掉，因为后台psutil命令返回结果拼接的时候去掉了引号，所以这里也要去掉才能逻辑匹配到
+                        if(server_stop_cmd.indexOf('"')>-1){
+                        server_stop_cmd = server_stop_cmd.replace(/"/g,'');
+                        }
+                        if(server_stop_cmd.indexOf("'")>-1){
+                            server_stop_cmd = server_stop_cmd.replace(/'/g,'');
+                        }
+                        operation_arguments = operation_arguments+'"' + server_stop_style +'":r"'+ server_stop_cmd +'",' ;
+                    }
+                    else if(server_stop_style == '停止命令'){
+                        // 注意顺序不要改下面的，因为两个if中都加了\所以一改，命令就变了不是原来的了
+                        if(server_stop_cmd.indexOf('\\')>-1){
+                            server_stop_cmd = server_stop_cmd.replace(/\\/g,'\\\\');
+				        }
+                        // 因为我是用双引号拼接起来的operation_arguments所以如果命令中有双引号python会调用出错，所以要出现双引号要转义下，单引号没事
+                        if(server_stop_cmd.indexOf('"')>-1){
+                            server_stop_cmd = server_stop_cmd.replace(/"/g,'\\\"');
+                        }
+                        // 注意命令行的话不要加r不然\会被原样输出
+                        operation_arguments = operation_arguments+'"' + server_stop_style +'":"'+ server_stop_cmd +'",' ;
+                    }else{
+                        // 默认都加r，这样python不会自动转义那些\t \n之类的，这些在windows中经常会遇到比如D:\text
+                        operation_arguments = operation_arguments+'"' + server_stop_style +'":r"'+ server_stop_cmd +'",' ;
+                    }
+
+				}
+				if(operation_content.indexOf("应用启动")>-1){
+					server_start_style = $("input[name='add_server_start_style']:checked").val();
+                    server_start_cmd = $.trim($("#add_server_start_cmd").val());
+                    if(server_start_cmd.length < 1){
+                        $('#add_server_start_cmd_help').text('该项不能为空');
+                        $('#add_server_start_cmd')[0].focus();
+					    return false;
+                    }
+                    if(server_start_cmd.length >500){
+                        $('#add_server_start_cmd_help').text('长度不能超过500');
+                        $('#add_server_start_cmd')[0].focus();
+                        return false;
+				    }
+				    if(server_start_style == '启动命令'){
+                        if(server_start_cmd.indexOf('\\')>-1){
+                            server_start_cmd = server_start_cmd.replace(/\\/g,'\\\\');
+				        }
+                        if(server_start_cmd.indexOf('"')>-1){
+                            server_start_cmd = server_start_cmd.replace(/"/g,'\\\"');
+                        }
+                        operation_arguments = operation_arguments+'"' + server_start_style +'":"'+ server_start_cmd +'",' ;
+                    }else{
+                        operation_arguments = operation_arguments+'"' + server_start_style +'":r"'+ server_start_cmd +'",' ;
+                    }
+
+				}
+				if(operation_content.indexOf("执行命令1")>-1){
+					execute_command_1_cmd = $.trim($("#add_execute_command_1_cmd").val());
+					if(execute_command_1_cmd.length < 1){
+                        $('#add_execute_command_1_cmd_help').text('该项不能为空');
+                        $('#add_execute_command_1_cmd')[0].focus();
+					    return false;
+                    }
+                    if(execute_command_1_cmd.indexOf('\\')>-1){
+                        execute_command_1_cmd = execute_command_1_cmd.replace(/\\/g,'\\\\');
+				    }
+				    if(execute_command_1_cmd.indexOf('"')>-1){
+                        execute_command_1_cmd = execute_command_1_cmd.replace(/"/g,'\\\"');
+				    }
+                    operation_arguments = operation_arguments+'"' + execute_command_1_key +'":"'+ execute_command_1_cmd +'",' ;
+				}
+				if(operation_content.indexOf("执行命令2")>-1){
+					execute_command_2_cmd = $.trim($("#add_execute_command_2_cmd").val());
+					if(execute_command_2_cmd.length < 1){
+                        $('#add_execute_command_2_cmd_help').text('该项不能为空');
+                        $('#add_execute_command_2_cmd')[0].focus();
+					    return false;
+                    }
+                    if(execute_command_2_cmd.indexOf('\\')>-1){
+                        execute_command_2_cmd = execute_command_2_cmd.replace(/\\/g,'\\\\');
+				    }
+				    if(execute_command_2_cmd.indexOf('"')>-1){
+                        execute_command_2_cmd = execute_command_2_cmd.replace(/"/g,'\\\"');
+				    }
+                    operation_arguments = operation_arguments+'"' + execute_command_2_key +'":"'+ execute_command_2_cmd +'",' ;
+				}
+				var app_backup_path = $.trim($('#add_app_backup_path').val());
+				var description = $.trim($('#add_description').val());
+
+                //提交之前清空密码框防止提示保存密码
+                $('#add_app_svn_password').val("");
+
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'app_release_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+//                    由于有密码字段要加下面的cache不然老提示保存密码
+                    cache:false,
+					data:{
+						'app_name':app_name,
+                        'sys_type':sys_type,
+                        'minion_id':minion_id,
+                        'app_path':app_path,
+                        'app_path_owner':app_path_owner,
+                        'app_svn_url':app_svn_url,
+                        'app_svn_user':app_svn_user,
+                        'app_svn_password':app_svn_password,
+                        'execution_style':execution_style,
+                        'operation_content':operation_content,
+                        'operation_arguments':'{'+operation_arguments+'}',
+                        'app_backup_path':app_backup_path,
+                        'description':description,
+                        'app_tag_key':'app_add'
+
+					},
+					success:function(result){
+						if(result.status){
+                            $('#app_add_modal').modal('toggle');
+                            toastr.success(result.result,'Success',{timeOut: 1500});
+                            setTimeout(function(){window.location.href=window.location.href}, 1000);
+						}else {
+//						    通过表单验证返回的错误是多层嵌套字典加列表，一层key是对应提交数据的key，二层有2个key一个是code一个是message，错误信息在message里
+						    $.each(result.result, function (k,v) {
+//						        把错误信息插入到对应的错误help位子
+                                $('#add_'+k+'_help').text(v[0].message);
+                            });
+						    // 如果提交失败要把提交前清空的密码框填充回去
+						    $('#add_app_svn_password').val(app_svn_password);
+//                            console.log(JSON.stringify(result.result));
+                        }
+					}
+				});
+
+			});
+
+
+//            查看应用明细
+            $('.view_detail').click(function () {
+                $('#view_app_name').val($.trim($(this).parent().siblings('.data_app_name').html()));
+                $('#view_minion_id').val($.trim($(this).parent().siblings('.data_minion_id').html()));
+                $('#view_operation_content').val($.trim($(this).parent().siblings('.data_operation_content').text()));
+                $('#view_update_time').val($.trim($(this).parent().siblings('.data_update_time').html()));
+                $('#view_app_svn_version').val($.trim($(this).parent().parent().find('.data_app_svn_version').html()));
+                $('#view_app_path').val($.trim($(this).parent().siblings('.data_app_path').html()));
+                $('#view_app_path_owner').val($.trim($(this).parent().siblings('.data_app_path_owner').html()));
+                $('#view_app_svn_url').val($.trim($(this).parent().siblings('.data_app_svn_url').html()));
+                $('#view_app_svn_user').val($.trim($(this).parent().siblings('.data_app_svn_user').html()));
+                $('#view_app_svn_co_path').val($.trim($(this).parent().siblings('.data_app_svn_co_path').html()));
+                $('#view_app_svn_version_success').val($.trim($(this).parent().siblings('.data_app_svn_version_success').html()));
+                $('#view_execution_style').val($.trim($(this).parent().siblings('.data_execution_style').html()));
+                $('#view_operation_arguments').val($.trim($(this).parent().siblings('.data_operation_arguments').html()));
+                $('#view_app_backup_path').val($.trim($(this).parent().siblings('.data_app_backup_path').html()));
+                $('#view_create_time').val($.trim($(this).parent().siblings('.data_create_time').html()));
+                $('#view_app_group_name').val($.trim($(this).parent().siblings('.data_app_group_name').html()));
+                $('#view_description').val($.trim($(this).parent().siblings('.data_description').html()));
+                $('#view_sys_type').val($.trim($(this).parent().siblings('.data_sys_type').html()));
+
+            });
+
+
+//            编辑按钮触发内容填充模态框
+            $('.edit_detail').click(function () {
+                //  隐藏新增按钮和显示更新按钮的显示
+                $("#add_app_submit").addClass("hidden");
+                $("#update_app_submit").removeClass("hidden");
+                $("#clone_app_submit").removeClass("hidden");
+
+                // 模态框标题修改
+                $('#app_add_lable').html('编辑应用发布');
+
+                $('#add_app_name').val($(this).parent().siblings('.data_app_name').html());
+                $("#add_app_name").attr('readonly','readonly');
+                var view_sys_data = $(this).parent().siblings('.data_sys_type').html();
+                if(view_sys_data=='windows'){
+                    $("input[name='add_sys_type']").eq(1).click();
+                }else{
+                    $("input[name='add_sys_type']").eq(0).click();
+                }
+//                之所以加一层if是因为minion_id由于minion表id删除会出现None的情况在minion_id全为空的时候，如果出现None我们就不需要做下面的填充内容操作，不然会填充None过去
+                if($(this).parent().siblings('.data_minion_id').html()){
+                    var minion_id = $(this).parent().siblings('.data_minion_id').html().split(',');
+                    for(var i=0;i<minion_id.length;i++) {
+                        $("<option value='"+minion_id[i]+"'>"+minion_id[i]+"</option>").appendTo("#add_selected_minion_id");
+                    }
+                }
+
+                $('#add_app_path').val($(this).parent().siblings('.data_app_path').html());
+                $('#add_app_path_owner').val($(this).parent().siblings('.data_app_path_owner').html());
+                $('#add_app_svn_url').val($(this).parent().siblings('.data_app_svn_url').html());
+                $('#add_app_svn_user').val($(this).parent().siblings('.data_app_svn_user').html());
+                $('#add_app_svn_password').val($(this).parent().siblings('.data_app_svn_password').html());
+
+                var data_execution_style = $(this).parent().siblings('.data_execution_style').html();
+                if(data_execution_style=='parallel'){
+                    $("input[name='add_execution_style']").eq(1).click();
+                }else{
+                    $("input[name='add_execution_style']").eq(0).click();
+                }
+
+                var content_data = $(this).parent().siblings('.data_operation_content').text().split('>>');
+                for(var i=0;i<content_data.length;i++) {
+                    $("<option value='"+content_data[i]+"'>"+content_data[i]+"</option>").appendTo("#add_selected_operation");
+                    $("#add_select_operation option[value="+content_data[i]+"]").remove();
+                    if($.trim(content_data[i]) == "同步文件"){
+                        $("#add_sync_file_div").removeClass("hidden");
+                        var sync_file_style = $.trim($(this).parent().siblings('.data_sync_file_style').html());
+//                       设置按值选中radio
+                        $("input[name='add_sync_file_style'][value="+sync_file_style+"]").click();
+
+                        $("#add_sync_file_method_div").removeClass("hidden");
+                        var sync_file_method = $.trim($(this).parent().siblings('.data_sync_file_method').html());
+//                       设置按值选中radio
+                        $("input[name='add_sync_file_method'][value="+sync_file_method+"]").click();
+                        if(sync_file_method=='rsync'){
+                            $("#add_rsync_server_content_div").removeClass("hidden");
+                            var sync_rsync_ip = $.trim($(this).parent().siblings('.data_sync_rsync_ip').html());
+                            var sync_rsync_port = $.trim($(this).parent().siblings('.data_sync_rsync_port').html());
+                            $('#add_rsync_server_ip').val(sync_rsync_ip);
+                            $('#add_rsync_server_port').val(sync_rsync_port);
+                        }
+                    }
+                    if($.trim(content_data[i]) == "应用停止"){
+                        $("#add_server_stop_div").removeClass("hidden");
+                        var stop_style = $.trim($(this).parent().siblings('.data_server_stop_style').html());
+//                       设置按值选中radio
+                        $("input[name='add_server_stop_style'][value="+stop_style+"]").click();
+                        var stop_cmd = $.trim($(this).parent().siblings('.data_server_stop_cmd').html());
+                        $("#add_server_stop_cmd").val(stop_cmd);
+                    }
+                    if($.trim(content_data[i]) == "应用启动"){
+                        $("#add_server_start_div").removeClass("hidden");
+                        var start_style = $.trim($(this).parent().siblings('.data_server_start_style').html());
+//                       设置按值选中radio
+                        $("input[name='add_server_start_style'][value="+start_style+"]").click();
+                        var start_cmd = $.trim($(this).parent().siblings('.data_server_start_cmd').html());
+                        $("#add_server_start_cmd").val(start_cmd);
+                    }
+                    if($.trim(content_data[i]) == "执行命令1"){
+                        $("#add_execute_command_1_div").removeClass("hidden");
+                        var execute_command_1_cmd = $.trim($(this).parent().siblings('.data_execute_command_1_cmd').html());
+                        $("#add_execute_command_1_cmd").val(execute_command_1_cmd);
+                    }
+                    if($.trim(content_data[i]) == "执行命令2"){
+                        $("#add_execute_command_2_div").removeClass("hidden");
+                        var execute_command_2_cmd = $.trim($(this).parent().siblings('.data_execute_command_2_cmd').html());
+                        $("#add_execute_command_2_cmd").val(execute_command_2_cmd);
+                    }
+                }
+
+                var app_backup_path = $(this).parent().siblings('.data_app_backup_path').html();
+                $("#add_app_backup_path").val(app_backup_path);
+
+                $('#add_description').val($(this).parent().siblings('.data_description').html());
+
+            });
+
+
+//          编辑应用更新按钮触发提交更新
+            $('#update_app_submit').click(function(){
+                var app_name = $.trim($('#add_app_name').val());
+				var sys_type = $("input[name='add_sys_type']:checked").val();
+				var minion_id=$('#add_selected_minion_id option').map(function(){return $(this).val();}).get().join(",");
+				var app_path=$.trim($('#add_app_path').val());
+				var app_path_owner=$.trim($('#add_app_path_owner').val());
+				var app_svn_url=$.trim($('#add_app_svn_url').val());
+				var app_svn_user=$.trim($('#add_app_svn_user').val());
+				var app_svn_password=$.trim($('#add_app_svn_password').val());
+				var execution_style = $("input[name='add_execution_style']:checked").val();
+				var operation_content=$('#add_selected_operation option').map(function(){return $.trim($(this).val());}).get().join(",");
+				var server_stop_style= "";
+				var server_stop_cmd= "";
+				var server_start_style= "";
+				var server_start_cmd= "";
+//				妈的因为不知道怎么传字典到后端，所以最后用拼接的方式把字典变成字符串的方式赋值给operation_arguments然后传递到后端eval解开一层字符串
+				var operation_arguments = "";
+//				var svn_rollback_version_key = "SVN回滚版本";
+//				var svn_rollback_version = "";
+				var sync_file_style_key = "文件同步方式";
+				var sync_file_style = "";
+				var sync_file_method_key = "文件同步方法";
+				var sync_file_method = "";
+				var sync_rsync_server_ip_key = "rsync源IP";
+				var sync_rsync_server_ip = $.trim($('#add_rsync_server_ip').val());
+				var sync_rsync_server_port_key = "rsync源端口";
+				var sync_rsync_server_port = $.trim($('#add_rsync_server_port').val());
+				var execute_command_1_key= "执行命令1";
+				var execute_command_1_cmd= "";
+				var execute_command_2_key= "执行命令2";
+				var execute_command_2_cmd= "";
+				if(operation_content.indexOf("同步文件")>-1){
+					sync_file_style = $("input[name='add_sync_file_style']:checked").val();
+                    operation_arguments = operation_arguments+'"' + sync_file_style_key +'":r"'+ sync_file_style +'",' ;
+                    sync_file_method = $("input[name='add_sync_file_method']:checked").val();
+                    operation_arguments = operation_arguments+'"' + sync_file_method_key +'":r"'+ sync_file_method +'",' ;
+                    if(sync_file_method=='rsync'){
+                        var reg1 = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/;
+                        // 判断rsync的IP输入是否为空
+                        if(sync_rsync_server_ip==""){
+                            $('#add_rsync_server_ip_help').text('请输入ip');
+                            //让输入框获取焦点用下面的,当输入内容时候取消告警提示的方法我全部放在xiaopggyunwei.js里了
+                            $("#add_rsync_server_ip")[0].focus();
+                            //清空输入框内容，因为有时候输入很多空格，我判断他为空
+                            $('#add_rsync_server_ip').val("");
+                            return false;
+                        }
+                        //判断ip格式是否正确
+                        else if(sync_rsync_server_ip.match(reg1)==null){
+                            $('#add_rsync_server_ip_help').text('IP格式不合法');
+                            $('#add_rsync_server_ip')[0].focus();
+                            return false;
+                        }
+
+                        // 判断rsync的端口是否正确
+                        var reg2 =/^([0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-5]{2}[0-3][0-5])$/;
+                        if(sync_rsync_server_port==""){
+                            $('#add_rsync_server_port_help').text('请输入端口');
+                            //让输入框获取焦点用下面的,当输入内容时候取消告警提示的方法我全部放在xiaopggyunwei.js里了
+                            $("#add_rsync_server_port")[0].focus();
+                            //清空输入框内容，因为有时候输入很多空格，我判断他为空
+                            $('#add_rsync_server_port').val("");
+                            return false;
+                        }
+                        //判断端口格式是否正确
+                        else if(sync_rsync_server_port.match(reg2)==null){
+                            $('#add_rsync_server_port_help').text('端口不合法');
+                            $('#add_rsync_server_port')[0].focus();
+                            return false;
+                        }
+                        operation_arguments = operation_arguments+'"' + sync_rsync_server_ip_key +'":r"'+ sync_rsync_server_ip +'",' ;
+                        operation_arguments = operation_arguments+'"' + sync_rsync_server_port_key +'":r"'+ sync_rsync_server_port +'",' ;
+                    }
+
+
+				}
+				if(operation_content.indexOf("应用停止")>-1){
+					server_stop_style = $("input[name='add_server_stop_style']:checked").val();
+                    server_stop_cmd = $.trim($("#add_server_stop_cmd").val());
+                    if(server_stop_cmd.length < 1){
+                        $('#add_server_stop_cmd_help').text('该项不能为空');
+                        $('#add_server_stop_cmd')[0].focus();
+					    return false;
+                    }
+                    if(server_stop_cmd.length >500){
+                        $('#add_server_stop_cmd_help').text('长度不能超过500');
+                        $('#add_server_stop_cmd')[0].focus();
+                        return false;
+				    }
+
+				    if(server_stop_style == '映像名称和命令行'){
+                        if(server_stop_cmd.indexOf('"')>-1){
+                        server_stop_cmd = server_stop_cmd.replace(/"/g,'');
+                        }
+                        if(server_stop_cmd.indexOf("'")>-1){
+                            server_stop_cmd = server_stop_cmd.replace(/'/g,'');
+                        }
+                        operation_arguments = operation_arguments+'"' + server_stop_style +'":r"'+ server_stop_cmd +'",' ;
+                    }
+                    else if(server_stop_style == '停止命令'){
+                        // 注意顺序不要改下面的，因为两个if中都加了\所以一改，命令就变了不是原来的了
+                        if(server_stop_cmd.indexOf('\\')>-1){
+                            server_stop_cmd = server_stop_cmd.replace(/\\/g,'\\\\');
+				        }
+                        if(server_stop_cmd.indexOf('"')>-1){
+                            server_stop_cmd = server_stop_cmd.replace(/"/g,'\\\"');
+                        }
+                        operation_arguments = operation_arguments+'"' + server_stop_style +'":"'+ server_stop_cmd +'",' ;
+                    }else{
+                        operation_arguments = operation_arguments+'"' + server_stop_style +'":r"'+ server_stop_cmd +'",' ;
+                    }
+
+				}
+				if(operation_content.indexOf("应用启动")>-1){
+					server_start_style = $("input[name='add_server_start_style']:checked").val();
+                    server_start_cmd = $.trim($("#add_server_start_cmd").val());
+                    if(server_start_cmd.length < 1){
+                        $('#add_server_start_cmd_help').text('该项不能为空');
+                        $('#add_server_start_cmd')[0].focus();
+					    return false;
+                    }
+                    if(server_start_cmd.length >500){
+                        $('#add_server_start_cmd_help').text('长度不能超过500');
+                        $('#add_server_start_cmd')[0].focus();
+                        return false;
+				    }
+				    if(server_start_style == '启动命令'){
+                        if(server_start_cmd.indexOf('\\')>-1){
+                            server_start_cmd = server_start_cmd.replace(/\\/g,'\\\\');
+				        }
+                        if(server_start_cmd.indexOf('"')>-1){
+                            server_start_cmd = server_start_cmd.replace(/"/g,'\\\"');
+                        }
+                        operation_arguments = operation_arguments+'"' + server_start_style +'":"'+ server_start_cmd +'",' ;
+                    }else{
+                        operation_arguments = operation_arguments+'"' + server_start_style +'":r"'+ server_start_cmd +'",' ;
+                    }
+
+				}
+				if(operation_content.indexOf("执行命令1")>-1){
+					execute_command_1_cmd = $.trim($("#add_execute_command_1_cmd").val());
+					if(execute_command_1_cmd.length < 1){
+                        $('#add_execute_command_1_cmd_help').text('该项不能为空');
+                        $('#add_execute_command_1_cmd')[0].focus();
+					    return false;
+                    }
+                    if(execute_command_1_cmd.indexOf('\\')>-1){
+                        execute_command_1_cmd = execute_command_1_cmd.replace(/\\/g,'\\\\');
+				    }
+				    if(execute_command_1_cmd.indexOf('"')>-1){
+                        execute_command_1_cmd = execute_command_1_cmd.replace(/"/g,'\\\"');
+				    }
+                    operation_arguments = operation_arguments+'"' + execute_command_1_key +'":"'+ execute_command_1_cmd +'",' ;
+				}
+				if(operation_content.indexOf("执行命令2")>-1){
+					execute_command_2_cmd = $.trim($("#add_execute_command_2_cmd").val());
+					if(execute_command_2_cmd.length < 1){
+                        $('#add_execute_command_2_cmd_help').text('该项不能为空');
+                        $('#add_execute_command_2_cmd')[0].focus();
+					    return false;
+                    }
+                    if(execute_command_2_cmd.indexOf('\\')>-1){
+                        execute_command_2_cmd = execute_command_2_cmd.replace(/\\/g,'\\\\');
+				    }
+				    if(execute_command_2_cmd.indexOf('"')>-1){
+                        execute_command_2_cmd = execute_command_2_cmd.replace(/"/g,'\\\"');
+				    }
+                    operation_arguments = operation_arguments+'"' + execute_command_2_key +'":"'+ execute_command_2_cmd +'",' ;
+				}
+				var app_backup_path = $.trim($('#add_app_backup_path').val());
+				var description = $.trim($('#add_description').val());
+
+                // 把密码框改成清空
+                $('#add_app_svn_password').val("");
+
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'app_release_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+                    cache:false,
+					data:{
+						'app_name':app_name,
+                        'sys_type':sys_type,
+                        'minion_id':minion_id,
+                        'app_path':app_path,
+                        'app_path_owner':app_path_owner,
+                        'app_svn_url':app_svn_url,
+                        'app_svn_user':app_svn_user,
+                        'app_svn_password':app_svn_password,
+                        'execution_style':execution_style,
+                        'operation_content':operation_content,
+                        'operation_arguments':'{'+operation_arguments+'}',
+                        'app_backup_path':app_backup_path,
+                        'description':description,
+                        'app_tag_key':'app_update'
+
+					},
+					success:function(result){
+						if(result.status){
+                            $('#app_add_modal').modal('toggle');
+                            toastr.success(result.result,'Success',{timeOut: 1500});
+                            setTimeout(function(){window.location.href=window.location.href}, 1000);
+						}else {
+//						    通过表单验证返回的错误是多层嵌套字典加列表，一层key是对应提交数据的key，二层有2个key一个是code一个是message，错误信息在message里
+						    $.each(result.result, function (k,v) {
+//						        把错误信息插入到对应的错误help位子
+                                $('#add_'+k+'_help').text(v[0].message);
+                            });
+						    // 如果ajax失败了则要记得把提交前清空的密码框再填充回去
+						    $('#add_app_svn_password').val(app_svn_password);
+                           console.log(JSON.stringify(result.result));
+                        }
+					}
+				});
+			});
+
+
+//            点击删除填充模态框
+            $('.delete_app').click(function () {
+                $('.hidden_app_name').val($(this).parent().siblings('.data_app_name').html());
+                $('input[name=delete_app_file_select]').removeAttr('checked');
+                $('.delete_app_file_select_help').html('');
+            });
+
+//            删除框里单选框点击事件
+            $("input[name='delete_app_file_select']").click(function () {
+                $('.delete_app_file_select_help').html('');
+            });
+//            点击确定删除应用
+            $('#delete_app_button').click(function(){
+				var app_name=$.trim($('.hidden_app_name').val());
+				var delete_app_file_select = $("input[name='delete_app_file_select']:checked").val();
+				if(delete_app_file_select == null){
+                    $('.delete_app_file_select_help').html('未选择是否删除文件夹');
+                    return false
+                }
+				$('#delete_app_modal').modal('toggle');
+				$.ajax({
+					url:"{% url 'app_release_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+//                    提交的数据要和后台form验证的变量一致，不过可以多出来，只要验证的有就行，比如这里就多了project_tag_key
+					data:{
+                        'app_name':app_name,
+                        'delete_app_file_select':delete_app_file_select,
+                        'app_tag_key':'app_delete'
+
+					},
+					success:function(result){
+						if(result.status){
+                            $('.loading_modal').modal('toggle');
+                            toastr.success(result.result,'Success',{timeOut: 1500});
+                            setTimeout(function(){window.location.href=window.location.href}, 1000);
+						}else {
+						    $('.loading_modal').modal('toggle');
+						    toastr.error(result.result,'Error',{timeOut: 1500});
+                        }
+					}
+				});
+			});
+
+
+//            检查svn版本
+            $('.check_svn').click(function () {
+                var app_name = $.trim($(this).parent().siblings('.data_app_name').html());
+                var server_svn_version = $(this).siblings('.data_server_svn_version');
+                server_svn_version.css('color','royalblue');
+                server_svn_version.html('查询..');
+                var re_button = $(this);
+//                改变按钮的样子变成正在执行。。。，原来用下面这个bootstrap自带的，发现有一个问题最后$btn.button("reset")会影响到我disabled
+//                掉按钮的操作，死活都无法添加disabled属性到button里，没办法下面改成手动写一个正在执行....
+//                var $btn = $(this).button('loading');
+                re_button.html("检查..");
+                re_button.attr("disabled",true);
+
+                $.ajax({
+					url:"{% url 'app_release_ajax' %}",
+					type:'GET',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'app_name':app_name,
+                        'app_tag_key':'check_svn'
+
+					},
+					success:function(result){
+						if(result.status){
+//						    console.log(JSON.stringify(result.result));
+                            server_svn_version.css('color','royalblue');
+                            server_svn_version.html(result.result);
+                            re_button.html("检查");
+                            re_button.attr("disabled",false);
+						}else {
+						    server_svn_version.css('color','#CC5522');
+                            server_svn_version.html('查询失败');
+                            re_button.html("检查");
+                            re_button.attr("disabled",false);
+                        }
+					}
+				});
+            });
+
+//            点击 发布 按钮跳出svn版本输入模态框等操作
+            $('.release_app').click(function () {
+                $('#release_svn_version_modal').modal('toggle');
+//                清空模态框内容
+                $('#release_svn_version').val('');
+                $('#trSeq').val('');
+                $('#release_style').val('');
+                $('#release_style').val('single');
+//                获取行号，发布函数通过行号来定位发布的位子哈哈
+                var trSeq = $(this).parent().parent().parent().find("tr").index($(this).parent().parent()[0]);
+                $('#trSeq').val(trSeq);
+            });
+
+//            批量发布 按钮点击事件
+            $('.app_batch_release_button').click(function () {
+                $('#release_svn_version_modal').modal('toggle');
+//                清空模态框内容
+                $('#release_svn_version').val('');
+                $('#trSeq').val('');
+                $('#release_style').val('');
+//                利用给release_style赋值的关键字作为判断是批量还是单台发布
+                $('#release_style').val('batch');
+            });
+
+//            svn版本输入模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
+            $('#release_svn_version_modal').on('shown.bs.modal', function () {
+                $("#release_svn_version").focus();
+            });
+
+//            点击svn版本输入模态框 确认 按钮执行发布操作
+            $('#release_app_button').click(function () {
+                var release_svn_version = $('#release_svn_version').val();
+                var release_style = $('#release_style').val();
+                var tr_list = [];
+                if(release_style == 'single'){
+                    tr_list.push($('#trSeq').val());
+                }else if(release_style == 'batch'){
+                    if($('input[name="checkItem"]:checked').length<1){
+                        toastr.error('没有选中的应用','Error',{timeOut: 1500});
+                        return false
+                    }
+                    $('input[name="checkItem"]:checked').each(function () {
+                       tr_list.push($(this).parent().parent().parent().find("tr").index($(this).parent().parent()[0]));
+                    });
+                }
+
+                release_app(release_svn_version,tr_list);
+                $('#release_svn_version_modal').modal('toggle');
+            });
+
+//            应用发布 函数
+            var release_app = function (release_svn_version,tr_list) {
+                var tr_list = tr_list;
+                $.each(tr_list,function () {
+                    var app_name = $.trim($('.trSeq').eq(this).find('.data_app_name').html());
+                    var svn_version = '';
+                    var release_status = $('.trSeq').eq(this).children('.release_status');
+                    release_status.css('color','royalblue');
+                    release_status.html('发布中..');
+                    var re_button = $('.trSeq').eq(this).find('.release_app');
+                    var backup_button = $('.trSeq').eq(this).find('.backup_app');
+                    backup_button.attr("disabled",true);
+                    var restore_button = $('.trSeq').eq(this).find('.restore_app');
+                    restore_button.attr("disabled",true);
+    //                改变按钮的样子变成正在执行。。。，原来用下面这个bootstrap自带的，发现有一个问题最后$btn.button("reset")会影响到我disabled
+    //                掉按钮的操作，死活都无法添加disabled属性到button里，没办法下面改成手动写一个正在执行....
+    //                var $btn = $(this).button('loading');
+                    re_button.html("发布中...");
+                    re_button.attr("disabled",true);
+
+                    if(release_svn_version){
+                        svn_version = release_svn_version;
+                    }else{
+                        svn_version = 'HEAD';
+                    }
+
+                    $.ajax({
+                        url:"{% url 'app_release_ajax' %}",
+                        type:'POST',
+                        dataType:'json',
+                        //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+                        traditional:true,
+                        timeout: 180000,
+                        data:{
+                            'app_name':app_name,
+                            'release_svn_version':svn_version,
+                            'app_tag_key':'release_app'
+
+
+                        },
+                        success:function(result){
+                            if(result.status){
+                                release_status.css('color','green');
+                                release_status.html('发布成功');
+                                re_button.html("发布");
+                                re_button.attr("disabled",false);
+                                backup_button.attr("disabled",false);
+                                restore_button.attr("disabled",false);
+                            }else {
+                                release_status.css('color','red');
+                                release_status.html('发布失败');
+                                re_button.html("发布");
+                                re_button.attr("disabled",false);
+                                backup_button.attr("disabled",false);
+                                restore_button.attr("disabled",false);
+                            }
+                        },
+                        error:function (xhr) {
+                            release_status.css('color','#337ab7');
+                            release_status.html('发布时间较长，请稍后查看日志');
+                            re_button.html("发布");
+                            re_button.attr("disabled",false);
+                            backup_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
+                        }
+                    });
+                });
+
+            };
+
+
+//            单项操作 弹出提示框
+            $('.app_single_release_btn').click(function () {
+                var single_cmd = $.trim($(this).text());
+                $('.single_release_svn_version').val('');
+                if(single_cmd == 'SVN更新'){
+                    $('.single_release_svn_version').removeClass('hidden');
+                }else{
+                    $('.single_release_svn_version').addClass('hidden');
+                }
+                var app_name = $.trim($(this).parent().siblings('.data_app_name').html());
+                $('.single_operation_app_name').text(app_name);
+                $('.single_cmd').text(single_cmd);
+                var trSeq = $(this).parent().parent().parent().find("tr").index($(this).parent().parent()[0]);
+                $('.single_release_trSeq').val(trSeq);
+                $('#single_operation_app_modal').modal('toggle');
+            });
+
+//            单项操作 svn版本输入模态框 打开后获取焦点的框，注意模态框获取焦点必须单独在模态框shown事件中写才有效
+            $('#single_operation_app_modal').on('shown.bs.modal', function () {
+                $('.single_release_svn_version')[0].focus()
+            });
+
+//            单项操作 点击确认执行发布单项操作
+            $('#single_operation_app_button').click(function () {
+                var svn_version='';
+                var app_name = $.trim($('.single_operation_app_name').text());
+                var single_cmd = $.trim($('.single_cmd').text());
+                var single_release_svn_version = $('.single_release_svn_version').val();
+                var trSeq = $('.single_release_trSeq').val();
+                var release_status = $('.trSeq').eq(trSeq).children('.release_status');
+                release_status.css('color','royalblue');
+                release_status.html('执行中..');
+//                禁用掉发布和还原按钮，然后改变备份按钮成备份中状态
+                var release_button = $('.trSeq').eq(trSeq).find('.release_app');
+                release_button.attr("disabled",true);
+                var restore_button = $('.trSeq').eq(trSeq).find('.restore_app');
+                restore_button.attr("disabled",true);
+                var backup_button = $('.trSeq').eq(trSeq).find('.backup_app');
+                backup_button.attr("disabled",true);
+                if(single_release_svn_version){
+                    svn_version = single_release_svn_version;
+                }else{
+                    svn_version = 'HEAD';
+                }
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'app_release_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'app_name':app_name,
+                        'release_svn_version':svn_version,
+                        'single_cmd':single_cmd,
+                        'app_tag_key':'release_app'
+
+					},
+					success:function(result){
+						if(result.status){
+                            release_status.css('color','green');
+                            release_status.html('执行成功');
+                            backup_button.attr("disabled",false);
+                            release_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
+                        }else {
+                            release_status.css('color','red');
+                            release_status.html('执行失败');
+                            backup_button.attr("disabled",false);
+                            release_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
+                        }
+					}
+				});
+
+            });
+
+//            查询日志函数封装
+            var search_log_object = function (page) {
+                var app_name=$.trim($('.log_app_name').html());
+				var page = page||1;
+				$.ajax({
+					url:"{% url 'app_release_ajax' %}",
+					type:'GET',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+//                    提交的数据要和后台form验证的变量一致，不过可以多出来，只要验证的有就行，比如这里就多了project_tag_key
+					data:{
+                        'app_name':app_name,
+                        'page':page,
+                        'app_tag_key':'search_app_log'
+
+					},
+					success:function(result){
+					    if(result.status) {
+                            $('.log_pager').empty();
+                            if (result.has_previous) {
+                                $('<li><a href="javascript:void(0);" class="app_log_btn" onclick="search_log_object(' + result.previous_page_number + ')">上一页</a></li>').appendTo('.log_pager');
+                            } else {
+                                $('<li class="disabled"><a href="javascript:void(0);">上一页</a></li>').appendTo('.log_pager');
+                            }
+
+                            $('<li class="current"> 页数 ' + result.number + ' / ' + result.num_pages + '</li>').appendTo('.log_pager');
+
+                            if (result.has_next) {
+                                $('<li><a href="javascript:void(0);" class="app_log_btn" onclick="search_log_object(' + result.next_page_number + ')">下一页</a></li>').appendTo('.log_pager');
+                            } else {
+                                $('<li class="disabled"><a href="javascript:void(0);">下一页</a></li>').appendTo('.log_pager');
+                            }
+                            $('<li>&nbsp;&nbsp;<input type="text"  style="width: 30px;border-radius: 30%;" id="log_page_index">/' + result.num_pages + '页<button type="button" class="btn btn-sm btn-success log_page_go"  >跳转</button></li>').appendTo('.log_pager');
+
+
+                            $('#modal_app_log').empty();
+                            $.each(result.log_content,function (index,content) {
+                                $('#modal_app_log').text($('#modal_app_log').text()+content)
+                            });
+                            $('.log_create_time').html(result.create_time);
+                            $('.log_release_result').html(result.release_result);
+                            $('.log_app_username').html(result.log_app_username);
+                        }else {
+					        $('.log_pager').empty();
+						    $('#modal_app_log').empty();
+						    $('.log_create_time').html('');
+                            $('.log_release_result').html('');
+                            $('.log_app_username').html('');
+                            $('#modal_app_log').html('查询出错了，不好意思');
+                        }
+					}
+				});
+            };
+//            因为上一页下一页是用的onclick事件，而onclick只能调用windows作为上下文基点的函数所以需要加下面这个
+            window.search_log_object = search_log_object;
+
+//            日志查询按钮
+            $('.search_log').click(function () {
+//                代入参数和清空一些东西
+                $('#modal_app_log').html('');
+
+                var app_name = $(this).parent().siblings('.data_app_name').html();
+                $(".log_app_name").html(app_name);
+                search_log_object();
+            });
+
+//            日志页面 跳转按钮事件,由于按钮是动态生成的无法直接调用click实现必须用delegate，注意父元素一定要存在不是未来的
+            $('.log_pager').delegate(".log_page_go","click",function () {
+               var page_num = $('#log_page_index').val();
+               search_log_object(page_num);
+            });
+
+
+//            点击日志里的刷新，刷新日志
+            $('.app_log_btn').click(function(){
+				search_log_object();
+			});
+
+//            点击备份按钮 打开确认备份页
+            $('.backup_app').click(function () {
+                var data_app_backup_path = $(this).parent().siblings('.data_app_backup_path').html();
+                var app_name = $(this).parent().siblings('.data_app_name').html();
+                if(data_app_backup_path){
+                    var trSeq = $(this).parent().parent().parent().find("tr").index($(this).parent().parent()[0]);
+                    $('.backup_trSeq').val(trSeq);
+                    $('.backup_app_name').val(app_name);
+                    $('#backup_app_modal').modal('toggle');
+                }else{
+                    toastr.error('没有备份目录，请编辑应用增加备份目录','Error',{timeOut: 2000});
+                }
+            });
+
+//            点击备份确认页的 确认按钮，确认备份
+            $('#backup_app_button').click(function () {
+                var app_name = $('.backup_app_name').val();
+                var trSeq = $('.backup_trSeq').val();
+                var release_status = $('.trSeq').eq(trSeq).children('.release_status');
+                release_status.css('color','royalblue');
+                release_status.html('备份中..');
+//                禁用掉发布和还原按钮，然后改变备份按钮成备份中状态
+                var release_button = $('.trSeq').eq(trSeq).find('.release_app');
+                release_button.attr("disabled",true);
+                var restore_button = $('.trSeq').eq(trSeq).find('.restore_app');
+                restore_button.attr("disabled",true);
+                var backup_button = $('.trSeq').eq(trSeq).find('.backup_app');
+                backup_button.html("备份中...");
+                backup_button.attr("disabled",true);
+
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'app_release_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'app_name':app_name,
+                        'app_tag_key':'app_backup'
+
+					},
+					success:function(result){
+						if(result.status){
+                            release_status.css('color','green');
+                            release_status.html('备份成功');
+                            backup_button.html("备份");
+                            backup_button.attr("disabled",false);
+                            release_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
+                        }else {
+                            release_status.css('color','red');
+                            release_status.html('备份失败');
+                            backup_button.html("备份");
+                            backup_button.attr("disabled",false);
+                            release_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
+                        }
+					}
+				});
+            });
+
+//            点击还原按钮 执行还原
+            $('.restore_app').click(function () {
+                var data_app_backup_path = $(this).parent().siblings('.data_app_backup_path').html();
+                var app_name = $(this).parent().siblings('.data_app_name').html();
+                if(data_app_backup_path){
+                    var trSeq = $(this).parent().parent().parent().find("tr").index($(this).parent().parent()[0]);
+                    $('.restore_trSeq').val(trSeq);
+                    $('.restore_app_name').val(app_name);
+                    $('#restore_app_modal').modal('toggle');
+                }else{
+                    toastr.error('没有备份目录，请编辑应用增加备份目录','Error',{timeOut: 2000});
+                }
+            });
+
+//            点击还原确认页的 确认按钮，确认备份
+            $('#restore_app_button').click(function () {
+                var app_name = $('.restore_app_name').val();
+                var trSeq = $('.restore_trSeq').val();
+                var release_status = $('.trSeq').eq(trSeq).children('.release_status');
+                release_status.css('color','royalblue');
+                release_status.html('还原中..');
+//                禁用掉发布和还原按钮，然后改变备份按钮成备份中状态
+                var release_button = $('.trSeq').eq(trSeq).find('.release_app');
+                release_button.attr("disabled",true);
+                var backup_button = $('.trSeq').eq(trSeq).find('.backup_app');
+                backup_button.attr("disabled",true);
+                var restore_button = $('.trSeq').eq(trSeq).find('.restore_app');
+                restore_button.html("还原中..");
+                restore_button.attr("disabled",true);
+
+//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
+				$.ajax({
+					url:"{% url 'app_release_ajax' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'app_name':app_name,
+                        'app_tag_key':'app_restore'
+
+					},
+					success:function(result){
+						if(result.status){
+                            release_status.css('color','green');
+                            release_status.html('还原成功');
+                            restore_button.html("还原");
+                            backup_button.attr("disabled",false);
+                            release_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
+                        }else {
+                            release_status.css('color','red');
+                            release_status.html('还原失败');
+                            restore_button.html("还原");
+                            backup_button.attr("disabled",false);
+                            release_button.attr("disabled",false);
+                            restore_button.attr("disabled",false);
+                        }
+					}
+				});
+            });
+
+//            搜索框回车触发查询按钮事件
+            $("#search_content").keydown(function (e) {
+                if (e.keyCode == 13) {
+                    $('.search_btn').click();
+                }
+            });
+
+
+            getForm();
+
+            function getForm(page) {
+                page = 2;
+                $.ajax({
+					url:"{%url 'appreleaselist-list'%}",
+					type:'GET',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'page':page
+
+					},
+					success:function(data){
+						console.log(data.results);
+						// $.each(data.results,function (index,content) {
+                         //        $('.trSeq').append(
+                         //            <td><input type="checkbox" name="checkItem" /></td>
+                         //            <td class="data_app_name">content.app_name</td>
+                        //
+                         //        )
+                         //    });
+					}
+				});
+            }
+
+		});
+
+</script>
+
+{% endblock %}
+
+{% block panel-title_content %}新应用发布{% endblock %}
+
+{% block panel_body_content %}
+
+
+<div class="row-fluid ">
+    <div class="col-xs-12 overflow_set"  >
+        <div style="margin-bottom: 5px;">
+            <!--下面这里本来是用form的样式的，后来改成div是因为用form默认带了回车会提交表单的功能，所以改成div不过class还是form的哈哈-->
+            <div class="form-inline" role="form">
+                <div class="form-group">
+                    {% if request.user.is_superuser %}
+                    <button type="button" class="btn btn-success app_add_button" data-toggle="modal" data-target="#app_add_modal">新增应用</button>
+                    {% endif %}
+                    <button type="button" class="btn btn-primary app_batch_release_button" >批量发布</button>
+                </div>
+
+
+                  <div class="form-group pull-right">
+                        <label for="search_field">查询字段</label>
+                        <select class="form-control" id="search_field">
+                            <option value="search_app_name">应用名称</option>
+                            {% if search_field == "search_minion_id" %}
+                            <option value="search_minion_id" selected>Minion_ID</option>
+                            <option value="search_svn_url" >svn地址</option>
+                            {% elif search_field == "search_svn_url" %}
+                            <option value="search_minion_id">Minion_ID</option>
+                            <option value="search_svn_url" selected>svn地址</option>
+                            {% else %}
+                            <option value="search_minion_id">Minion_ID</option>
+                            <option value="search_svn_url">svn地址</option>
+                            {% endif %}
+                        </select>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="search_content" placeholder="请输入查询条件" value="{{ search_content }}">
+                              <span class="input-group-btn">
+                                <button type="submit" class="btn btn-primary search_btn"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
+                              </span>
+                        </div>
+                  </div>
+
+
+            </div>
+
+        </div>
+        <table class="table table-hover  table-bordered table-striped  table-condensed" >
+            <!--<caption>主机列表</caption>-->
+            <thead>
+            <!--给下面tr加个success是bootstrap的一个类颜色会改变下呵呵-->
+              <tr class="success" >
+                  <th width="40px"><input type="checkbox" id="checkAll" name="checkAll" /></th>
+                  <th width="10%">应用名称</th>
+                  <th width="120px">Minion_ID</th>
+                  <th width="17%">操作步骤</th>
+                  <th  width="145px" >应用操作</th>
+                  <th width="220px" style="text-align: left;">SVN版本比对</th>
+                  <th width="220px" style="">发布操作</th>
+                  <th width="6%">发布状态</th>
+
+              </tr>
+            </thead>
+            <tbody>
+                {% for data in data_list%}
+                <tr class="trSeq">
+                    <td><input type="checkbox" name="checkItem" /></td>
+                    <td class="data_app_name">{{ data.app_name }}</td>
+                    <td class="data_minion_id">{{ data.minion_id }}</td>
+                    <td class="data_operation_content ">
+                        {% for argument in data.operation_content|my_split:','%}{% if forloop.last %}<a  class="app_single_release_btn" style="cursor: pointer;text-decoration: none;">{{ argument }}</a>{% else %}<a  class="app_single_release_btn" style="cursor: pointer;text-decoration: none;">{{ argument }}</a>>>{% endif %}{% endfor %}
+                    </td>
+                    <td class="data_update_time hidden">{{ data.update_time }}</td>
+                    <td class="data_operation" style="padding: 0;">
+                        <button type="button" class="btn btn-info btn-sm view_detail" data-toggle="modal" data-target="#view_app_modal">查看</button>
+                        {% if request.user.is_superuser %}
+                        <button type="button" class="btn btn-info btn-sm edit_detail " data-toggle="modal" data-target="#app_add_modal">编辑</button>
+                        <button type="button" class="btn btn-danger btn-sm delete_app" data-toggle="modal" data-target="#delete_app_modal">删除</button>
+                        {% endif %}
+                    </td>
+                    <td  style="padding: 0 0 0 3px;text-align: left;">应用:
+                        {% if data.app_svn_version %}
+                        <span class="data_app_svn_version" style="color: royalblue;">{{ data.app_svn_version }}</span>
+                        {% else %}
+                        <span class="data_app_svn_version" style="color: #CC5522">未检出</span>
+                        {% endif %}
+                        　库:<span class="data_server_svn_version" style="color: #CC5522">未检查</span>
+                        　{% if data.app_svn_version %}
+                        <button type="button" class="btn btn-info btn-sm check_svn " style="">检查</button>
+                        {% else%}
+                        <button type="button" class="btn btn-info btn-sm check_svn" disabled="disabled">检查</button>
+                        {% endif %}</td>
+
+                    <td class="data_release_operation" style="padding: 0;">
+                        <button type="button" class="btn btn-primary btn-sm release_app" >发布</button>
+                        <!--<button type="button" class="btn btn-primary btn-sm search_log" data-toggle="modal" data-target="#search_app_log">回滚</button>-->
+                        <button type="button" class="btn btn-info btn-sm backup_app" data-toggle="tooltip" title="如没有指定备份目录，请在应用操作编辑的应用备份目录中添加">备份</button>
+                        <button type="button" class="btn btn-info btn-sm restore_app" data-toggle="tooltip" title="仅还原应用文件不执行其他操作">还原</button>
+                        <button type="button" class="btn btn-info btn-sm search_log" data-toggle="modal" data-target="#search_app_log">日志</button>
+
+                    </td>
+                    <td class="release_status "></td>
+
+                    {% for key,value in data.operation_arguments|my_eval %}
+                    {% if key == "停止命令" or key == "映像名称和命令行" or key == "任务计划停止" or key == "停止服务名" or key == "supervisor_stop" %}
+                    <td class="data_server_stop_style hidden">{{ key }}</td>
+                    <td class="data_server_stop_cmd hidden">{{ value }}</td>
+
+                    {% elif key == "启动命令" or key == "启动服务名" or key == "任务计划启动" or key == "supervisor_start" %}
+                    <td class="data_server_start_style hidden">{{ key }}</td>
+                    <td class="data_server_start_cmd hidden">{{ value }}</td>
+                    {% elif key == "文件同步方式" %}
+                    <td class="data_sync_file_style hidden">{{ value }}</td>
+                    {% elif key == "文件同步方法" %}
+                    <td class="data_sync_file_method hidden">{{ value }}</td>
+                    {% elif key == "rsync源IP" %}
+                    <td class="data_sync_rsync_ip hidden">{{ value }}</td>
+                    {% elif key == "rsync源端口" %}
+                    <td class="data_sync_rsync_port hidden">{{ value }}</td>
+                    {% elif key == "执行命令1" %}
+                    <td class="data_execute_command_1 hidden">{{ key }}</td>
+                    <td class="data_execute_command_1_cmd hidden">{{ value }}</td>
+                    {% elif key == "执行命令2" %}
+                    <td class="data_execute_command_2 hidden">{{ key }}</td>
+                    <td class="data_execute_command_2_cmd hidden">{{ value }}</td>
+                    {% endif %}
+                    {% endfor %}
+
+                    <td class="data_sys_type hidden">{{ data.sys_type }}</td>
+                    <td class="data_app_path hidden">{{ data.app_path }}</td>
+                    <td class="data_app_path_owner hidden">{{ data.app_path_owner }}</td>
+                    <td class="data_app_svn_url hidden">{{ data.app_svn_url }}</td>
+                    <td class="data_app_svn_user hidden">{{ data.app_svn_user }}</td>
+                    <td class="data_app_svn_password hidden">{{ data.app_svn_password }}</td>
+                    <td class="data_app_svn_co_path hidden">{{ data.app_svn_co_path }}</td>
+                    <td class="data_app_svn_version_success hidden">{{ data.app_svn_version_success }}</td>
+                    <td class="data_execution_style hidden">{{ data.execution_style }}</td>
+                    <td class="data_operation_arguments hidden">{{ data.operation_arguments }}</td>
+                    <td class="data_app_backup_path hidden">{{ data.app_backup_path }}</td>
+                    <td class="data_create_time hidden">{{ data.create_time |date:"Y年m月d日 H:i:s" }}</td>
+                    <td class="data_app_group_name hidden">{{ data.app_group_name }}</td>
+                    <td class="data_description hidden">{{ data.description }}</td>
+
+
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div>
+                <ul class="pager">
+                     {% if data_list.has_previous %}
+                    <!--注意如果url中已经有参数了比如http://192.168.68.50:8000/saltkey_manage/?status=denied那么需要把这个status加上，不然跳转错了哈哈-->
+                        <li><a href="?search_field={{ search_field }}&search_content={{ search_content }}&page={{ data_list.previous_page_number }}">上一页</a></li>
+                    {% else %}
+                        <li class="disabled"><a href="">上一页</a></li>
+                    {% endif %}
+
+                    <li class="current">
+                        页数 {{ data_list.number }} / {{ data_list.paginator.num_pages }}
+                    </li>
+
+                    {% if data_list.has_next %}
+                        <li><a href="?search_field={{ search_field }}&search_content={{ search_content }}&page={{ data_list.next_page_number }}">下一页</a></li>
+                    {% else %}
+                        <li class="disabled"><a href="">下一页</a></li>
+                    {% endif %}
+                    <li>
+                        &nbsp;&nbsp;<input type="text"  style="width: 30px;border-radius: 30%;" id="page_index">/{{ data_list.paginator.num_pages }}页
+                        <button type="button" class="btn btn-sm btn-success page_go" >跳转</button>
+                    </li>
+                </ul>
+            </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block another_content %}
+
+<!-- 添加发布模态框 -->
+<div class="modal fade juzhong" id="app_add_modal" tabindex="-1" role="dialog" aria-labelledby="app_add_lable" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+	<div class="modal-dialog" style="width: 1200px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+				<h4 class="modal-title" id="app_add_lable">
+					新增应用发布
+				</h4>
+                <!--<span id="xxxxxx" style="color: #FF0000;">　</span>-->
+
+			</div>
+			<div class="modal-body">
+
+                <div class="row" >
+                    <div class="col-sm-6">
+                        <form class="form-horizontal " role="form"  >
+                            <div class="form-group">
+										<label class="control-label col-sm-2 " for="add_app_name">应用名称:</label>
+                                <div class="col-sm-6">
+										<input type="text" class="form-control" id="add_app_name"
+									    style="font-size: 14px;"  >
+									    <span id="add_app_name_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+							</div>
+
+                            <div class="form-group">
+                                    <label class="control-label col-sm-2 " >系统类型:</label>
+                                <div class="col-sm-8">
+                                <label class="radio-inline">
+                                <input type="radio" class="add_sys_type" name="add_sys_type"  value="linux" checked> Linux
+                                 </label>
+                                <label class="radio-inline">
+                                <input type="radio" class="add_sys_type" name="add_sys_type"   value="windows"> Windows
+                                </label>
+                                </div>
+                            </div>
+
+							<div class="form-group ">
+										<label class="control-label col-sm-2 " >Minion_ID:</label>
+                                <div class="panel panel-default col-sm-4" style="padding: 0;margin-left: 15px;margin-bottom: 0;">
+                                    <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
+                                        <div class="input-group">
+                                        <input type="text" class="form-control input-sm" id="add_search_minion_id" placeholder="查询Minion_ID">
+                                          <span class="input-group-btn">
+                                            <button type="button" class="btn btn-primary add_search_minion_id_btn btn-sm"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
+                                          </span>
+
+                                        </div>
+                                    </div>
+                                    <select size=5  multiple class="form-control panel-body" id="add_select_minion_id" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+                                    </select>
+                                </div>
+
+                                <div class="col-sm-1" style="padding: 0 10px 0 10px;">
+                                    <div style="margin-top: 30px;">
+                                        <button type="button" class="btn btn-xs btn-info " id="add_select_minion_id_btn" disabled="true">&gt;&gt;</button>
+                                        <button type="button" class="btn btn-xs btn-info " style="margin-top: 1px;" id="add_delete_minion_id_btn" disabled="true">&lt;&lt;</button>
+                                    </div>
+                                </div>
+
+                                <div class="panel panel-info col-sm-4" style="padding: 0;margin-bottom: 0;">
+                                    <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
+                                        <h3 class="panel-title " style="font-size: 12px;padding: 5px 10px;height: 30px;line-height: 1.5;">选中的Minion_ID 有序</h3>
+                                    </div>
+                                    <select size=5 multiple class="form-control panel-body" id="add_selected_minion_id" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+
+                                    </select>
+                                </div>
+
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+
+                                <div class="col-sm-6 col-sm-offset-3">
+									    <span id="add_minion_id_help" style="color: #FF0000;">　</span>
+								</div>
+							</div>
+
+							<div class="form-group">
+										<label class="control-label col-sm-2 " for="add_app_path">应用目录:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="add_app_path"
+									    style="font-size: 14px;"  required="required" >
+                                        <span class="" id="add_app_path_help" style="color: #FF0000;">　</span>
+                                </div>
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+							</div>
+
+                            <div class="form-group add_app_path_owner_div">
+										<label class="control-label col-sm-2 " for="add_app_path_owner">目录属主:</label>
+                                <div class="col-sm-6">
+										<input type="text" class="form-control" id="add_app_path_owner"
+									     style="font-size: 14px;"  required="required" value="root">
+                                        <span class="" id="add_app_path_owner_help" style="color: #FF0000;">　</span>
+                                </div>
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-2 " for="add_app_svn_url">SVN地址:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="add_app_svn_url"
+									    style="font-size: 14px;"  required="required" placeholder="暂不支持https的svn地址">
+									    <span class="" id="add_app_svn_url_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+							</div>
+
+							<div class="form-group">
+										<label class="control-label col-sm-2 " for="add_app_svn_user">SVN账户:</label>
+                                <div class="col-sm-8">
+
+										<input type="text" name="fuck_user" class="form-control" id="add_app_svn_user"
+									   style="font-size: 14px;" autocomplete="off" required="required" >
+                                    <!--防止自动填充  注意位子要放在下面passwd中间-->
+                                        <input type="text" name="fuck_user" style="display:none;">
+									    <span class="" id="add_app_svn_user_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-2 " for="add_app_svn_password">SVN密码:</label>
+                                <div class="col-sm-8">
+                                    <!--防止自动填充-->
+                                        <input type="password" name="fuck_pwd" style="display:none;">
+										<input type="password" name="fuck_pwd"  class="form-control" id="add_app_svn_password"
+									   style="font-size: 14px;background-color: white;"  autocomplete="new-password"  required="required" >
+									    <span class="" id="add_app_svn_password_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+							</div>
+                    </form>
+                    </div>
+                    <form class="col-sm-6">
+                        <div class="form-horizontal " role="form"  >
+                            <div class="form-group " id="add_release_sequence_div">
+                                    <label class="control-label col-sm-3 " >多主机执行顺序:</label>
+                                <div class="col-sm-8">
+                                <label class="radio-inline">
+                                <input type="radio" class="add_execution_style" name="add_execution_style"  value="serial" data-toggle="tooltip" title="按Minion_ID顺序逐台发布，出错则终止" checked> 有序
+                                 </label>
+                                <label class="radio-inline">
+                                <input type="radio" class="add_execution_style" name="add_execution_style"   value="parallel" data-toggle="tooltip" title="同时对所有Minion_ID发布"> 并行
+                                </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group ">
+										<label class="control-label col-sm-3 ">操作选择:</label>
+                                <div class="panel panel-default col-sm-3" style="padding: 0;margin-left: 15px;margin-bottom: 0;">
+                                    <div class="panel-heading " style="padding: 5px 15px 5px 15px;">
+                                        <h3 class="panel-title " style="font-size: 12px;">可选的操作</h3>
+                                    </div>
+                                    <select multiple class="form-control panel-body" id="add_select_operation" style="padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+                                            <option value="SVN更新">SVN更新</option>
+                                            <option value="同步文件">同步文件</option>
+                                            <option value="应用停止">应用停止</option>
+                                            <option value="应用启动">应用启动</option>
+                                            <option value="执行命令1">执行命令1</option>
+                                            <option value="执行命令2">执行命令2</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-sm-1" style="padding: 0 10px 0 10px;">
+                                    <div style="margin-top: 30px;">
+                                        <button type="button" class="btn btn-xs btn-info " id="add_select_operation_btn" disabled="true">&gt;&gt;</button>
+                                        <button type="button" class="btn btn-xs btn-info " style="margin-top: 1px;" id="add_delete_operation_btn" disabled="true">&lt;&lt;</button>
+                                    </div>
+                                </div>
+
+                                <div class="panel panel-info col-sm-3" style="padding: 0;margin-left: 15px;margin-bottom: 0;">
+                                    <div class="panel-heading " style="padding: 5px 15px 5px 15px;">
+                                        <h3 class="panel-title " style="font-size: 12px;">选中的操作 有序</h3>
+                                    </div>
+                                    <select multiple class="form-control panel-body" id="add_selected_operation" style="padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
+
+                                    </select>
+                                </div>
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+
+                                <div class="col-sm-6 col-sm-offset-3">
+									    <span id="add_operation_content_help" style="color: #FF0000;">　</span>
+                                        <span id="add_operation_arguments_help" style="color: #FF0000;">　</span>
+								</div>
+							</div>
+
+                            <div class="form-group hidden" id="add_sync_file_div">
+                                    <label class="control-label col-sm-3 " >文件同步方式:</label>
+                                <div class="col-sm-8">
+                                <label class="radio-inline">
+                                <input type="radio" class="add_sync_file_style" name="add_sync_file_style"  value="check_file" data-toggle="tooltip" title="保证svn目录内容和应用目录内容一致性" checked> 差异比对
+                                 </label>
+                                <label class="radio-inline">
+                                <input type="radio" class="add_sync_file_style" name="add_sync_file_style"   value="not_check_file" data-toggle="tooltip" title="同步svn文件，对应用目录下多余文件不进行操作"> 不比对差异
+                                </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group hidden" id="add_sync_file_method_div">
+                                    <label class="control-label col-sm-3 " >可选同步方法:</label>
+                                <div class="col-sm-8">
+                                <label class="radio-inline">
+                                <input type="radio" class="add_sync_file_method" name="add_sync_file_method"  value="salt" data-toggle="tooltip" title="使用salt的file模块同步文件" checked> salt
+                                 </label>
+                                <label class="radio-inline">
+                                <input type="radio" class="add_sync_file_method" name="add_sync_file_method"   value="rsync" data-toggle="tooltip" title="使用rsync同步文件，注意服务端和客户端需安装rsync软件"> rsync
+                                </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group hidden" id="add_rsync_server_content_div">
+								<label class="control-label col-sm-3 " for="add_rsync_server_ip">rsync源IP:</label>
+                                <div class="col-sm-3" >
+										<input type="text" class="form-control" id="add_rsync_server_ip"
+									   style="font-size: 12px;" value="192.168.18.18">
+                                        <span  id="add_rsync_server_ip_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label col-sm-2 " for="add_rsync_server_port" style="padding-left: 0;">rsync源端口:</label>
+                                <div class="col-sm-3">
+										<input type="text" class="form-control" id="add_rsync_server_port"
+									   style="font-size: 12px;" value="873">
+                                        <span  id="add_rsync_server_port_help" style="color: #FF0000;">　</span>
+								</div>
+                                <!--<label class="control-label  " style="color: #FF0000;" >*</label>-->
+							</div>
+
+
+                            <div class="form-group hidden" id="add_server_stop_div">
+                                    <label class="control-label col-sm-3 " >应用停止方式:</label>
+                                <div class="col-sm-9">
+                                    <label class="radio-inline">
+                                    <input type="radio" class="add_server_stop_style" name="add_server_stop_style"  value="停止服务名" checked> 服务名
+                                     </label>
+                                    <label class="radio-inline">
+                                    <input type="radio" class="add_server_stop_style" name="add_server_stop_style"  value="停止命令" > 停止命令
+                                     </label>
+                                    <label class="radio-inline">
+                                    <input type="radio" class="add_server_stop_style" name="add_server_stop_style"  value="任务计划停止" > 任务计划
+                                    </label>
+                                    <label class="radio-inline">
+                                    <input type="radio" class="add_server_stop_style" name="add_server_stop_style"  value="supervisor_stop" > supervisor
+                                    </label>
+                                    <label class="radio-inline" style="margin-left: 0;">
+                                    <input type="radio" class="add_server_stop_style" name="add_server_stop_style" data-toggle="tooltip" title="windows在任务管理器中的进程里可以查看映像名称和命令行，linux用ss -anp查看映像名称ps -ef查看命令行"  value="映像名称和命令行"> 映像名称和命令行
+                                    </label>
+                                </div>
+
+                                <div class="col-sm-8 col-sm-offset-3">
+										<input type="text" class="form-control" id="add_server_stop_cmd"
+									    style="font-size: 14px;" placeholder="填写服务名" >
+									    <span  id="add_server_stop_cmd_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+                            </div>
+
+                            <div class="form-group hidden" id="add_server_start_div">
+                                    <label class="control-label col-sm-3 " >应用启动方式:</label>
+                                <div class="col-sm-9">
+                                <label class="radio-inline">
+                                <input type="radio" class="add_server_start_style" name="add_server_start_style"  value="启动服务名" checked> 服务名
+                                 </label>
+                                <label class="radio-inline">
+                                <input type="radio" class="add_server_start_style" name="add_server_start_style"  value="启动命令" > 启动命令
+                                 </label>
+                                <label class="radio-inline">
+                                <input type="radio" class="add_server_start_style" name="add_server_start_style" data-toggle="tooltip" title="windows无法打开黑窗等UI界面程序需要用任务计划来" value="任务计划启动" > 任务计划
+                                 </label>
+                                <label class="radio-inline">
+                                <input type="radio" class="add_server_start_style" name="add_server_start_style"   value="supervisor_start"> supervisor
+                                </label>
+                                </div>
+
+                                <div class="col-sm-8 col-sm-offset-3">
+										<input type="text" class="form-control" id="add_server_start_cmd"
+									    style="font-size: 14px;" placeholder="填写服务名" >
+									    <span  id="add_server_start_cmd_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+                            </div>
+
+                            <div class="form-group hidden" id="add_execute_command_1_div">
+										<label class="control-label col-sm-3 " for="add_execute_command_1_cmd">执行命令1:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="add_execute_command_1_cmd"
+									   style="font-size: 14px;"  required="required" placeholder="填写要执行的命令">
+									    <span class="" id="add_execute_command_1_cmd_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+							</div>
+
+                            <div class="form-group hidden" id="add_execute_command_2_div">
+										<label class="control-label col-sm-3 " for="add_execute_command_2_cmd">执行命令2:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="add_execute_command_2_cmd"
+									   style="font-size: 14px;"  required="required" placeholder="填写要执行的命令">
+									    <span class="" id="add_execute_command_2_cmd_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+							</div>
+
+
+
+                            <div class="form-group " id="add_app_backup_path_div">
+										<label class="control-label col-sm-3 " for="add_app_backup_path">应用备份目录:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="add_app_backup_path"
+									   style="font-size: 14px;" placeholder="填写应用备份目录，供备份还原使用">
+                                        <span  id="add_app_backup_path_help" style="color: #FF0000;">　</span>
+								</div>
+                                <!--<label class="control-label  " style="color: #FF0000;" >*</label>-->
+							</div>
+
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="add_description">备注:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="add_description"
+									   style="font-size: 14px;" >
+                                        <span  id="add_description_help" style="color: #FF0000;">　</span>
+								</div>
+							</div>
+
+                        </div>
+				    </form>
+                </div>
+
+			</div>
+			<div class="modal-footer">
+                <button type="button" class="btn btn-primary pull-left" id="clone_app_submit">
+					克隆应用
+				</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal">取消
+				</button>
+                <button type="button" class="btn btn-primary" id="add_app_submit">
+					确认提交
+				</button>
+                <button type="button" class="btn btn-primary" id="update_app_submit">
+					提交更新
+				</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+
+<!-- 查询发布模态框 -->
+<div class="modal fade juzhong" id="view_app_modal" tabindex="-1" role="dialog" aria-labelledby="view_app_lable" aria-hidden="true" >
+	<div class="modal-dialog" style="width: 900px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+				<h4 class="modal-title" id="view_app_lable">
+					应用详细信息
+				</h4>
+                <!--<span class="" id="view_process_help" style="color: #FF0000;">　</span>-->
+			</div>
+			<div class="modal-body">
+                <div class="row" >
+                    <div class="col-sm-6">
+                        <form class="form-horizontal " role="form">
+                            <div class="form-group">
+                                 		<label class="control-label col-sm-3 " for="view_app_name">应用名称:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_name"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+                            </div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_sys_type">系统类型:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_sys_type"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_minion_id">Minion_ID:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_minion_id"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_path">应用目录:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_path"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_path_owner">目录属主:</label>
+                                <div class="col-sm-6">
+										<input type="text" class="form-control" id="view_app_path_owner"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_svn_url">SVN地址:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_svn_url"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_svn_user">SVN账户:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_svn_user"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_svn_co_path">控制台SVN检出目录:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_svn_co_path"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_svn_version_success">最近一次成功发布SVN版本:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_svn_version_success"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_svn_version">控制台SVN版本:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_svn_version"
+									    style="font-size: 14px;" readonly="readonly">
+								</div>
+							</div>
+                            </form>
+                        </div>
+                    <div class="col-sm-6">
+                        <form class="form-horizontal " role="form">
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_execution_style">多主机执行顺序:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_execution_style"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_operation_content">操作步骤:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_operation_content"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_operation_arguments">操作相关参数:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_operation_arguments"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_backup_path">应用备份目录:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_backup_path"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_update_time">最近一次更新时间:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_update_time"
+									   style="font-size: 14px;" readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_create_time">创建时间:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_create_time"
+									   style="font-size: 14px;" readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_group_name">所属应用组:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_group_name"
+									   style="font-size: 14px;" readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_description">描述备注:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_description"
+									   style="font-size: 14px;" readonly="readonly">
+								</div>
+							</div>
+                            </form>
+                        </div>
+                </div>
+
+
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">关闭
+				</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+
+
+<!--删除提示框，也是用的模态框-->
+<div class="modal fade juzhong " id="delete_app_modal" tabindex="-1" role="dialog" aria-labelledby="delete_app_lable" aria-hidden="true" data-backdrop="static" >
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:50%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">操作提醒</h4>
+            </div>
+            <div class="modal-body">
+                <!--隐藏属性，用来获取触发模态框的那条记录的相关数据-->
+                <input type="hidden" class="hidden_app_name"/>
+                <p style="color: #0063DC;">是否要删除应用目录和应用备份目录</p>
+                <div class="form-group " id="" style="text-align: center;margin-bottom: 0;">
+                    <label class="radio-inline" style="margin-right: 20px;">
+                    <input type="radio" class="delete_app_file_select" name="delete_app_file_select"  value="delete_app_file" > 是
+                     </label>
+                    <label class="radio-inline">
+                    <input type="radio" class="delete_app_file_select" name="delete_app_file_select"   value="not_delete_app_file" > 否
+                    </label>
+                    <p class=" delete_app_file_select_help " style="color: #FF0000;margin-bottom: 0;" ></p>
+                    <!--</div>-->
+                </div>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="delete_app_button" data-dismiss="modal" data-toggle="modal" data-target=".loading_modal"> 确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- loading模态框 -->
+<div class="modal fade juzhong loading_modal " data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog"  aria-hidden="true" >
+	<div class="modal-dialog" style="width:100px;">
+		<div class="modal-content" style="background-color: rgba(255,255,255,0.5);">
+				<img src="../static/images/loading.gif"  alt="未加载" >
+		</div>
+	</div>
+</div>
+
+<!--日志模态框-->
+<div class="modal fade juzhong" id="search_app_log" tabindex="-1" role="dialog" aria-labelledby="app_log_lable" aria-hidden="true" >
+	<div class="modal-dialog" style="width: 780px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+				<h4 class="modal-title" id="app_log_lable">
+					<span class="log_app_name"></span>日志<button type="button" class="btn btn-primary app_log_btn pull-right" style="margin-right: 10px;">
+					刷新日志
+				    </button>
+				</h4>
+                <div style="margin-bottom: 5px;">
+
+                    <ul class="pager log_pager" style="margin: 0;">
+
+                    </ul>
+                </div>
+                <!--<span class="" id="" style="color: #FF0000;">　</span>-->
+                <div class="col-sm-1  log_create_time_label" style="padding: 0;font-weight: bold;">发布时间:</div>
+                <div class="col-sm-3 log_create_time" ></div>
+                <div class="col-sm-1  log_release_result_label" style="padding: 0;font-weight: bold;">发布结果:</div>
+                <div class="col-sm-3 log_release_result" ></div>
+                <div class="col-sm-1  log_app_username_label" style="padding: 0;font-weight: bold;">操作人:</div>
+                <div class="col-sm-3 log_app_username" ></div>
+
+			</div>
+			<div class="modal-body" style="padding-bottom:0;">
+                <div class="form-group" style="height:630px;">
+                    <pre class="form-control " id="modal_app_log"   style="resize:none;font-weight: bold;line-height:100%;height: 100%;margin-top: 4px;background-color:#000;color:#00B600;"></pre>
+                </div>
+
+			</div>
+			<div class="modal-footer" style="padding: 5px 15px 5px 0;">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">
+					确认
+				</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+
+<!--SVN版本输入提示框-->
+<div class="modal fade juzhong " id="release_svn_version_modal" tabindex="-1" role="dialog" aria-labelledby="release_svn_version_lable" aria-hidden="true" data-backdrop="static">
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:60%;">
+            <div class="modal-body">
+                <form class="form-horizontal" role="form">
+                     <div class="form-group" style="margin: 0;">
+                        <div class="col-sm-11">
+                          <input type="text" class="form-control" id="release_svn_version" placeholder="SVN版本号" style="padding-left: 0;" autocomplete="off">
+                          <input type="text" class="form-control hidden" id="release_style"  >
+                          <input type="text" class="form-control hidden" id="trSeq" >
+                        </div>
+                         <div class="col-sm-11">
+                            <label class="control-label" style="padding-left: 0;text-align: left;" id="release_svn_version_help">请输入SVN版本号，为空则默认为最新</label>
+                         </div>
+                      </div>
+                </form>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:60%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="release_app_button"> 确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--备份提示框-->
+<div class="modal fade juzhong " id="backup_app_modal" tabindex="-1" role="dialog" aria-labelledby="backup_app_lable" aria-hidden="true" data-backdrop="static">
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:50%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">操作提醒</h4>
+            </div>
+            <div class="modal-body">
+                <!--隐藏属性，用来获取触发模态框的那条记录的相关数据-->
+                <input type="hidden" class="backup_app_name"/>
+                <input type="hidden" class="backup_trSeq"/>
+                <p style="text-align: center;font-weight: bold;font-size: large;">确认备份？</p>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="backup_app_button" data-dismiss="modal" > 确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--还原提示框-->
+<div class="modal fade juzhong " id="restore_app_modal" tabindex="-1" role="dialog" aria-labelledby="restore_app_lable" aria-hidden="true" data-backdrop="static">
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:50%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">操作提醒</h4>
+            </div>
+            <div class="modal-body">
+                <!--隐藏属性，用来获取触发模态框的那条记录的相关数据-->
+                <input type="hidden" class="restore_app_name"/>
+                <input type="hidden" class="restore_trSeq"/>
+                <p style="text-align: center;font-weight: bold;font-size: large;">确认还原？</p>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="restore_app_button" data-dismiss="modal" > 确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--单项操作提示框-->
+<div class="modal fade juzhong " id="single_operation_app_modal" tabindex="-1" role="dialog" aria-labelledby="single_operation_app_lable" aria-hidden="true" data-backdrop="static">
+    <div class="modal-dialog">
+        <!--下面这个modal-content的div可以调整整个模态框的大小-->
+        <div class="modal-content" style="width:50%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h5 class="modal-title">操作提醒</h5>
+            </div>
+            <div class="modal-body">
+                <!--隐藏属性，用来获取触发模态框的那条记录的相关数据-->
+                <!--<input type="hidden" class="restore_app_name"/>-->
+                <input type="hidden" class="single_release_trSeq"/>
+                <p style="font-weight: bold;">应用：<span class="single_operation_app_name"></span></p>
+                <p style="font-weight: bold;">操作：<span class="single_cmd"></span></p>
+                <input  class="single_release_svn_version hidden" placeholder="SVN版本号,不填默认最新" style="border-radius: 5px;"/>
+                <p style="font-weight: bold;color: #ff0084;">确认要单独执行操作吗？</p>
+            </div>
+            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
+            <div class="modal-footer" style="height:100%;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="single_operation_app_button" data-dismiss="modal" > 确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -53,6 +53,8 @@ INSTALLED_APPS = [
     'xpgg_oms',
     'django_crontab',
     'guardian',
+    'django_filters',
+    'rest_framework',
 ]
 
 # django-guardian配置

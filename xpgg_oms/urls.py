@@ -1,5 +1,13 @@
-from django.conf.urls import url
+from django.conf.urls import url, include
 from . import views
+
+# drf的router
+from rest_framework.routers import DefaultRouter
+
+# 实例化router对象
+router = DefaultRouter()
+# 通过router注册方式配置路由，快准狠
+router.register(r'appreleaselist', views.AppReleaseListViewSet, base_name='appreleaselist')
 
 urlpatterns = [
     # url(r'^$',views.index,name='index'),
@@ -42,6 +50,7 @@ urlpatterns = [
     url(r'^nginx_reload/$', views.nginx_reload, name='nginx_reload'),
     url(r'^nginx_upstreamserver_add/$', views.nginx_upstreamserver_add, name='nginx_upstreamserver_add'),
     url(r'^app_release/$', views.app_release, name='app_release'),
+    url(r'^app_release_test/$', views.app_release_test, name='app_release_test'),
     url(r'^app_release_ajax/$', views.app_release_ajax, name='app_release_ajax'),
     url(r'^app_group/$', views.app_group, name='app_group'),
     url(r'^app_group/app_group_members_manage/$', views.app_group_members_manage, name='app_group_members_manage'),
@@ -59,4 +68,5 @@ urlpatterns = [
     # url(r'^nginx_add/$',views.nginx_add,name='nginx_add'),
     # url(r'^archive/$',views.archive,name='archive'),
     url(r'^test/$', views.server_list, name='test'),
+    url(r'^api/', include(router.urls)),
 ]

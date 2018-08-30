@@ -315,6 +315,7 @@
 								{% if request.user.is_superuser %}
 								<li class="zicaidan app_auth_li"><a href="{% url 'app_auth' %}"><span aria-hidden="true" class="glyphicon glyphicon-hand-right"></span>　发布授权</a></li>
 							    {% endif %}
+								<li class="zicaidan"><a href="{% url 'app_release_test' %}"><span aria-hidden="true" class="glyphicon glyphicon-hand-right"></span>　应用发布测试</a></li>
                             </ul>
 						</li>
 
