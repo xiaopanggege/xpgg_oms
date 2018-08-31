@@ -8,7 +8,7 @@
 >**环境**：  
 centos7.4  
 python3.5.2  
-django2.0.5  
+django2.0.7  
 saltstack version 2017.7.3  
 
 ***
