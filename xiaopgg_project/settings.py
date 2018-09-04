@@ -101,15 +101,15 @@ SITE_URL = 'http://localhost:8000/'
 SITE_NAME = '小胖哥哥运维系统'
 SITE_DESC = '专注Python开发，欢迎和大家交流'
 # salt-api地址
-SITE_SALT_API_URL = 'http://192.168.68.50:8080'
+SITE_SALT_API_URL = 'http://172.16.0.7:8080'
 # salt-api用户
 SITE_SALT_API_NAME = 'saltapi'
 # salt-api密码
 SITE_SALT_API_PWD = '123456'
 # salt服务端安装的minion的id，服务端也要安装一下minion，有很多用到的时候
-SITE_SALT_MASTER = '192.168.68.50-master'
+SITE_SALT_MASTER = '172.16.0.7-master'
 # salt服务端IP，salt-ssh等调用
-SITE_SALT_MASTER_IP = '192.168.68.50'
+SITE_SALT_MASTER_IP = '172.16.0.7'
 # 发布系统中随机生成svn目录的路径和名字前缀，这里是xiaopgg作为前缀嘿嘿
 # 在views.py里后面加上当前时间来组成完整的目录路径，千万别出现中文因为py2版salt中文支持不好，出现中文后同步文件时目录可以同步文件不同步过去反而全被删除！！
 SITE_BASE_SVN_PATH = '/data/svn/xiaopgg'

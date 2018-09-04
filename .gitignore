@@ -1,4 +1,5 @@
 *.py[cod]
-logs/
+*.log
 __pycache__/
-migrations/
+migrations/*
+!migrations/__init__.py 
