@@ -1,6 +1,5 @@
 *.py[cod]
 *.log
 __pycache__/
-!__init__.py
-migrations/
-#!migrations/__init__.py 
+migrations/*
+!migrations/__init__.py
