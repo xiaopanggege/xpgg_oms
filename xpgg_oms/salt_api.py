@@ -2,9 +2,14 @@
 # -.- coding:utf-8 -.-
 
 from django.conf import settings
+import  time
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
+import logging
+# Create your views here.
+logger = logging.getLogger('xpgg_oms.views')
 
 
 # 封装salt-api的调用
