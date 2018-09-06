@@ -8,7 +8,6 @@
 >**环境**：  
 centos7.4  
 python3.5.2  
-django2.0.7  
 saltstack version 2017.7.3  
 
 ***
@@ -22,21 +21,18 @@ saltstack version 2017.7.3
 
 ***
 ## 项目安装
->如不熟悉则按下面步骤操作，熟悉的忽略
-1. 先下载`requirements.txt`文件假设放在/tmp下，pip安装环境依赖包：  
-`pip3 install -r /tmp/requirements.txt`  
-2. 进入想要创建项目的文件夹，假设：`cd /usr/local/django/`  
-3. 创建django项目，项目名xiaopgg_project：`django-admin.py startproject xiaopgg_project`  #django-admin.py在python3.5.2安装的bin目录下      
-4. 进入项目目录`cd /usr/local/django/xiaopgg_project`  
-5. 创建app，app名xpgg_oms：`python3 manage.py startapp xpgg_oms` #python3也是在python3.安装的bin目录下，最好加入环境变量方便使用  
-6. 然后把git的文件覆盖到项目下即`/usr/local/django/xiaopgg_project/`下面  
-7. `mkdir /usr/local/django/xiaopgg_project/logs` 日志目录创建必须提前创建不然项目启动会提示没有logs目录，如果需要修改日志目录则自行在settings.py里修改日志相关的配置
-
+>如不熟悉则按下面步骤操作，熟悉的忽略  
+>下载我的项目并安装依赖：  
+```
+cd /usr/local
+git clone git@github.com:xiaopanggege/xpgg_oms.git 
+pip3 install -r xpgg_oms/requirements.txt
+``` 
 ***
 ## 预配置
 >修改配置settings.py文件  
 ``` python
-vi /usr/local/django/xiaopgg_project/xpgg_oms/settings.py修改如下内容：
+vi /usr/local/xpgg_oms/xiaopgg_project/settings.py修改如下内容：
 SITE_SALT_API_URL = 绑定salt-api的url  
 SITE_SALT_MASTER = 绑定salt-master的minion_id  
 SITE_SALT_API_NAME = 绑定salt-api的用户名  
@@ -66,7 +62,7 @@ file_roots:
 ## 初始化
 
 ***
-以下操作都在`/usr/local/django/xiaopgg_project/`目录下执行  
+以下操作都在`cd /usr/local/xpgg_oms/`目录下执行  
 >1.同步数据库： 
 ```
 python3 manage.py makemigrations  
