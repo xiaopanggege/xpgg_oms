@@ -1516,7 +1516,7 @@
             getForm();
 
             function getForm(page) {
-                page = 2;
+                page = 1;
                 $.ajax({
 					url:"{%url 'appreleaselist-list'%}",
 					type:'GET',
@@ -1529,13 +1529,16 @@
 					},
 					success:function(data){
 						console.log(data.results);
-						// $.each(data.results,function (index,content) {
-                         //        $('.trSeq').append(
-                         //            <td><input type="checkbox" name="checkItem" /></td>
-                         //            <td class="data_app_name">content.app_name</td>
-                        //
-                         //        )
-                         //    });
+						 $.each(data.results,function (index,content) {
+                                 $('#tbSeq').append(
+                                     '<tr class="trSeq">' +
+                                     '<td><input type="checkbox" name="checkItem" /></td>' +
+                                     '<td class="data_app_name">'+content.app_name+'</td>' +
+                                     '<td class="data_minion_id">'+data.minion_id+'</td>' +
+                                     '</tr>'
+                                 )
+
+                             });
 					}
 				});
             }
@@ -1607,7 +1610,7 @@
 
               </tr>
             </thead>
-            <tbody>
+            <tbody id="tbSeq">
                 {% for data in data_list%}
                 <tr class="trSeq">
                     <td><input type="checkbox" name="checkItem" /></td>

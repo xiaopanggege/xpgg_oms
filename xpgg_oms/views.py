@@ -4626,6 +4626,11 @@ class StandardPagination(PageNumberPagination):
 
 
 class AppReleaseListViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """
+        list:
+            列表显示
+    """
+    
     queryset = AppRelease.objects.all()
     serializer_class = AppReleaseListSerializer
     pagination_class = StandardPagination
