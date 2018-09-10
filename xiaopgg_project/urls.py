@@ -21,7 +21,7 @@ from xpgg_oms.upload import upload_image
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r"^uploads/(?P<path>.*)$", static.serve, {"document_root": settings.MEDIA_ROOT, }),
+    url(r"^media/(?P<path>.*)$", static.serve, {"document_root": settings.MEDIA_ROOT, }),
     # 上面的django.views.static.server是django自带专门处理静态文件的,在admin的用户表中添加用户头像字段里定义了路径和这里匹配就能在点击的时候直接显示
     url(r'^', include('xpgg_oms.urls')),
 ]

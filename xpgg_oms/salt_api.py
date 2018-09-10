@@ -2,10 +2,8 @@
 # -.- coding:utf-8 -.-
 
 from django.conf import settings
-import  time
-import requests
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+import time
+
 
 import logging
 # Create your views here.

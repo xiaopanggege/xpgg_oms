@@ -189,8 +189,8 @@ STATICFILES_DIRS = (
 
 
 # 配置上传文件路径
-MEDIA_URL = '/uploads/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # 自定义用户model
 AUTH_USER_MODEL = 'xpgg_oms.MyUser'

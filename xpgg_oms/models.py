@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, AbstractBaseUser
+import os
+from django.conf import settings
 from django.contrib.auth import password_validation
 from django.contrib.auth.hashers import (
     check_password, is_password_usable, make_password,
@@ -9,7 +11,8 @@ from django.contrib.auth.hashers import (
 
 # 继承admin的user表，不在这方面花太多精力自己做用户管理
 class MyUser(AbstractUser):
-    avatar = models.ImageField(upload_to='avatar/%Y/%m', max_length=200, blank=True, null=True, verbose_name='用户头像')
+    avatar = models.ImageField(upload_to='avatar/%Y/%m', max_length=200, verbose_name='用户头像',
+                               default='avatar/default.png')
 
     class Meta:
         verbose_name = '用户'

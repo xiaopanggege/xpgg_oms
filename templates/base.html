@@ -257,7 +257,7 @@
 						<li>
                             <div style="height: 90px;">
                             <div class="pull-left" >
-                            <img src="{% static 'images/touxiang.png' %}" class="  img-rounded" alt="未加载" width="70" height="70" style="margin:10px 10px 0 10px;">
+                            <img src="{{ request.user.avatar.url}}" class="  img-rounded" alt="未加载" width="70" height="70" style="margin:10px 10px 0 10px;">
                             </div>
                             <div class="pull-left" style="margin:20px 10px 0 10px;width: 90px;">
                                 <h4 title="{{ request.user.username}}"  style="color: lightblue;">{{ request.user.username | truncatechars:16}}</h4>

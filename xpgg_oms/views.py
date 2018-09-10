@@ -14,8 +14,9 @@ from .salt_api import SaltAPI
 from .scripts import netscantool
 from django.conf import settings
 import requests
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+# 下面这个是py3解决requests请求https误报问题
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 from django.views.generic import TemplateView, ListView, DetailView
@@ -4630,7 +4631,7 @@ class AppReleaseListViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         list:
             列表显示
     """
-    
+
     queryset = AppRelease.objects.all()
     serializer_class = AppReleaseListSerializer
     pagination_class = StandardPagination
