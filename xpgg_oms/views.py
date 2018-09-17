@@ -3247,7 +3247,7 @@ def app_release_ajax(request):
                                                     result['result'] = app_log
                                                     return JsonResponse(result)
                                             # 执行文件同步
-                                            jid = saltapi.async_state_api(tgt=minion_id, arg=["rsync_dir", "pillar={'sync_file_method':'%s','source_path':'%s','name_path':'%s','user':'%s','sync_file_style':'%s'}" % (sync_file_method, source_path, app_path, app_path_owner, sync_file_style), "queue=True"])
+                                            jid = saltapi.async_state_api(tgt=minion_id, arg=["rsync_dir", "pillar={'sync_file_method':'%s','source_path':'%s','name_path':'%s','user':'%s','sync_file_style':'%s'}" % (sync_file_method, source_path, app_path, app_path_owner, sync_file_style), "concurrent=True"])
                                             if jid is False:
                                                 app_log.append('\n同步文件后台出错,SaltAPI调用async_state_api请求出错，请联系管理员. 时间戳%s\n' % time.strftime('%X'))
                                                 result['result'] = app_log
@@ -3378,7 +3378,7 @@ def app_release_ajax(request):
                                                                                               rsync_ip, rsync_port, source_path,
                                                                                               name_path, app_path_owner,
                                                                                               sync_file_style),
-                                                                                              "queue=True"])
+                                                                                              "concurrent=True"])
 
                                             if jid is False:
                                                 app_log.append(
@@ -4017,7 +4017,7 @@ def app_release_ajax(request):
                                 else:
                                     response_data = response_data['return'][0][minion]
                                     if response_data is True:
-                                        response_data = saltapi.state_api(tgt=minion_id, arg=["copy_dir", "pillar={'source_path':'%s','name_path':'%s'}" % (app_path, app_backup_path), "queue=True"])
+                                        response_data = saltapi.state_api(tgt=minion_id, arg=["copy_dir", "pillar={'source_path':'%s','name_path':'%s'}" % (app_path, app_backup_path), "concurrent=True"])
                                         if response_data is False:
                                             app_log.append('\n备份应用后台出错_error(2)，请联系管理员')
                                             result['result'] = app_log
@@ -4094,7 +4094,7 @@ def app_release_ajax(request):
                                 else:
                                     response_data = response_data['return'][0][minion]
                                     if response_data is True:
-                                        response_data = saltapi.state_api(tgt=minion_id, arg=["copy_dir", "pillar={'source_path':'%s','name_path':'%s'}" % (app_backup_path, app_path), "queue=True"])
+                                        response_data = saltapi.state_api(tgt=minion_id, arg=["copy_dir", "pillar={'source_path':'%s','name_path':'%s'}" % (app_backup_path, app_path), "concurrent=True"])
                                         if response_data is False:
                                             app_log.append('\n还原应用后台出错_error(2)，请联系管理员')
                                             result['result'] = app_log
