@@ -25,7 +25,7 @@ saltstack version 2017.7.3
 >下载我的项目并安装依赖：  
 ```
 cd /usr/local
-git clone git@github.com:xiaopanggege/xpgg_oms.git 
+git clone https://github.com/xiaopanggege/xpgg_oms.git 
 pip3 install -r xpgg_oms/requirements.txt
 ``` 
 ***
