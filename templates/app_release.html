@@ -120,6 +120,7 @@
                 $("#add_app_name").focus();
             });
 
+      
 
 //           新增发布模态框 隐藏时数据清除,更新编辑也是共用这个模态框
             $("#app_add_modal").on("hidden.bs.modal", function() {
@@ -139,6 +140,11 @@
 				$("#add_select_operation").empty();
                 $("#add_selected_operation").empty();
                 $('<option value="SVN更新">SVN更新</option><option value="同步文件">同步文件</option><option value="应用停止">应用停止</option><option value="应用启动">应用启动</option><option value="执行命令1">执行命令1</option><option value="执行命令2">执行命令2</option>').appendTo("#add_select_operation");
+                $("#add_select_minion_id_btn").attr("disabled",true);
+                $("#add_delete_minion_id_btn").attr("disabled",true);
+                $("#add_select_operation_btn").attr("disabled",true);
+                $("#add_delete_operation_btn").attr("disabled",true);
+                $(".app_svn_info").addClass("hidden");
                 $("#add_sync_file_div").addClass("hidden");
                 $("#add_sync_file_method_div").addClass("hidden");
                 $("input[name='add_sync_file_style']").eq(0).click();
@@ -359,6 +365,9 @@
                     else if($.trim($(this).val())=="执行命令2"){
                         $("#add_execute_command_2_div").removeClass("hidden");
                     }
+                    else if($.trim($(this).val())=="SVN更新"){
+                        $(".app_svn_info").removeClass("hidden");
+                    }
                     $("#add_select_operation_btn").attr("disabled",true);
                 })
             });
@@ -383,6 +392,9 @@
                     }
                     else if($.trim($(this).val())=="执行命令2"){
                         $("#add_execute_command_2_div").addClass("hidden");
+                    }
+                    else if($.trim($(this).val())=="SVN更新"){
+                        $(".app_svn_info").addClass("hidden");
                     }
                     $("#add_delete_operation_btn").attr("disabled",true);
                 })
@@ -458,9 +470,9 @@
 				var minion_id=$('#add_selected_minion_id option').map(function(){return $(this).val();}).get().join(",");
 				var app_path=$.trim($('#add_app_path').val());
 				var app_path_owner=$.trim($('#add_app_path_owner').val());
-				var app_svn_url=$.trim($('#add_app_svn_url').val());
-				var app_svn_user=$.trim($('#add_app_svn_user').val());
-				var app_svn_password=$.trim($('#add_app_svn_password').val());
+				var app_svn_url="";
+				var app_svn_user="";
+				var app_svn_password="";
 				var execution_style = $("input[name='add_execution_style']:checked").val();
 				var operation_content=$('#add_selected_operation option').map(function(){return $.trim($(this).val());}).get().join(",");
 				var server_stop_style= "";
@@ -481,6 +493,26 @@
 				var execute_command_1_cmd= "";
 				var execute_command_2_key= "执行命令2";
 				var execute_command_2_cmd= "";
+				if(operation_content.indexOf("SVN更新")>-1){
+					app_svn_url=$.trim($('#add_app_svn_url').val());
+                    app_svn_user=$.trim($('#add_app_svn_user').val());
+                    app_svn_password=$.trim($('#add_app_svn_password').val());
+                    if(app_svn_url.length < 1){
+                        $('#add_app_svn_url_help').text('该项不能为空');
+                        $('#add_app_svn_url')[0].focus();
+					    return false;
+                    }
+                    if(app_svn_user.length <1){
+                        $('#add_app_svn_user_help').text('该项不能为空');
+                        $('#add_app_svn_user')[0].focus();
+                        return false;
+				    }
+				    if(app_svn_password.length <1){
+                        $('#add_app_svn_password_help').text('该项不能为空');
+                        $('#add_app_svn_password')[0].focus();
+                        return false;
+				    }
+				}
 				if(operation_content.indexOf("同步文件")>-1){
 					sync_file_style = $("input[name='add_sync_file_style']:checked").val();
                     operation_arguments = operation_arguments+'"' + sync_file_style_key +'":r"'+ sync_file_style +'",' ;
@@ -785,6 +817,9 @@
                         var execute_command_2_cmd = $.trim($(this).parent().siblings('.data_execute_command_2_cmd').html());
                         $("#add_execute_command_2_cmd").val(execute_command_2_cmd);
                     }
+                    if($.trim(content_data[i]) == "SVN更新"){
+                        $(".app_svn_info").removeClass("hidden");
+                    }
                 }
 
                 var app_backup_path = $(this).parent().siblings('.data_app_backup_path').html();
@@ -802,9 +837,9 @@
 				var minion_id=$('#add_selected_minion_id option').map(function(){return $(this).val();}).get().join(",");
 				var app_path=$.trim($('#add_app_path').val());
 				var app_path_owner=$.trim($('#add_app_path_owner').val());
-				var app_svn_url=$.trim($('#add_app_svn_url').val());
-				var app_svn_user=$.trim($('#add_app_svn_user').val());
-				var app_svn_password=$.trim($('#add_app_svn_password').val());
+				var app_svn_url="";
+				var app_svn_user="";
+				var app_svn_password="";
 				var execution_style = $("input[name='add_execution_style']:checked").val();
 				var operation_content=$('#add_selected_operation option').map(function(){return $.trim($(this).val());}).get().join(",");
 				var server_stop_style= "";
@@ -827,6 +862,26 @@
 				var execute_command_1_cmd= "";
 				var execute_command_2_key= "执行命令2";
 				var execute_command_2_cmd= "";
+				if(operation_content.indexOf("SVN更新")>-1){
+					app_svn_url=$.trim($('#add_app_svn_url').val());
+                    app_svn_user=$.trim($('#add_app_svn_user').val());
+                    app_svn_password=$.trim($('#add_app_svn_password').val());
+                    if(app_svn_url.length < 1){
+                        $('#add_app_svn_url_help').text('该项不能为空');
+                        $('#add_app_svn_url')[0].focus();
+					    return false;
+                    }
+                    if(app_svn_user.length <1){
+                        $('#add_app_svn_user_help').text('该项不能为空');
+                        $('#add_app_svn_user')[0].focus();
+                        return false;
+				    }
+				    if(app_svn_password.length <1){
+                        $('#add_app_svn_password_help').text('该项不能为空');
+                        $('#add_app_svn_password')[0].focus();
+                        return false;
+				    }
+				}
 				if(operation_content.indexOf("同步文件")>-1){
 					sync_file_style = $("input[name='add_sync_file_style']:checked").val();
                     operation_arguments = operation_arguments+'"' + sync_file_style_key +'":r"'+ sync_file_style +'",' ;
@@ -1796,7 +1851,7 @@
                                 <label class="control-label  " style="color: #FF0000;" >*</label>
 							</div>
 
-                            <div class="form-group">
+                            <div class="form-group app_svn_info hidden">
 										<label class="control-label col-sm-2 " for="add_app_svn_url">SVN地址:</label>
                                 <div class="col-sm-8">
 										<input type="text" class="form-control" id="add_app_svn_url"
@@ -1806,7 +1861,7 @@
                                 <label class="control-label  " style="color: #FF0000;" >*</label>
 							</div>
 
-							<div class="form-group">
+							<div class="form-group app_svn_info hidden">
 										<label class="control-label col-sm-2 " for="add_app_svn_user">SVN账户:</label>
                                 <div class="col-sm-8">
 
@@ -1819,7 +1874,7 @@
                                 <label class="control-label  " style="color: #FF0000;" >*</label>
 							</div>
 
-                            <div class="form-group">
+                            <div class="form-group app_svn_info hidden">
 										<label class="control-label col-sm-2 " for="add_app_svn_password">SVN密码:</label>
                                 <div class="col-sm-8">
                                     <!--防止自动填充-->
