@@ -3247,7 +3247,7 @@ def app_release_ajax(request):
                                                     result['result'] = app_log
                                                     return JsonResponse(result)
                                             # 执行文件同步
-                                            jid = saltapi.async_state_api(tgt=minion_id, arg=["rsync_dir", "pillar={'sync_file_method':'%s','source_path':'%s','name_path':'%s','user':'%s','sync_file_style':'%s'}" % (sync_file_method, source_path, app_path, app_path_owner, sync_file_style), "concurrent=True"])
+                                            jid = saltapi.async_state_api(tgt=minion_id, arg=["rsync_dir", "pillar={'sync_file_method':'%s','source_path':'%s','name_path':'%s','user':'%s','sync_file_style':'%s'}" % (sync_file_method, source_path, app_path, app_path_owner, sync_file_style), "queue=True"])
                                             if jid is False:
                                                 app_log.append('\n同步文件后台出错,SaltAPI调用async_state_api请求出错，请联系管理员. 时间戳%s\n' % time.strftime('%X'))
                                                 result['result'] = app_log

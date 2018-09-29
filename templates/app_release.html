@@ -147,7 +147,7 @@
                 $(".app_svn_info").addClass("hidden");
                 $("#add_sync_file_div").addClass("hidden");
                 $("#add_sync_file_method_div").addClass("hidden");
-                $("input[name='add_sync_file_style']").eq(0).click();
+                $("input[name='add_sync_file_style']").eq(1).click();
                 $("input[name='add_sync_file_method']").eq(0).click();
                 $("#add_rsync_server_content_div").addClass("hidden");
                 $('#add_rsync_server_ip').val('192.168.18.18');
@@ -720,7 +720,7 @@
                 $('#view_app_svn_co_path').val($.trim($(this).parent().siblings('.data_app_svn_co_path').html()));
                 $('#view_app_svn_version_success').val($.trim($(this).parent().siblings('.data_app_svn_version_success').html()));
                 $('#view_execution_style').val($.trim($(this).parent().siblings('.data_execution_style').html()));
-                $('#view_operation_arguments').val($.trim($(this).parent().siblings('.data_operation_arguments').html()));
+                $('#view_operation_arguments').val($.trim($(this).parent().siblings('.data_operation_arguments').text()));
                 $('#view_app_backup_path').val($.trim($(this).parent().siblings('.data_app_backup_path').html()));
                 $('#view_create_time').val($.trim($(this).parent().siblings('.data_create_time').html()));
                 $('#view_app_group_name').val($.trim($(this).parent().siblings('.data_app_group_name').html()));
@@ -796,7 +796,7 @@
                         var stop_style = $.trim($(this).parent().siblings('.data_server_stop_style').html());
 //                       设置按值选中radio
                         $("input[name='add_server_stop_style'][value="+stop_style+"]").click();
-                        var stop_cmd = $.trim($(this).parent().siblings('.data_server_stop_cmd').html());
+                        var stop_cmd = $.trim($(this).parent().siblings('.data_server_stop_cmd').text());
                         $("#add_server_stop_cmd").val(stop_cmd);
                     }
                     if($.trim(content_data[i]) == "应用启动"){
@@ -804,17 +804,17 @@
                         var start_style = $.trim($(this).parent().siblings('.data_server_start_style').html());
 //                       设置按值选中radio
                         $("input[name='add_server_start_style'][value="+start_style+"]").click();
-                        var start_cmd = $.trim($(this).parent().siblings('.data_server_start_cmd').html());
+                        var start_cmd = $.trim($(this).parent().siblings('.data_server_start_cmd').text());
                         $("#add_server_start_cmd").val(start_cmd);
                     }
                     if($.trim(content_data[i]) == "执行命令1"){
                         $("#add_execute_command_1_div").removeClass("hidden");
-                        var execute_command_1_cmd = $.trim($(this).parent().siblings('.data_execute_command_1_cmd').html());
+                        var execute_command_1_cmd = $.trim($(this).parent().siblings('.data_execute_command_1_cmd').text());
                         $("#add_execute_command_1_cmd").val(execute_command_1_cmd);
                     }
                     if($.trim(content_data[i]) == "执行命令2"){
                         $("#add_execute_command_2_div").removeClass("hidden");
-                        var execute_command_2_cmd = $.trim($(this).parent().siblings('.data_execute_command_2_cmd').html());
+                        var execute_command_2_cmd = $.trim($(this).parent().siblings('.data_execute_command_2_cmd').text());
                         $("#add_execute_command_2_cmd").val(execute_command_2_cmd);
                     }
                     if($.trim(content_data[i]) == "SVN更新"){
@@ -1944,10 +1944,10 @@
                                     <label class="control-label col-sm-3 " >文件同步方式:</label>
                                 <div class="col-sm-8">
                                 <label class="radio-inline">
-                                <input type="radio" class="add_sync_file_style" name="add_sync_file_style"  value="check_file" data-toggle="tooltip" title="保证svn目录内容和应用目录内容一致性" checked> 差异比对
+                                <input type="radio" class="add_sync_file_style" name="add_sync_file_style"  value="check_file" data-toggle="tooltip" title="保证svn目录内容和应用目录内容一致性" > 差异比对
                                  </label>
                                 <label class="radio-inline">
-                                <input type="radio" class="add_sync_file_style" name="add_sync_file_style"   value="not_check_file" data-toggle="tooltip" title="同步svn文件，对应用目录下多余文件不进行操作"> 不比对差异
+                                <input type="radio" class="add_sync_file_style" name="add_sync_file_style"   value="not_check_file" data-toggle="tooltip" title="同步svn文件，对应用目录下多余文件不进行操作" checked> 不比对差异
                                 </label>
                                 </div>
                             </div>
