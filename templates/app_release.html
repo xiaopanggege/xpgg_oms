@@ -139,7 +139,7 @@
 				$("input[name='add_execution_style']").eq(0).click();
 				$("#add_select_operation").empty();
                 $("#add_selected_operation").empty();
-                $('<option value="SVN更新">SVN更新</option><option value="同步文件">同步文件</option><option value="应用停止">应用停止</option><option value="应用启动">应用启动</option><option value="执行命令1">执行命令1</option><option value="执行命令2">执行命令2</option>').appendTo("#add_select_operation");
+                $('<option value="SVN更新">SVN更新</option><option value="GIT更新">GIT更新</option><option value="同步文件">同步文件</option><option value="应用停止">应用停止</option><option value="应用启动">应用启动</option><option value="执行命令1">执行命令1</option><option value="执行命令2">执行命令2</option>').appendTo("#add_select_operation");
                 $("#add_select_minion_id_btn").attr("disabled",true);
                 $("#add_delete_minion_id_btn").attr("disabled",true);
                 $("#add_select_operation_btn").attr("disabled",true);
@@ -1908,12 +1908,13 @@
                                         <h3 class="panel-title " style="font-size: 12px;">可选的操作</h3>
                                     </div>
                                     <select multiple class="form-control panel-body" id="add_select_operation" style="padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
-                                            <option value="SVN更新">SVN更新</option>
-                                            <option value="同步文件">同步文件</option>
-                                            <option value="应用停止">应用停止</option>
-                                            <option value="应用启动">应用启动</option>
-                                            <option value="执行命令1">执行命令1</option>
-                                            <option value="执行命令2">执行命令2</option>
+                                        <option value="SVN更新">SVN更新</option>
+                                        <option value="GIT更新">GIT更新</option>
+                                        <option value="同步文件">同步文件</option>
+                                        <option value="应用停止">应用停止</option>
+                                        <option value="应用启动">应用启动</option>
+                                        <option value="执行命令1">执行命令1</option>
+                                        <option value="执行命令2">执行命令2</option>
                                     </select>
                                 </div>
 
