@@ -136,6 +136,10 @@
 				$('#add_app_svn_url').val('');
 				$('#add_app_svn_user').val('');
 				$('#add_app_svn_password').val('');
+				$('#add_app_git_url').val('');
+				$('#add_app_git_user').val('');
+				$('#add_app_git_password').val('');
+				$('#add_app_git_branch').val('');
 				$("input[name='add_execution_style']").eq(0).click();
 				$("#add_select_operation").empty();
                 $("#add_selected_operation").empty();
@@ -173,6 +177,10 @@
 				$('#add_app_svn_url_help').text('　');
 				$('#add_app_svn_user_help').text('　');
 				$('#add_app_svn_password_help').text('　');
+				$('#add_app_git_url_help').text('　');
+				$('#add_app_git_user_help').text('　');
+				$('#add_app_git_password_help').text('　');
+				$('#add_app_git_branch_help').text('　');
 				$('#add_rsync_server_ip_help').text('　');
 				$('#add_rsync_server_port_help').text('　');
 				$('#add_operation_content_help').text('　');
@@ -203,6 +211,18 @@
 	    	});
             $('#add_app_svn_password').keyup(function(){
 	    		$('#add_app_svn_password_help').text('　');
+	    	});
+            $('#add_app_git_url').keyup(function(){
+	    		$('#add_app_git_url_help').text('　');
+	    	});
+            $('#add_app_git_user').keyup(function(){
+	    		$('#add_app_git_user_help').text('　');
+	    	});
+            $('#add_app_git_password').keyup(function(){
+	    		$('#add_app_git_password_help').text('　');
+	    	});
+            $('#add_app_git_branch').keyup(function(){
+	    		$('#add_app_git_branch_help').text('　');
 	    	});
             $('#add_rsync_server_ip').keyup(function(){
 	    		$('#add_rsync_server_ip_help').text('　');
@@ -368,6 +388,9 @@
                     else if($.trim($(this).val())=="SVN更新"){
                         $(".app_svn_info").removeClass("hidden");
                     }
+                    else if($.trim($(this).val())=="GIT更新"){
+                        $(".app_git_info").removeClass("hidden");
+                    }
                     $("#add_select_operation_btn").attr("disabled",true);
                 })
             });
@@ -395,6 +418,9 @@
                     }
                     else if($.trim($(this).val())=="SVN更新"){
                         $(".app_svn_info").addClass("hidden");
+                    }
+                    else if($.trim($(this).val())=="GIT更新"){
+                        $(".app_git_info").addClass("hidden");
                     }
                     $("#add_delete_operation_btn").attr("disabled",true);
                 })
@@ -473,6 +499,10 @@
 				var app_svn_url="";
 				var app_svn_user="";
 				var app_svn_password="";
+				var app_git_url="";
+				var app_git_user="";
+				var app_git_password="";
+				var app_git_branch="";
 				var execution_style = $("input[name='add_execution_style']:checked").val();
 				var operation_content=$('#add_selected_operation option').map(function(){return $.trim($(this).val());}).get().join(",");
 				var server_stop_style= "";
@@ -510,6 +540,32 @@
 				    if(app_svn_password.length <1){
                         $('#add_app_svn_password_help').text('该项不能为空');
                         $('#add_app_svn_password')[0].focus();
+                        return false;
+				    }
+				}
+				if(operation_content.indexOf("GIT更新")>-1){
+					app_git_url=$.trim($('#add_app_git_url').val());
+                    app_git_user=$.trim($('#add_app_git_user').val());
+                    app_git_password=$.trim($('#add_app_git_password').val());
+                    app_git_branch=$.trim($('#add_app_git_branch').val());
+                    if(app_git_url.length < 1){
+                        $('#add_app_git_url_help').text('该项不能为空');
+                        $('#add_app_git_url')[0].focus();
+					    return false;
+                    }
+                    if(app_git_user.length <1){
+                        $('#add_app_git_user_help').text('该项不能为空');
+                        $('#add_app_git_user')[0].focus();
+                        return false;
+				    }
+				    if(app_git_password.length <1){
+                        $('#add_app_git_password_help').text('该项不能为空');
+                        $('#add_app_git_password')[0].focus();
+                        return false;
+				    }
+				    if(app_git_branch.length <1){
+                        $('#add_app_git_branch_help').text('该项不能为空');
+                        $('#add_app_git_branch')[0].focus();
                         return false;
 				    }
 				}
@@ -677,6 +733,10 @@
                         'app_svn_url':app_svn_url,
                         'app_svn_user':app_svn_user,
                         'app_svn_password':app_svn_password,
+                        'app_git_url':app_git_url,
+                        'app_git_user':app_git_user,
+                        'app_git_password':app_git_password,
+                        'app_git_branch':app_git_branch,
                         'execution_style':execution_style,
                         'operation_content':operation_content,
                         'operation_arguments':'{'+operation_arguments+'}',
@@ -718,6 +778,10 @@
                 $('#view_app_svn_url').val($.trim($(this).parent().siblings('.data_app_svn_url').html()));
                 $('#view_app_svn_user').val($.trim($(this).parent().siblings('.data_app_svn_user').html()));
                 $('#view_app_svn_co_path').val($.trim($(this).parent().siblings('.data_app_svn_co_path').html()));
+                $('#view_app_git_url').val($.trim($(this).parent().siblings('.data_app_git_url').html()));
+                $('#view_app_git_user').val($.trim($(this).parent().siblings('.data_app_git_user').html()));
+                $('#view_app_git_branch').val($.trim($(this).parent().siblings('.data_app_git_branch').html()));
+                $('#view_app_git_co_path').val($.trim($(this).parent().siblings('.data_app_git_co_path').html()));
                 $('#view_app_svn_version_success').val($.trim($(this).parent().siblings('.data_app_svn_version_success').html()));
                 $('#view_execution_style').val($.trim($(this).parent().siblings('.data_execution_style').html()));
                 $('#view_operation_arguments').val($.trim($(this).parent().siblings('.data_operation_arguments').text()));
@@ -761,6 +825,10 @@
                 $('#add_app_svn_url').val($(this).parent().siblings('.data_app_svn_url').html());
                 $('#add_app_svn_user').val($(this).parent().siblings('.data_app_svn_user').html());
                 $('#add_app_svn_password').val($(this).parent().siblings('.data_app_svn_password').html());
+                $('#add_app_git_url').val($(this).parent().siblings('.data_app_git_url').html());
+                $('#add_app_git_user').val($(this).parent().siblings('.data_app_git_user').html());
+                $('#add_app_git_password').val($(this).parent().siblings('.data_app_git_password').html());
+                $('#add_app_git_branch').val($(this).parent().siblings('.data_app_git_branch').html());
 
                 var data_execution_style = $(this).parent().siblings('.data_execution_style').html();
                 if(data_execution_style=='parallel'){
@@ -820,6 +888,9 @@
                     if($.trim(content_data[i]) == "SVN更新"){
                         $(".app_svn_info").removeClass("hidden");
                     }
+                    if($.trim(content_data[i]) == "GIT更新"){
+                        $(".app_git_info").removeClass("hidden");
+                    }
                 }
 
                 var app_backup_path = $(this).parent().siblings('.data_app_backup_path').html();
@@ -840,6 +911,10 @@
 				var app_svn_url="";
 				var app_svn_user="";
 				var app_svn_password="";
+				var app_git_url="";
+				var app_git_user="";
+				var app_git_password="";
+				var app_git_branch="";
 				var execution_style = $("input[name='add_execution_style']:checked").val();
 				var operation_content=$('#add_selected_operation option').map(function(){return $.trim($(this).val());}).get().join(",");
 				var server_stop_style= "";
@@ -879,6 +954,31 @@
 				    if(app_svn_password.length <1){
                         $('#add_app_svn_password_help').text('该项不能为空');
                         $('#add_app_svn_password')[0].focus();
+                        return false;
+				    }
+				}
+				if(operation_content.indexOf("GIT更新")>-1){
+					app_git_url=$.trim($('#add_app_git_url').val());
+                    app_git_user=$.trim($('#add_app_git_user').val());
+                    app_git_password=$.trim($('#add_app_git_password').val());
+                    if(app_git_url.length < 1){
+                        $('#add_app_git_url_help').text('该项不能为空');
+                        $('#add_app_git_url')[0].focus();
+					    return false;
+                    }
+                    if(app_git_user.length <1){
+                        $('#add_app_git_user_help').text('该项不能为空');
+                        $('#add_app_git_user')[0].focus();
+                        return false;
+				    }
+				    if(app_git_password.length <1){
+                        $('#add_app_git_password_help').text('该项不能为空');
+                        $('#add_app_git_password')[0].focus();
+                        return false;
+				    }
+				    if(app_git_branch.length <1){
+                        $('#add_app_git_branch_help').text('该项不能为空');
+                        $('#add_app_git_branch')[0].focus();
                         return false;
 				    }
 				}
@@ -1043,6 +1143,10 @@
                         'app_svn_url':app_svn_url,
                         'app_svn_user':app_svn_user,
                         'app_svn_password':app_svn_password,
+                        'app_git_url':app_git_url,
+                        'app_git_user':app_git_user,
+                        'app_git_password':app_git_password,
+                        'app_git_branch':app_git_branch,
                         'execution_style':execution_style,
                         'operation_content':operation_content,
                         'operation_arguments':'{'+operation_arguments+'}',
@@ -1885,6 +1989,51 @@
 								</div>
                                 <label class="control-label  " style="color: #FF0000;" >*</label>
 							</div>
+
+
+
+                            <div class="form-group app_git_info hidden">
+										<label class="control-label col-sm-2 " for="add_app_git_url">git地址:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="add_app_git_url"
+									    style="font-size: 14px;"  required="required" placeholder="暂不支持ssh的git地址">
+									    <span class="" id="add_app_git_url_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+							</div>
+
+							<div class="form-group app_git_info hidden">
+								<label class="control-label col-sm-2 " for="add_app_git_user">git账户:</label>
+                                <div class="col-sm-3">
+
+										<input type="text" name="fuck_user" class="form-control" id="add_app_git_user"
+									   style="font-size: 14px;" autocomplete="off" required="required" >
+                                    <!--防止自动填充  注意位子要放在下面passwd中间-->
+                                        <input type="text" name="fuck_user" style="display:none;">
+									    <span class="" id="add_app_git_user_help" style="color: #FF0000;">　</span>
+								</div>
+                                <div class="pull-left"><label class="control-label  " style="color: #FF0000;" >*</label></div>
+
+                                <label class="control-label col-sm-2 " for="add_app_git_password">git密码:</label>
+                                <div class="col-sm-3">
+                                    <!--防止自动填充-->
+                                        <input type="password" name="fuck_pwd" style="display:none;">
+										<input type="password" name="fuck_pwd"  class="form-control" id="add_app_git_password"
+									   style="font-size: 14px;background-color: white;"  autocomplete="new-password"  required="required" >
+									    <span class="" id="add_app_git_password_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+							</div>
+
+                            <div class="form-group app_git_info hidden">
+								<label class="control-label col-sm-2 " for="add_app_git_branch">git分支:</label>
+                                <div class="col-sm-4">
+										<input type="branch" class="form-control" id="add_app_git_branch"
+									   style="font-size: 14px;" required="required" value="master">
+									    <span class="" id="add_app_git_branch_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+							</div>
                     </form>
                     </div>
                     <form class="col-sm-6">
@@ -2179,6 +2328,36 @@
 									    style="font-size: 14px;"  readonly="readonly">
 								</div>
 							</div>
+                            
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_git_url">git地址:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_git_url"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_git_user">git账户:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_git_user"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_git_co_path">控制台git检出目录:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_git_co_path"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+
+                            </form>
+                        </div>
+                    <div class="col-sm-6">
+                        <form class="form-horizontal " role="form">
 
                             <div class="form-group">
 										<label class="control-label col-sm-3 " for="view_app_svn_version_success">最近一次成功发布SVN版本:</label>
@@ -2195,10 +2374,7 @@
 									    style="font-size: 14px;" readonly="readonly">
 								</div>
 							</div>
-                            </form>
-                        </div>
-                    <div class="col-sm-6">
-                        <form class="form-horizontal " role="form">
+
                             <div class="form-group">
 										<label class="control-label col-sm-3 " for="view_execution_style">多主机执行顺序:</label>
                                 <div class="col-sm-8">
