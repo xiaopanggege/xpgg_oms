@@ -3177,6 +3177,9 @@ def app_release_ajax(request):
                 app_git_user = app_data.app_git_user
                 app_git_password = app_data.app_git_password
                 app_git_branch = app_data.app_git_branch
+                # 目前只支持http方式的git，下面是拼接把用户名密码拼接进去这样就不用输入了,如果用户名有@需要转义
+                app_git_user_new = app_git_user.replace('@', '%40')
+                app_git_url_join_usr_passwd = app_git_url.split('://')[0] + '://' + app_git_user_new + ':' + app_git_password + '@' + app_git_url.split('://')[1]
                 app_git_co_status = app_data.app_git_co_status
                 app_path = app_data.app_path
                 sys_type = app_data.sys_type
@@ -3257,18 +3260,21 @@ def app_release_ajax(request):
                                         result['result'] = app_log
                                         return JsonResponse(result)
                                     else:
-                                        # 判断是否有应用svn版本号，如果有说明已经检出过，那就使用更新up，如果没有就用检出co
-                                        if app_git_co_status:
-                                            cmd_data = 'svn up -r %s %s --no-auth-cache --non-interactive  --username=%s --password=%s' % (
-                                                release_svn_version, app_svn_co_path, app_svn_user, app_svn_password)
-                                            # 用来做执行结果判断的，因为结果有很多意外情况，下面是对的情况下会出现的关键字
-                                            check_data = "Updating '%s'" % app_svn_co_path
+                                        # 判断状态是否为True，如果有说明已经检出过，那就使用更新pull，如果没有就用git clone
+                                        logger.error(app_git_co_status)
+                                        logger.error(type(app_git_co_status))
+                                        if app_git_co_status is not True:
+                                            app_log.append('\n\ngit clone ....\n')
+                                            response_data = saltapi.git_clone_api(tgt=settings.SITE_SALT_MASTER, arg=[
+                                                'cwd=%s' % app_svn_co_path.rsplit('/', 1)[0],
+                                                'url=%s' % app_git_url_join_usr_passwd,
+                                                'name=%s' % app_svn_co_path.rsplit('/', 1)[1],
+                                                'opts="-b %s"' % app_git_branch])
+                                            check_data = True
                                         else:
-                                            cmd_data = 'svn co -r %s %s  %s --username=%s --password=%s --non-interactive --no-auth-cache' % (
-                                                release_svn_version, app_svn_url, app_svn_co_path, app_svn_user, app_svn_password)
-                                            check_data = 'Checked out revision'
-                                        response_data = saltapi.cmd_run_api(tgt=settings.SITE_SALT_MASTER, arg=[
-                                            cmd_data, 'reset_system_locale=false'])
+                                            response_data = saltapi.git_pull_api(tgt=settings.SITE_SALT_MASTER,
+                                                                                 arg=[app_svn_co_path])
+                                            check_data = 'Updating'
                                         # 当调用api失败的时候会返回false
                                         if response_data is False:
                                             app_log.append('\n更新svn后台出错_error(1)，请联系管理员. 时间戳%s\n' % time.strftime('%X'))
@@ -3276,21 +3282,20 @@ def app_release_ajax(request):
                                             return JsonResponse(result)
                                         else:
                                             response_data = response_data['return'][0][settings.SITE_SALT_MASTER]
-
-                                            if check_data in response_data:
-                                                # 用正则获取版本号，并更新一下数据表,这里发现有出错的可能就是正则没匹配到，所以再加一层try
+                                            # 对结果进行判断，妈的用salt的module方式还得自个判断结果，比较麻烦一点
+                                            logger.error(response_data)
+                                            logger.error('11111')
+                                            if response_data is True or check_data in response_data or 'Already up to date' in response_data:
                                                 try:
-                                                    app_svn_version = re.search(r'revision (\d+)\.', response_data).group(1)
                                                     AppRelease.objects.filter(app_name=app_name).update(
-                                                        app_svn_version=app_svn_version)
-                                                    app_svn_version_success = app_svn_version
-                                                    app_log.append('\n'+str(response_data)+'\n\nSVN更新完成<- 时间戳%s\n' % time.strftime('%X'))
+                                                        app_git_co_status=True)
+                                                    app_log.append('\n'+str(response_data)+'\n\nGIT更新完成<- 时间戳%s\n' % time.strftime('%X'))
                                                 except Exception as e:
-                                                    app_log.append('\nSVN更新失败:\n'+str(response_data)+'\n时间戳%s' % time.strftime('%X'))
+                                                    app_log.append('\nGIT更新失败:\n'+str(response_data)+'\n时间戳%s' % time.strftime('%X'))
                                                     result['result'] = app_log
                                                     return JsonResponse(result)
                                             else:
-                                                app_log.append('\nSVN更新失败:'+str(response_data)+'\n时间戳%s' % time.strftime('%X'))
+                                                app_log.append('\nGIT更新失败:'+str(response_data)+'\n时间戳%s' % time.strftime('%X'))
                                                 result['result'] = app_log
                                                 return JsonResponse(result)
                             elif operation == '同步文件':

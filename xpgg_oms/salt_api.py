@@ -577,3 +577,25 @@ class SaltAPI(object):
                 }
         message = 'sys_state_doc_api'
         return self.public(data, message)
+    
+    # 封装git.clone命令
+    def git_clone_api(self, client='local', tgt='*', tgt_type='glob', fun='git.clone', arg=None):
+        data = {'client': client,
+                'tgt': tgt,
+                'tgt_type': tgt_type,
+                'fun': fun,
+                'arg': arg,
+                }
+        message = 'git_clone_api'
+        return self.public(data, message)
+    
+    # 封装git.pull命令
+    def git_pull_api(self, client='local', tgt='*', tgt_type='glob', fun='git.pull', arg=None):
+        data = {'client': client,
+                'tgt': tgt,
+                'tgt_type': tgt_type,
+                'fun': fun,
+                'arg': arg,
+                }
+        message = 'git_pull_api'
+        return self.public(data, message)
