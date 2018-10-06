@@ -2830,6 +2830,7 @@ def app_release_ajax(request):
             elif request.POST.get('app_tag_key') == 'app_add' and request.user.is_superuser:
                 obj = AppReleaseAddForm(request.POST)
                 if obj.is_valid():
+                    # 由于git更新方式是后期添加的，为了不添加多余目录，和svn检出目录共用一个目录
                     app_svn_co_path = settings.SITE_BASE_SVN_PATH + time.strftime('%Y%m%d_%H%M%S')
                     AppRelease.objects.create(app_name=obj.cleaned_data["app_name"],
                                               sys_type=obj.cleaned_data["sys_type"],
@@ -2839,6 +2840,10 @@ def app_release_ajax(request):
                                               app_svn_url=obj.cleaned_data["app_svn_url"],
                                               app_svn_user=obj.cleaned_data["app_svn_user"],
                                               app_svn_password=obj.cleaned_data["app_svn_password"],
+                                              app_git_url=obj.cleaned_data["app_git_url"],
+                                              app_git_user=obj.cleaned_data["app_git_user"],
+                                              app_git_password=obj.cleaned_data["app_git_password"],
+                                              app_git_branch=obj.cleaned_data["app_git_branch"],
                                               app_svn_co_path=app_svn_co_path,
                                               execution_style=obj.cleaned_data["execution_style"],
                                               operation_content=obj.cleaned_data["operation_content"],
@@ -2856,12 +2861,19 @@ def app_release_ajax(request):
                 if obj.is_valid():
                     app_svn_co_path = AppRelease.objects.get(
                         app_name=obj.cleaned_data["app_name"]).app_svn_co_path
+                    # 只要svn或者git的url/branch有变化就删除检出目录
                     source_app_svn_url = AppRelease.objects.get(
                         app_name=obj.cleaned_data["app_name"]).app_svn_url
                     update_app_svn_url = obj.cleaned_data["app_svn_url"]
-                    # 判断下svn地址有没改变，如果有改变删除master上的svn目录并重置svn两版本字段为none，下次有更新再重新检出，但注意目录路径是不改变的！！
+                    source_app_git_url = AppRelease.objects.get(
+                        app_name=obj.cleaned_data["app_name"]).app_git_url
+                    update_app_git_url = obj.cleaned_data["app_git_url"]
+                    source_app_git_branch = AppRelease.objects.get(
+                        app_name=obj.cleaned_data["app_name"]).app_git_branch
+                    update_app_git_branch = obj.cleaned_data["app_git_branch"]
+                    # 判断下svn/git地址有没改变，如果有改变删除master上的svn目录并重置svn两版本字段为none，下次有更新再重新检出，但注意目录路径是不改变的！！
                     # 主要是因为发现如果svn目录不重新生成会出现旧的svn文件不会在新svn地址检出后清除掉
-                    if source_app_svn_url == update_app_svn_url:
+                    if source_app_svn_url == update_app_svn_url and source_app_git_url == update_app_git_url and source_app_git_branch == update_app_git_branch:
                         AppRelease.objects.filter(app_name=obj.cleaned_data["app_name"]).update(
                             sys_type=obj.cleaned_data["sys_type"],
                             minion_id=obj.cleaned_data["minion_id"],
@@ -2870,6 +2882,10 @@ def app_release_ajax(request):
                             app_svn_url=obj.cleaned_data["app_svn_url"],
                             app_svn_user=obj.cleaned_data["app_svn_user"],
                             app_svn_password=obj.cleaned_data["app_svn_password"],
+                            app_git_url=obj.cleaned_data["app_git_url"],
+                            app_git_user=obj.cleaned_data["app_git_user"],
+                            app_git_password=obj.cleaned_data["app_git_password"],
+                            app_git_branch=obj.cleaned_data["app_git_branch"],
                             execution_style=obj.cleaned_data["execution_style"],
                             operation_content=obj.cleaned_data["operation_content"],
                             operation_arguments=obj.cleaned_data["operation_arguments"],
@@ -2920,12 +2936,17 @@ def app_release_ajax(request):
                                                     app_svn_url=obj.cleaned_data["app_svn_url"],
                                                     app_svn_user=obj.cleaned_data["app_svn_user"],
                                                     app_svn_password=obj.cleaned_data["app_svn_password"],
+                                                    app_git_url=obj.cleaned_data["app_git_url"],
+                                                    app_git_user=obj.cleaned_data["app_git_user"],
+                                                    app_git_password=obj.cleaned_data["app_git_password"],
+                                                    app_git_branch=obj.cleaned_data["app_git_branch"],
                                                     execution_style=obj.cleaned_data["execution_style"],
                                                     operation_content=obj.cleaned_data["operation_content"],
                                                     operation_arguments=obj.cleaned_data["operation_arguments"],
                                                     app_backup_path=obj.cleaned_data["app_backup_path"],
                                                     description=obj.cleaned_data["description"],
-                                                    app_svn_version=None, app_svn_version_success=None)
+                                                    app_svn_version=None, app_svn_version_success=None, 
+                                                    app_git_co_status=None)
                                                 result['result'] = '成功'
                                                 result['status'] = True
                                             else:
@@ -2941,6 +2962,10 @@ def app_release_ajax(request):
                                             app_svn_url=obj.cleaned_data["app_svn_url"],
                                             app_svn_user=obj.cleaned_data["app_svn_user"],
                                             app_svn_password=obj.cleaned_data["app_svn_password"],
+                                            app_git_url=obj.cleaned_data["app_git_url"],
+                                            app_git_user=obj.cleaned_data["app_git_user"],
+                                            app_git_password=obj.cleaned_data["app_git_password"],
+                                            app_git_branch=obj.cleaned_data["app_git_branch"],
                                             execution_style=obj.cleaned_data["execution_style"],
                                             operation_content=obj.cleaned_data["operation_content"],
                                             operation_arguments=obj.cleaned_data["operation_arguments"],
@@ -3147,7 +3172,12 @@ def app_release_ajax(request):
                 app_svn_url = app_data.app_svn_url
                 app_svn_user = app_data.app_svn_user
                 app_svn_password = app_data.app_svn_password
-                app_svn_version_success = ''
+                app_svn_version_success = app_data.app_svn_version_success
+                app_git_url = app_data.app_git_url
+                app_git_user = app_data.app_git_user
+                app_git_password = app_data.app_git_password
+                app_git_branch = app_data.app_git_branch
+                app_git_co_status = app_data.app_git_co_status
                 app_path = app_data.app_path
                 sys_type = app_data.sys_type
                 app_path_owner = app_data.app_path_owner
@@ -3184,6 +3214,51 @@ def app_release_ajax(request):
                                     else:
                                         # 判断是否有应用svn版本号，如果有说明已经检出过，那就使用更新up，如果没有就用检出co
                                         if app_svn_version:
+                                            cmd_data = 'svn up -r %s %s --no-auth-cache --non-interactive  --username=%s --password=%s' % (
+                                                release_svn_version, app_svn_co_path, app_svn_user, app_svn_password)
+                                            # 用来做执行结果判断的，因为结果有很多意外情况，下面是对的情况下会出现的关键字
+                                            check_data = "Updating '%s'" % app_svn_co_path
+                                        else:
+                                            cmd_data = 'svn co -r %s %s  %s --username=%s --password=%s --non-interactive --no-auth-cache' % (
+                                                release_svn_version, app_svn_url, app_svn_co_path, app_svn_user, app_svn_password)
+                                            check_data = 'Checked out revision'
+                                        response_data = saltapi.cmd_run_api(tgt=settings.SITE_SALT_MASTER, arg=[
+                                            cmd_data, 'reset_system_locale=false'])
+                                        # 当调用api失败的时候会返回false
+                                        if response_data is False:
+                                            app_log.append('\n更新svn后台出错_error(1)，请联系管理员. 时间戳%s\n' % time.strftime('%X'))
+                                            result['result'] = app_log
+                                            return JsonResponse(result)
+                                        else:
+                                            response_data = response_data['return'][0][settings.SITE_SALT_MASTER]
+
+                                            if check_data in response_data:
+                                                # 用正则获取版本号，并更新一下数据表,这里发现有出错的可能就是正则没匹配到，所以再加一层try
+                                                try:
+                                                    app_svn_version = re.search(r'revision (\d+)\.', response_data).group(1)
+                                                    AppRelease.objects.filter(app_name=app_name).update(
+                                                        app_svn_version=app_svn_version)
+                                                    app_svn_version_success = app_svn_version
+                                                    app_log.append('\n'+str(response_data)+'\n\nSVN更新完成<- 时间戳%s\n' % time.strftime('%X'))
+                                                except Exception as e:
+                                                    app_log.append('\nSVN更新失败:\n'+str(response_data)+'\n时间戳%s' % time.strftime('%X'))
+                                                    result['result'] = app_log
+                                                    return JsonResponse(result)
+                                            else:
+                                                app_log.append('\nSVN更新失败:'+str(response_data)+'\n时间戳%s' % time.strftime('%X'))
+                                                result['result'] = app_log
+                                                return JsonResponse(result)
+                            if operation == 'GIT更新':
+                                app_log.append('\n\n开始执行GIT更新-> 时间戳%s\n' % time.strftime('%X'))
+                                with requests.Session() as s:
+                                    saltapi = SaltAPI(session=s)
+                                    if saltapi.get_token() is False:
+                                        app_log.append('\n更新git后台出错_error(0)，请联系管理员. 时间戳%s\n' % time.strftime('%X'))
+                                        result['result'] = app_log
+                                        return JsonResponse(result)
+                                    else:
+                                        # 判断是否有应用svn版本号，如果有说明已经检出过，那就使用更新up，如果没有就用检出co
+                                        if app_git_co_status:
                                             cmd_data = 'svn up -r %s %s --no-auth-cache --non-interactive  --username=%s --password=%s' % (
                                                 release_svn_version, app_svn_co_path, app_svn_user, app_svn_password)
                                             # 用来做执行结果判断的，因为结果有很多意外情况，下面是对的情况下会出现的关键字

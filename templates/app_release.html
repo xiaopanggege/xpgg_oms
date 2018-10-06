@@ -149,6 +149,7 @@
                 $("#add_select_operation_btn").attr("disabled",true);
                 $("#add_delete_operation_btn").attr("disabled",true);
                 $(".app_svn_info").addClass("hidden");
+                $(".app_git_info").addClass("hidden");
                 $("#add_sync_file_div").addClass("hidden");
                 $("#add_sync_file_method_div").addClass("hidden");
                 $("input[name='add_sync_file_style']").eq(1).click();
@@ -961,6 +962,7 @@
 					app_git_url=$.trim($('#add_app_git_url').val());
                     app_git_user=$.trim($('#add_app_git_user').val());
                     app_git_password=$.trim($('#add_app_git_password').val());
+                    app_git_branch=$.trim($('#add_app_git_branch').val());
                     if(app_git_url.length < 1){
                         $('#add_app_git_url_help').text('该项不能为空');
                         $('#add_app_git_url')[0].focus();

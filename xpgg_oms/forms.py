@@ -23,6 +23,13 @@ def app_release_name_validate(value):
         raise ValidationError('应用名称已存在，请更换')
 
 
+# 发布系统 应用发布 表单验证 验证svn更新和git更新是否都存在，这里设计只能存在一种更新方式
+def operation_content_validate(value):
+    check_svn_git = value.split(',')
+    if 'SVN更新' in check_svn_git and 'GIT更新' in check_svn_git:
+        raise ValidationError('不好意思只能存在一种更新下方式')
+
+
 # 发布系统 应用发布  新增应用表单验证 主
 class AppReleaseAddForm(forms.Form):
     app_name = forms.CharField(max_length=100, error_messages={'required': '应用名称不能为空', 'max_length': '最多100位'}, validators=[app_release_name_validate])
@@ -33,8 +40,12 @@ class AppReleaseAddForm(forms.Form):
     app_svn_url = forms.CharField(required=False, max_length=200, error_messages={'max_length': '最多200位'})
     app_svn_user = forms.CharField(required=False, max_length=20, error_messages={'max_length': '最多20位'})
     app_svn_password = forms.CharField(required=False, max_length=20, error_messages={'max_length': '最多20位'})
+    app_git_url = forms.CharField(required=False, max_length=200, error_messages={'max_length': '最多200位'})
+    app_git_user = forms.CharField(required=False, max_length=20, error_messages={'max_length': '最多20位'})
+    app_git_password = forms.CharField(required=False, max_length=20, error_messages={'max_length': '最多20位'})
+    app_git_branch = forms.CharField(required=False, max_length=20, error_messages={'max_length': '最多20位'})
     execution_style = forms.CharField(max_length=20, error_messages={'required': '多主机执行顺序不能为空', 'max_length': '最多20位'})
-    operation_content = forms.CharField(max_length=200, error_messages={'required': '没有选中的操作，请选择', 'max_length': '最多200位'})
+    operation_content = forms.CharField(validators=[operation_content_validate], max_length=200, error_messages={'required': '没有选中的操作，请选择', 'max_length': '最多200位'})
     operation_arguments = forms.CharField(required=False, max_length=2000, error_messages={'max_length': '命令长度总和最多2000位'})
     app_backup_path = forms.CharField(required=False, max_length=200, error_messages={'max_length': '最多200位'})
     description = forms.CharField(required=False, max_length=200, error_messages={'max_length': '最多200位'})
@@ -57,8 +68,12 @@ class AppReleaseUpdateForm(forms.Form):
     app_svn_url = forms.CharField(required=False, max_length=200, error_messages={'max_length': '最多200位'})
     app_svn_user = forms.CharField(required=False, max_length=20, error_messages={'max_length': '最多20位'})
     app_svn_password = forms.CharField(required=False, max_length=20, error_messages={'max_length': '最多20位'})
+    app_git_url = forms.CharField(required=False, max_length=200, error_messages={'max_length': '最多200位'})
+    app_git_user = forms.CharField(required=False, max_length=20, error_messages={'max_length': '最多20位'})
+    app_git_password = forms.CharField(required=False, max_length=20, error_messages={'max_length': '最多20位'})
+    app_git_branch = forms.CharField(required=False, max_length=20, error_messages={'max_length': '最多20位'})
     execution_style = forms.CharField(max_length=20, error_messages={'required': '多主机执行顺序不能为空', 'max_length': '最多20位'})
-    operation_content = forms.CharField(max_length=200, error_messages={'required': '没有选中的操作，请选择', 'max_length': '最多200位'})
+    operation_content = forms.CharField(validators=[operation_content_validate], max_length=200, error_messages={'required': '没有选中的操作，请选择', 'max_length': '最多200位'})
     operation_arguments = forms.CharField(required=False, max_length=2000, error_messages={'max_length': '命令长度总和最多2000位'})
     app_backup_path = forms.CharField(required=False, max_length=200, error_messages={'max_length': '最多200位'})
     description = forms.CharField(required=False, max_length=200, error_messages={'max_length': '最多200位'})
