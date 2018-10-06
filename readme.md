@@ -13,7 +13,7 @@ saltstack version 2017.7.3
 ***
 
 
->依赖软件安装：`yum install subversion rsync tcpdump -y ` svn的版本需1.7或以上，centos7默认满足1.7，centos6默认只有1.6  
+>依赖软件安装：`yum install subversion git rsync tcpdump -y ` svn/git是发布系统所需，svn的版本需1.7或以上，centos7默认满足1.7，centos6默认只有1.6，git版本越新越好。  
 
 >数据库：mysql5.7.12-mysql8.0.11都可以，账号自行创建，新建一个数据库名`xpgg_oms`,编码字符集是`utf8mb4 -- UTF-8 Unicode`，排序是`utf8mb4_0900_ai_ci`   
 
