@@ -3177,9 +3177,6 @@ def app_release_ajax(request):
                 app_git_user = app_data.app_git_user
                 app_git_password = app_data.app_git_password
                 app_git_branch = app_data.app_git_branch
-                # 目前只支持http方式的git，下面是拼接把用户名密码拼接进去这样就不用输入了,如果用户名有@需要转义
-                app_git_user_new = app_git_user.replace('@', '%40')
-                app_git_url_join_usr_passwd = app_git_url.split('://')[0] + '://' + app_git_user_new + ':' + app_git_password + '@' + app_git_url.split('://')[1]
                 app_git_co_status = app_data.app_git_co_status
                 app_path = app_data.app_path
                 sys_type = app_data.sys_type
@@ -3252,6 +3249,11 @@ def app_release_ajax(request):
                                                 result['result'] = app_log
                                                 return JsonResponse(result)
                             if operation == 'GIT更新':
+                                # 目前只支持http方式的git，下面是拼接把用户名密码拼接进去这样就不用输入了,如果用户名有@需要转义
+                                app_git_user_new = app_git_user.replace('@', '%40')
+                                app_git_url_join_usr_passwd = app_git_url.split('://')[
+                                                                  0] + '://' + app_git_user_new + ':' + app_git_password + '@' + \
+                                                              app_git_url.split('://')[1]
                                 app_log.append('\n\n开始执行GIT更新-> 时间戳%s\n' % time.strftime('%X'))
                                 with requests.Session() as s:
                                     saltapi = SaltAPI(session=s)
