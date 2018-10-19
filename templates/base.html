@@ -144,6 +144,9 @@
             padding-left: 45px;
         }
 
+        .hall {
+            height: 100%;
+        }
     </style>
 
     <script>
@@ -155,16 +158,16 @@
     			$(this).siblings("li").removeClass("active");
     		});
 
-    		// 响应式调整页面高度
-    		$(window).resize(function(){
-
-    			// 侧边栏和右边的大框高度,之所以要-20是因为bootstrap的导航css有marginbottom 20px属性减掉才能不出现下拉框
-	        	$('.hall').css(
-	            	"height", $(window).height()*0.92-20);
-
-
-	        	});
-    		$(window).resize(); //这条要放上面函数的下面才能执行玛德
+    		// 响应式调整页面高度,后面发现直接设置.hall高度100%更好用
+    		// $(window).resize(function(){
+            //
+    		// 	// 侧边栏和右边的大框高度,之所以要-20是因为bootstrap的导航css有marginbottom 20px属性减掉才能不出现下拉框
+	        // 	$('.hall').css(
+	        //     	"height", $(window).height()*0.92-20);
+            //
+            //
+	        // 	});
+    		// $(window).resize(); //这条要放上面函数的下面才能执行玛德
 
 //            下面这个是做侧边栏选中a标签跳转到地址对比url如果一样则给他父级加active就是导航高亮，目前还有一个问题子菜单不知道怎么弄
 //            $('.xuanzhong_active').children().each(function () {
