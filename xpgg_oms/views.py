@@ -4690,6 +4690,10 @@ def app_release_test(request):
         return render(request, 'app_release_test.html')
 
 
+def huawei_cdn(request):
+    return render(request, 'huawei_cdn.html')
+
+
 from rest_framework.pagination import PageNumberPagination
 from rest_framework import viewsets
 from rest_framework import mixins

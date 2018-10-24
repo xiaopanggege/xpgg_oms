@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load staticfiles %}
-{% block title %}Salt命令执行{% endblock %}
+{% block title %}华为CDN{% endblock %}
 {% block custom_css %}
 	<style type="text/css">
         .he10{
@@ -27,32 +27,14 @@
 <script>
     	$(function(){
 
-    	    // 响应式调整页面高度
+            // 响应式调整页面高度
     		$(window).resize(function() {
-    		    // 结果打印框pre高度不然默认是没高度的
-	        	$('.overflow_result').css(
-	        		"height",$('.hall').height()*0.8);
-
-                // 扫描的输入表单单独适应窗口高度，不然如果以后我添加更多的扫描东西越来越长的时候会出现
+    		    // 扫描的输入表单单独适应窗口高度，不然如果以后我添加更多的扫描东西越来越长的时候会出现
                 // 整个右侧栏出现滚动条，我这样设置以后只会扫描表单那一块出现滚动，而不会然右边的结果框出现滚动条
                 $('.overflow_set').css(
                     "height", $('.hall').height() * 0.85);
             });
     		$(window).resize();
-
-            $('.collapse_parent').click(function () {
-               var collapse_name = $(this).attr('name');
-               $(collapse_name).siblings().collapse('hide');
-               $(collapse_name).collapse('toggle');
-            });
-
-
-//            minion_id搜索框回车触发查询按钮事件
-            $("#search_minion_id").keydown(function (e) {
-                if (e.keyCode == 13) {
-                    $('.search_minion_id_btn').click();
-                }
-            });
 
 			// // {#  django 跨站验证需要下面的 ajaxSetup   #}
             $.ajaxSetup({
@@ -64,222 +46,27 @@
 			$('#tgt_grain').keyup(function(){
 	    		$('#tgt_grain_help').text('　');
 	    	});
-			$('#tgt_grain_pcre').keyup(function(){
-	    		$('#tgt_grain_pcre_help').text('　');
-	    	});
-			$('#tgt_ip_address').keyup(function(){
-	    		$('#tgt_ip_address_help').text('　');
-	    	});
-	    	$('#tgt_pcre').keyup(function(){
-	    		$('#tgt_pcre_help').text('　');
-	    	});
-	    	$('#task_name_data').keyup(function(){
-	    		$('#task_name_data_help').text('　');
-	    	});
-	    	$('#cmd_data').keyup(function(){
-	    		$('#cmd_data_help').text('　');
-	    	});
-            $('#supervisor_program_data').keyup(function(){
-	    		$('#supervisor_program_data_help').text('　');
-	    	});
-	    	$('#supervisor_cmd_data').keyup(function(){
-	    		$('#supervisor_cmd_data_help').text('　');
-	    	});
 
-
-
-			// 执行对象选择触发输入框的隐藏显示
-			$('input[name="select_tgt"]').click(function () {
-			    //告警消失
-			    $('#tgt_help').text('　');
-               if($.trim($(this).val())=="any"){
-                   $('.select_tgt_list').addClass('hidden');
-               }else if($.trim($(this).val())=="custom_group"){
-                   $('.select_tgt_list').addClass('hidden');
-                   $('.select_tgt_custom_group_class').removeClass('hidden');
-                   $('#tgt_custom_group').focus();
-               }
-               else if($.trim($(this).val())=="minion_list"){
-                   $('.select_tgt_list').addClass('hidden');
-                   $('.select_tgt_minion_list_class').removeClass('hidden');
-                   $('#search_minion_id').focus();
-               }
-               else if($.trim($(this).val())=="pcre"){
-                   $('.select_tgt_list').addClass('hidden');
-                   $('.tgt_pcre_class').removeClass('hidden');
-                   $('#tgt_pcre').focus();
-               }
-               else if($.trim($(this).val())=="grain"){
-                   $('.select_tgt_list').addClass('hidden');
-                   $('.tgt_grain_class').removeClass('hidden');
-                   $('#tgt_grain').focus();
-               }
-               else if($.trim($(this).val())=="grain_pcre"){
-                   $('.select_tgt_list').addClass('hidden');
-                   $('.tgt_grain_pcre_class').removeClass('hidden');
-                   $('#tgt_grain_pcre').focus();
-               }
-               else if($.trim($(this).val())=="ip_address"){
-                   $('.select_tgt_list').addClass('hidden');
-                   $('.tgt_ip_address_class').removeClass('hidden');
-                   $('#tgt_ip_address').focus();
-               }
-
-            });
-
-//          查找minion_id 后期要准备些一个公共的view方法存这个经常用到查询minion的调用，不然每次都要在views.py写一遍
-            $('.search_minion_id_btn').click(function(){
-                 $('#search_select_minion_id').empty();
-                 var minion_id=$.trim($('#search_minion_id').val());
-                 var selected_minion_id=$('#search_selected_minion_id option');
-
-//				如果是在js文件中那么下面的"{% url 'login' %}"无法使用，必须改成/login/真实目录不然找不到
-				$.ajax({
-					url:"{% url 'salt_tool_ajax' %}",
-					type:'GET',
-					dataType:'json',
-                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
-					traditional:true,
-					data:{
-                        'minion_id':minion_id,
-                        'salt_tool_tag_key':'modal_search_minion_id'
-					},
-					success:function(result){
-						if(result.status){
-						    $.each(result.result,function (index,content) {
-						        $("<option value='"+content+"'>"+content+"</option>").appendTo("#search_select_minion_id");
-                                selected_minion_id.each(function () {
-                                    if($(this).val()==content){
-                                        $("#search_select_minion_id option[value='" +content+ "']").remove();
-                                    }
-                                });
-                            })
-						}else {
-						    toastr.error(result.result,'error',{timeOut: 1500});
-                        }
-					}
-				});
-			});
-
-//          minion_id选中 操作触发中间的》按钮可用
-            $("#search_select_minion_id").click(function () {
-                var minion_id_list=$('#search_select_minion_id option:selected').map(function(){return $(this).val();}).get().join(",");
-                if(minion_id_list.length != 0){
-                    $("#search_select_minion_id_btn").attr("disabled",false);
-                }
-            });
-
-//          minion_id选中 操作触发中间的《按钮可用
-            $("#search_selected_minion_id").click(function () {
-                var minion_id_list=$('#search_selected_minion_id option:selected').map(function(){return $(this).val();}).get().join(",");
-                if(minion_id_list.length != 0) {
-                    $("#add_delete_minion_id_btn").attr("disabled",false);
-                }
-            });
-
-//          minion_id》按钮触发选中值移动到右边
-            $("#search_select_minion_id_btn").click(function () {
-//                在这里触发清空如果没选择minion_id的错误提示,嘿嘿
-                $('#minion_list_help').text('　');
-                $("#search_select_minion_id option:selected").each(function () {
-                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#search_selected_minion_id");
-                    $(this).remove();
-                    $("#search_select_minion_id_btn").attr("disabled",true);
-                })
-            });
-
-//          minion_id《按钮触发选中值移动到左边
-            $("#add_delete_minion_id_btn").click(function () {
-                $("#search_selected_minion_id option:selected").each(function () {
-                    $("<option value='"+$.trim($(this).val())+"'>"+$.trim($(this).text())+"</option>").appendTo("#search_select_minion_id");
-                    $(this).remove();
-                    $("#add_delete_minion_id_btn").attr("disabled",true);
-                })
-            });
 
 //          用户下拉框触发文本框提示内容改变
-	        $('#username_select').change(function(){
-	         	if($(this).val()=='administrator'){
-	         		$('.username_help').text('提示：需前台运行的任务请选择administrator用户');
-	         	}else if($(this).val()=='system'){
-	         	    $('.username_help').text('提示：后台运行任务请选择system用户');
+	        $('.huawei_cdn_type_select').click(function(){
+	         	if($(this).val()=='directory'){
+	         		$('#huawei_cdn_urls_data').attr('placeholder','输入的目录必须带有http://或https://，使用“/”结尾，URL之间以“;”进行分隔，或者一行一个URL，如http://www.example.com/folder01/;http://www.example.com/folder02/。其中，www.example.com为您的加速域名。');
+	         	}else if($(this).val()=='file'){
+	         	    $('#huawei_cdn_urls_data').attr('placeholder','输入的URL必须带有http://或https://，URL之间以“;”进行分隔，或者一行一个URL，如http://www.example.com/file01.html;http://www.example.com/file02.html。其中，www.example.com为您的加速域名。');
 	         	}
 			});
 
-            
 
 
-            // windows计划任务执行命令按钮事件
-            $('#windows_task_submit').click(function () {
-                var task_name = $.trim($('#task_name_data').val());
-                var username = $('#username_select').val();
-                var cmd = $.trim($('#cmd_data').val());
-                var force = $.trim($('#force_select').val());
-                var start_in = $.trim($('#start_in_data').val());
-                var task_arg = $.trim($('#arg_data').val());
-                var select_tgt = $("input[name='select_tgt']:checked").val();
-                var tgt_type = 'glob';
-                var tgt = '';
-                if(select_tgt == 'any'){
-                    tgt = '*';
-                    tgt_type = 'glob';
-                }else if(select_tgt == 'minion_list'){
-                    tgt = $('#search_selected_minion_id option').map(function(){return $(this).val();}).get().join(",");
-                    if(tgt.length == 0){
-                        $('#minion_list_help').text('请选择minion_id');
-                        return false
-                    }
-                    tgt_type = 'list';
-                }else if(select_tgt == 'grain'){
-                    tgt = $.trim($('#tgt_grain').val());
-                    if(tgt.length == 0){
-                        $('#tgt_grain_help').text('请输入grain条件');
-                        $('#tgt_grain').focus();
-                        return false
-                    }
-                    tgt_type = 'grain';
-                }
-                else if(select_tgt == 'grain_pcre'){
-                    tgt = $.trim($('#tgt_grain_pcre').val());
-                    if(tgt.length == 0){
-                        $('#tgt_grain_pcre_help').text('请输入grain正则条件');
-                        $('#tgt_grain_pcre').focus();
-                        return false
-                    }
-                    tgt_type = 'grain_pcre';
-                }
-                else if(select_tgt == 'ip_address'){
-                    tgt = $.trim($('#tgt_ip_address').val());
-                    if(tgt.length == 0){
-                        $('#tgt_ip_address_help').text('请输入IP或IP段');
-                        $('#tgt_ip_address').focus();
-                        return false
-                    }
-                    tgt_type = 'ipcidr';
-                }
-                else if(select_tgt == 'pcre'){
-                    tgt = $.trim($('#tgt_pcre').val());
-                    if(tgt.length == 0){
-                        $('#tgt_pcre_help').text('请输入minion id正则');
-                        $('#tgt_pcre').focus();
-                        return false
-                    }
-                    tgt_type = 'pcre';
-                }
-                else {
-                    $('#tgt_help').text('请选择执行对象');
-                    return false
-                }
 
-                if($.trim(task_name).length == 0){
-                    $('#task_name_data_help').text('请输入计划任务名称');
-                        $('#task_name_data').focus();
-                        return false
-                }
-
-                if($.trim(cmd).length == 0){
-                    $('#cmd_data_help').text('请输入命令');
-                        $('#cmd_data').focus();
+            // 刷新缓存任务执行命令按钮事件
+            $('#huawei_cdn_refresh_submit').click(function () {
+                var select_type = $("input[name='huawei_cdn_type_select']:checked").val();
+                var urls = $.trim($('#huawei_cdn_urls_data').val());
+                if($.trim(urls).length == 0){
+                    $('#huawei_cdn_urls_data_help').text('请输入要刷新的内容');
+                        $('#huawei_cdn_urls_data').focus();
                         return false
                 }
 
@@ -512,27 +299,6 @@
 					}
 				});
             });
-            
-
-
-            // 结果输出格式化 递归函数
-            var result_fun = function (data,data_count) {
-                if(!data) return;
-                $.each(data,function(k,v){
-                    if($.isPlainObject(v)){
-                        $('#salt_tool_result').append("<p style='color: #3FB8AF;padding-left: "+data_count*25+"px;'>"+k+":</p>");
-                        result_fun(v,data_count+1)
-                    }else if($.isArray(v)){
-                        $('#salt_tool_result').append("<p style='color: #3FB8AF;padding-left: "+data_count*25+"px;'>"+k+":</p>");
-                        result_fun(v,data_count+1)
-                    }else{
-                        $('#salt_tool_result').append("<p style='color: #3FB8AF;padding-left: "+data_count*25+"px;'>"+k+":</p>");
-                        $('#salt_tool_result').append("<p style='padding-left: "+(data_count+1)*25+"px;'>"+v+"</p>");
-                    }
-                });
-            };
-
-
 
 		});
 
@@ -544,167 +310,65 @@
 {% block panel_body_content %}
 
 <div class="row-fluid ">
-    <div class="col-xs-6 overflow_set" >
+    <div class="col-xs-12 overflow_set" >
         <div class="he10"></div>
-        <div class="form-horizontal"   >
-            <div class="form-group" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;padding-bottom: 5px;margin-bottom: 5px;" >
-				<label class="label label-info " style="font-size: 17px;">工具选择</label>
-				<div class="he10"></div>
-                <div class="col-sm-12">
-                    <button type="button" class="btn btn-sm btn-success collapse_parent"   name="#windows_task_tool" style="margin-top: 5px;">
-                        windows计划任务
-                    </button>
+        <ul id="myTab" class="nav nav-tabs">
+            <li class="active">
+                <a href="#refresh" data-toggle="tab">
+                     刷新
+                </a>
+            </li>
+            <li><a href="#preheating" data-toggle="tab">预热</a></li>
+            <li><a href="#history" data-toggle="tab">操作记录</a></li>
+        </ul>
+        <div id="myTabContent" class="tab-content">
+            <div class="tab-pane fade in active col-xs-6" id="refresh">
+                <div id="huawei_cdn_tool" class="form-horizontal  salt_tool_collapse"   role="form" style="font-size: 15px;" >
+                    <div class="he10"></div>
+                    <div class="alert alert-success">CDN节点的缓存不实时更新，当您的源站内容更新后，希望用户获取到最新资源，可以通过缓存刷新请求，强制CDN节点缓存过期。
+每个帐户每天最多刷新2000个URL和100个目录，URL单次提交数量不超过1000个。任务生效大约需要5分钟。</div>
+                    <div class="form-group" >
+                        <label class="control-label col-sm-2" style="text-align: center;">类型:</label>
+                        <div class="col-sm-3">
+                            <label class="radio-inline">
+                                <input type="radio" class="huawei_cdn_type_select" name="huawei_cdn_type_select"  value="file" checked> URL
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" class="huawei_cdn_type_select" name="huawei_cdn_type_select"   value="directory"> 目录
+                            </label>
+                        </div>
+                    </div>
 
-                    <button type="button" class="btn btn-sm btn-success collapse_parent"  name="#supervisor_create_tool" style="margin-top: 5px;">
-                        supervisor创建
-                    </button>
+                    <div class="form-group" >
+                        <label class="control-label col-sm-2 " style="text-align: center;">URL:</label>
+                        <div class="col-sm-9">
+                            <textarea class="form-control" id="huawei_cdn_urls_data" rows="10" placeholder="输入的URL必须带有http://或https://，URL之间以“;”进行分隔，或者一行一个URL，如http://www.example.com/file01.html;http://www.example.com/file02.html。其中，www.example.com为您的加速域名。"></textarea>
+                            <span  id="huawei_cdn_urls_data_help" style="color: #FF0000;">　</span>
+                        </div>
+                    </div>
 
-                    <button type="button" class="btn btn-sm btn-success collapse_parent"  name="#huawei_cdn_tool" style="margin-top: 5px;">
-                        华为CDN缓存刷新
-                    </button>
+                    <div class="form-group " >
+                        <div class="col-sm-3 col-sm-offset-2" style="">
+                            <button type="button" class="btn btn-success " id="huawei_cdn_refresh_submit" data-loading-text="正在执行...">刷新</button>
+
+                        </div>
+                        <!--<div class="col-sm-2" style="padding: 0;">-->
+                        <!---->
+
+                        <!--</div>-->
+
+                    </div>
                 </div>
-                
-			</div>
+            </div>
+            <div class="tab-pane fade" id="preheating">
+                <p>正在开发中....</p>
+            </div>
+            <div class="tab-pane fade" id="history">
+                <p>正在开发中....</p>
+            </div>
         </div>
 
-        <div class="form-horizontal"   >
-
-            <div class="form-group " style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;padding-bottom: 5px;" >
-				<label class="label label-info " style="font-size: 17px;">执行对象选择</label>
-                <label class="label" id="tgt_help" style="color: #FF0000;font-size: 15px;"></label>
-				<div class="he10"></div>
-				<div class="container-fluid" style="font-size: 14px;">
-					<div class="row-fluid">
-						<div class="col-sm-3 col-md-3">
-							<label class="radio-inline" >
-								<input type="radio" name="select_tgt"  value="any" >所有
-							</label>
-						 </div>
-						<div class="col-sm-3 col-md-3">
-							<label class="radio-inline" >
-								<input type="radio" name="select_tgt"  value="minion_list">Minion_ID
-							</label>
-						 </div>
-                        <div class="col-sm-3 col-md-3">
-							<label class="radio-inline" >
-								<input type="radio" name="select_tgt"  value="pcre">Minion正则
-							</label>
-						</div>
-						<div class="col-sm-3 col-md-3">
-							<label class="radio-inline" >
-								<input type="radio" name="select_tgt"  value="custom_group">自定义组
-							</label>
-						</div>
-                        <div class="col-sm-3 col-md-3">
-							<label class="radio-inline" >
-								<input type="radio" name="select_tgt"  value="grain">Grain
-							</label>
-						</div>
-                        <div class="col-sm-3 col-md-3">
-							<label class="radio-inline" >
-								<input type="radio" name="select_tgt"  value="grain_pcre">Grain正则
-							</label>
-						</div>
-                        <div class="col-sm-3 col-md-3">
-							<label class="radio-inline" >
-								<input type="radio" name="select_tgt"  value="ip_address">IP
-							</label>
-						</div>
-
-
-					</div>
-				</div>
-				<div class="he10"></div>
-                <div class="select_tgt_list select_tgt_minion_list_class hidden">
-                    <label class="control-label col-sm-2 " >Minion_ID:</label>
-                    <div class="panel panel-default col-sm-4" style="padding: 0;margin-left: 15px;margin-bottom: 0;">
-                        <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
-                            <div class="input-group">
-                                <input type="text" class="form-control input-sm" id="search_minion_id" placeholder="查询Minion_ID">
-                                <span class="input-group-btn">
-                                    <button type="button" class="btn btn-primary search_minion_id_btn btn-sm"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
-                                </span>
-
-                            </div>
-                        </div>
-                        <select size=5  multiple class="form-control panel-body" id="search_select_minion_id" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
-                        </select>
-                    </div>
-
-                    <div class="col-sm-1" style="padding: 0 10px 0 10px;">
-                        <div style="margin-top: 30px;">
-                            <button type="button" class="btn btn-xs btn-info " id="search_select_minion_id_btn" disabled="true">&gt;&gt;</button>
-                            <button type="button" class="btn btn-xs btn-info " style="margin-top: 1px;" id="add_delete_minion_id_btn" disabled="true">&lt;&lt;</button>
-                        </div>
-                    </div>
-
-                    <div class="panel panel-info col-sm-4" style="padding: 0;margin-bottom: 0;">
-                        <div class="panel-heading " style="padding: 0px 0px 0px 0px;border: 0;">
-                            <h3 class="panel-title " style="font-size: 12px;padding: 5px 10px;height: 30px;line-height: 1.5;">选中的Minion_ID 可多选</h3>
-                        </div>
-                        <select size=5 multiple class="form-control panel-body" id="search_selected_minion_id" style="overflow-x: scroll;padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
-
-                        </select>
-                    </div>
-
-                    <label class="control-label  " style="color: #FF0000;" >*</label>
-
-                    <div class="col-sm-6 col-sm-offset-3">
-                        <span id="minion_list_help" style="color: #FF0000;">　</span>
-                </div>
-                </div>
-                <div class="select_tgt_list tgt_pcre_class hidden">
-                    <label class="control-label col-sm-2 " for="tgt_pcre">M正则:</label>
-                    <div class="col-sm-8">
-                        <input type="text" class="form-control" id="tgt_pcre"
-                        style="font-size: 14px;"  required="required" placeholder="正则匹配minion id">
-                        <span class="" id="tgt_pcre_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label  " style="color: #FF0000;" >*</label>
-                </div>
-                <div class="select_tgt_list select_tgt_custom_group_class hidden">
-                    <label class="control-label col-sm-2 " for="tgt_custom_group">Custom_group:</label>
-                    <div class="col-sm-8">
-                        <input type="text" class="form-control" id="tgt_custom_group"
-                        style="font-size: 14px;"  required="required" value="自定义组功能开发中。。尽请等待">
-                        <span class="" id="tgt_custom_group_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label  " style="color: #FF0000;" >*</label>
-                </div>
-                <div class="select_tgt_list tgt_grain_class hidden">
-                    <label class="control-label col-sm-2 " for="tgt_grain">Grain:</label>
-                    <div class="col-sm-8">
-                        <input type="text" class="form-control" id="tgt_grain"
-                        style="font-size: 14px;"  required="required" >
-                        <span class="" id="tgt_grain_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label  " style="color: #FF0000;" >*</label>
-                </div>
-                <div class="select_tgt_list tgt_grain_pcre_class hidden">
-                    <label class="control-label col-sm-2 " for="tgt_grain_pcre">Grain正则:</label>
-                    <div class="col-sm-8">
-                        <input type="text" class="form-control" id="tgt_grain_pcre"
-                        style="font-size: 14px;"  required="required" >
-                        <span class="" id="tgt_grain_pcre_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label  " style="color: #FF0000;" >*</label>
-                </div>
-                <div class="select_tgt_list tgt_ip_address_class hidden">
-                    <label class="control-label col-sm-2 " for="tgt_ip_address">IP:</label>
-                    <div class="col-sm-8">
-                        <input type="text" class="form-control" id="tgt_ip_address"
-                        style="font-size: 14px;"  required="required" placeholder="ip/ip段，例：192.168.1.1 or 192.168.1.0/24">
-                        <span class="" id="tgt_ip_address_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label  " style="color: #FF0000;" >*</label>
-                </div>
-
-
-
-			</div>
-        </div>
-        
-        <div class="">
+        <div class="hidden">
             <div id="windows_task_tool" class="form-horizontal  salt_tool_collapse collapse"  role="form" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" >
                 <label class="label label-info " style="font-size: 17px;">windows计划任务</label>
                 <div class="he10"></div>
@@ -873,55 +537,9 @@
                 </div>
             </div>
             <!--<div class="he10"></div>-->
-            
-            <div id="huawei_cdn_tool" class="form-horizontal  salt_tool_collapse collapse"   role="form" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" >
-                <label class="label label-info " style="font-size: 17px;">华为CDN缓存刷新</label>
-                <div class="he10"></div>
 
-                <div class="form-group" style="margin-bottom: 10px;">
-                    <label class="control-label col-sm-2" >类型:</label>
-                    <div class="col-sm-3">
-                        <label class="radio-inline">
-                            <input type="radio" class="huawei_cdn_type_select" name="huawei_cdn_type_select"  value="linux" checked> URL
-                        </label>
-                        <label class="radio-inline">
-                            <input type="radio" class="huawei_cdn_type_select" name="huawei_cdn_type_select"   value="windows"> 目录
-                        </label>
-                    </div>
-                </div>
-
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="control-label col-sm-2 " for="huawei_cdn_urls_data">URL:</label>
-                    <div class="col-sm-9">
-                        <textarea class="form-control" id="huawei_cdn_urls_data" rows="10" placeholder="输入的URL必须带有http://或https://，URL之间以“;”进行分隔，或者一行一个URL，如http://www.example.com/file01.html;http://www.example.com/file02.html。其中，www.example.com为您的加速域名。"></textarea>
-                        <span class="" id="huawei_cdn_urls_data_help" style="color: #FF0000;">　</span>
-                    </div>
-                </div>
-
-                <div class="form-group " style="margin-left: 5px;margin-bottom: 5px;">
-                    <div class="col-sm-3 col-sm-offset-2" style="padding: 0;">
-                        <button type="button" class="btn btn-success " id="huawei_cdn_create_submit" data-loading-text="正在执行...">刷新</button>
-
-                    </div>
-                    <!--<div class="col-sm-2" style="padding: 0;">-->
-                    <!---->
-
-                    <!--</div>-->
-                    <label class="control-label col-sm-9 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：</label>
-
-                </div>
-            </div>
             <!--<div class="he10"></div>-->
         </div>
-    </div>
-    <div class="form-group col-xs-6 overflow_result" style="padding-top: 5px;">
-        <label class="label label-danger " style="font-size: 17px;">结果打印</label>
-        <!-- 结果打印 -->
-        <!-- 下面这个列数cols弄100%比较大，高度我用h45来按浏览器调整，style是禁止拉伸 -->
-        <!--注意如果使用标签textarea的字体一定要设置等宽字体，因为普通的字体在输出的时候无法和在linux下面一样，想要输出程序代码的
-        原样，最好用等宽字体，不用你自己看下有多难看就知道这里用了font-family: monospace;自带的等宽字体-->
-        <!--最后我发现可以直接用pre标签这个标签可以完美的输出后端代码的格式哈哈不过换行和滚动条还是要加在上面的style里-->
-        <pre class="form-control "  id="salt_tool_result"  style="font-size:15px;resize:none;line-height:100%;height: 100%;margin-top: 4px;background-color:#000;color:#47c032;"></pre>
     </div>
 </div>
 

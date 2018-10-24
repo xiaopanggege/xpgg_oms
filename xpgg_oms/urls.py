@@ -59,6 +59,7 @@ urlpatterns = [
     url(r'^app_auth/app_auth_app_manage/$', views.app_auth_app_manage, name='app_auth_app_manage'),
     url(r'^app_auth/app_auth_app_group_manage/$', views.app_auth_app_group_manage, name='app_auth_app_group_manage'),
     url(r'^app_auth_ajax/$', views.app_auth_ajax, name='app_auth_ajax'),
+    url(r'^huawei_cdn/$', views.huawei_cdn, name='huawei_cdn'),
     url(r'^h5_issue/$', views.h5_issue, name='h5_issue'),
     url(r'^h5_svn_co/$', views.h5_svn_co, name='h5_svn_co'),
     url(r'^h5_svn_zip/$', views.h5_svn_zip, name='h5_svn_zip'),
