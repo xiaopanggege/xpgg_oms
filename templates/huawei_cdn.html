@@ -14,11 +14,29 @@
         .overflow_set{
         	overflow: auto;
         }
-		/*pre标签不会自动换行第二个是换行，第一个是滚动条*/
-		#salt_tool_result {
-            overflow-y: auto;
-            white-space: pre-wrap;
+
+        /*让列表内的信息上下居中,默认是换行的，但是词内默认没换行要设置word-break实现词内换行*/
+        td{
+            vertical-align:middle !important;
+            text-align: center;
+            word-break:break-all;
         }
+
+        th{
+            text-align: center;
+        }
+
+        textarea{
+            /*width:300px; */
+            height:100%;
+            overflow-y:visible
+        }
+
+        #myTab li a:hover{
+            color: #555!important;
+            background-color: #ddd;
+        }
+
     </style>
 
 {% endblock %}
@@ -36,19 +54,28 @@
             });
     		$(window).resize();
 
-			// // {#  django 跨站验证需要下面的 ajaxSetup   #}
+
+    		//  分页页面跳转
+            $('.page_go').click(function () {
+                window.location.href = window.location.href.split("?")[0]+'?history=true&page='+$("#page_index").val();
+            });
+
+			//  {#  django 跨站验证需要下面的 ajaxSetup   #}
             $.ajaxSetup({
                  data: {csrfmiddlewaretoken: '{{ csrf_token }}' }
             });
 
 
     	    //页面输入框改变清空错误提示信息
-			$('#tgt_grain').keyup(function(){
-	    		$('#tgt_grain_help').text('　');
+			$('#huawei_cdn_urls_data').keyup(function(){
+	    		$('#huawei_cdn_urls_data_help').text('　');
+	    	});
+			$('#huawei_cdn_preheating_urls_data').keyup(function(){
+	    		$('#huawei_cdn_preheating_urls_data_help').text('　');
 	    	});
 
 
-//          用户下拉框触发文本框提示内容改变
+//          点击类型选择触发文本框提示内容改变
 	        $('.huawei_cdn_type_select').click(function(){
 	         	if($(this).val()=='directory'){
 	         		$('#huawei_cdn_urls_data').attr('placeholder','输入的目录必须带有http://或https://，使用“/”结尾，URL之间以“;”进行分隔，或者一行一个URL，如http://www.example.com/folder01/;http://www.example.com/folder02/。其中，www.example.com为您的加速域名。');
@@ -71,241 +98,123 @@
                 }
 
                 var $btn = $(this).button('loading');
-                $("#salt_tool_result").text("正在执行.....");
                 $.ajax({
-					url:"{% url 'salt_tool_ajax' %}",
+					url:"{% url 'huawei_cdn' %}",
 					type:'POST',
 					dataType:'json',
                     //如果数据是列表即数组的话要加下面这个traditional不然传不过去
 					traditional:true,
 					data:{
-                        'tgt':tgt,
-                        'tgt_type':tgt_type,
-                        'task_name':task_name,
-                        'username':username,
-                        'cmd':cmd,
-                        'force':force,
-                        'start_in':start_in,
-                        'task_arg':task_arg,
-                        'salt_tool_tag_key':'create_task'
+                        'select_type':select_type,
+                        'urls':urls,
+                        'huawei_cdn_tag_key':'cdn_refresh'
 					},
 					success:function(result){
 						if(result.status){
-						    $("#salt_tool_result").empty();
-                            var data_count = 0;
-                            $.each(result.result,function (k,v) {
-                                if($.isPlainObject(v)){
-                                    $('#salt_tool_result').append("<p style='color: #45ddd4;font-weight: bold;'>"+k+":</p>");
-                                    result_fun(v,data_count+1);
-                                    $('#salt_tool_result').append('\n\n');
-                                }else if($.isArray(v)){
-                                    $('#salt_tool_result').append("<p style='color: #45ddd4;font-weight: bold;'>"+k+":</p>");
-                                    result_fun(v,data_count+1);
-                                    $('#salt_tool_result').append('\n\n');
-                                }else{
-                                    $('#salt_tool_result').append("<p style='color: #3FB8AF;font-weight: bold;'>"+k+":</p>");
-                                    $('#salt_tool_result').append("<p style='padding-left: 25px;'>"+v+"</p>");
-                                    $('#salt_tool_result').append('\n\n');
-                                }
-                            });
-                            $btn.button('reset');
+						    toastr.success(JSON.stringify(result.result), {timeOut: 2500});
+						    $btn.button('reset');
+						    $('#huawei_cdn_urls_data').val('');
 						}else {
-						    $("#salt_tool_result").empty();
-						    $('#salt_tool_result').html("<p style='color: #BF0000;'>"+result.result+"</p>");
+						    toastr.error(JSON.stringify(result.result), {timeOut: 2500});
 						    $btn.button('reset');
                         }
 					}
 				});
             });
 
-            // supervisor生成结果查询命令按钮事件
-            $('#supervisor_content_submit').click(function () {
-                var program = $.trim($('#supervisor_program_data').val());
-                var command = $.trim($('#supervisor_cmd_data').val());
-                var directory = $.trim($('#supervisor_directory_data').val());
-                var env = $.trim($('#supervisor_env_data').val());
-                var logfile = $.trim($('#supervisor_log_data').val());
-                var errorlogfile = $.trim($('#supervisor_errorlog_data').val());
-
-                if($.trim(program).length == 0){
-                    $('#supervisor_program_data_help').text('请输入进程名称');
-                        $('#supervisor_program_data').focus();
+            // 缓存预热任务执行命令按钮事件
+            $('#huawei_cdn_preheating_submit').click(function () {
+                var urls = $.trim($('#huawei_cdn_preheating_urls_data').val());
+                if($.trim(urls).length == 0){
+                    $('#huawei_cdn_preheating_urls_data_help').text('请输入要预热的内容');
+                        $('#huawei_cdn_preheating_urls_data').focus();
                         return false
                 }
-
-                if($.trim(command).length == 0){
-                    $('#supervisor_cmd_data_help').text('请输入命令');
-                        $('#supervisor_cmd_data').focus();
-                        return false
-                }
-
 
                 var $btn = $(this).button('loading');
-                $("#salt_tool_result").text("正在执行.....");
                 $.ajax({
-					url:"{% url 'salt_tool_ajax' %}",
-					type:'GET',
-					dataType:'json',
-                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
-					traditional:true,
-					data:{
-                        'program':program,
-                        'command':command,
-                        'directory':directory,
-                        'env':env,
-                        'logfile':logfile,
-                        'errorlogfile':errorlogfile,
-                        'salt_tool_tag_key':'get_supervisor_content'
-					},
-					success:function(result){
-						if(result.status){
-						    $("#salt_tool_result").empty();
-                            $.each(result.result,function (i,v) {
-                                $('#salt_tool_result').append("<p style='padding-left: 25px;'>"+v+"</p>");
-
-                            });
-                            $btn.button('reset');
-						}else {
-						    $("#salt_tool_result").empty();
-						    $('#salt_tool_result').html("<p style='color: #BF0000;'>"+result.result+"</p>");
-						    $btn.button('reset');
-                        }
-					}
-				});
-            });
-
-            // supervisor创建执行命令按钮事件
-            $('#supervisor_create_submit').click(function () {
-                var program = $.trim($('#supervisor_program_data').val());
-                var command = $.trim($('#supervisor_cmd_data').val());
-                var directory = $.trim($('#supervisor_directory_data').val());
-                var force = $.trim($('#supervisor_force_select').val());
-                var env = $.trim($('#supervisor_env_data').val());
-                var logfile = $.trim($('#supervisor_log_data').val());
-                var errorlogfile = $.trim($('#supervisor_errorlog_data').val());
-                var select_tgt = $("input[name='select_tgt']:checked").val();
-                var tgt_type = 'glob';
-                var tgt = '';
-                if(select_tgt == 'any'){
-                    tgt = '*';
-                    tgt_type = 'glob';
-                }else if(select_tgt == 'minion_list'){
-                    tgt = $('#search_selected_minion_id option').map(function(){return $(this).val();}).get().join(",");
-                    if(tgt.length == 0){
-                        $('#minion_list_help').text('请选择minion_id');
-                        return false
-                    }
-                    tgt_type = 'list';
-                }else if(select_tgt == 'grain'){
-                    tgt = $.trim($('#tgt_grain').val());
-                    if(tgt.length == 0){
-                        $('#tgt_grain_help').text('请输入grain条件');
-                        $('#tgt_grain').focus();
-                        return false
-                    }
-                    tgt_type = 'grain';
-                }
-                else if(select_tgt == 'grain_pcre'){
-                    tgt = $.trim($('#tgt_grain_pcre').val());
-                    if(tgt.length == 0){
-                        $('#tgt_grain_pcre_help').text('请输入grain正则条件');
-                        $('#tgt_grain_pcre').focus();
-                        return false
-                    }
-                    tgt_type = 'grain_pcre';
-                }
-                else if(select_tgt == 'ip_address'){
-                    tgt = $.trim($('#tgt_ip_address').val());
-                    if(tgt.length == 0){
-                        $('#tgt_ip_address_help').text('请输入IP或IP段');
-                        $('#tgt_ip_address').focus();
-                        return false
-                    }
-                    tgt_type = 'ipcidr';
-                }
-                else if(select_tgt == 'pcre'){
-                    tgt = $.trim($('#tgt_pcre').val());
-                    if(tgt.length == 0){
-                        $('#tgt_pcre_help').text('请输入minion id正则');
-                        $('#tgt_pcre').focus();
-                        return false
-                    }
-                    tgt_type = 'pcre';
-                }
-                else {
-                    $('#tgt_help').text('请选择执行对象');
-                    return false
-                }
-
-                if($.trim(program).length == 0){
-                    $('#supervisor_program_data_help').text('请输入进程名称');
-                        $('#supervisor_program_data').focus();
-                        return false
-                }
-
-                if($.trim(command).length == 0){
-                    $('#supervisor_cmd_data_help').text('请输入命令');
-                        $('#supervisor_cmd_data').focus();
-                        return false
-                }
-
-
-                var $btn = $(this).button('loading');
-                $("#salt_tool_result").text("正在执行.....");
-                $.ajax({
-					url:"{% url 'salt_tool_ajax' %}",
+					url:"{% url 'huawei_cdn' %}",
 					type:'POST',
 					dataType:'json',
                     //如果数据是列表即数组的话要加下面这个traditional不然传不过去
 					traditional:true,
 					data:{
-                        'tgt':tgt,
-                        'tgt_type':tgt_type,
-                        'program':program,
-                        'command':command,
-                        'directory':directory,
-                        'force':force,
-                        'env':env,
-                        'logfile':logfile,
-                        'errorlogfile':errorlogfile,
-                        'salt_tool_tag_key':'create_supervisor'
+                        'urls':urls,
+                        'huawei_cdn_tag_key':'cdn_preheating'
 					},
 					success:function(result){
 						if(result.status){
-						    $("#salt_tool_result").empty();
-                            var data_count = 0;
-                            console.log(JSON.stringify(result.result));
-                            $.each(result.result,function (k,v) {
-                                if($.isPlainObject(v)){
-                                    $('#salt_tool_result').append("<p style='color: #45ddd4;font-weight: bold;'>"+k+":</p>");
-                                    result_fun(v,data_count+1);
-                                    $('#salt_tool_result').append('\n\n');
-                                }else if($.isArray(v)){
-                                    $('#salt_tool_result').append("<p style='color: #45ddd4;font-weight: bold;'>"+k+":</p>");
-                                    result_fun(v,data_count+1);
-                                    $('#salt_tool_result').append('\n\n');
-                                }else{
-                                    $('#salt_tool_result').append("<p style='color: #3FB8AF;font-weight: bold;'>"+k+":</p>");
-                                    $('#salt_tool_result').append("<p style='padding-left: 25px;'>"+v+"</p>");
-                                    $('#salt_tool_result').append('\n\n');
-                                }
-                            });
-                            $btn.button('reset');
+						    toastr.success(JSON.stringify(result.result), {timeOut: 2500});
+						    $btn.button('reset');
+						    $('#huawei_cdn_urls_data').val('');
 						}else {
-						    $("#salt_tool_result").empty();
-						    $('#salt_tool_result').html("<p style='color: #BF0000;'>"+result.result+"</p>");
+						    toastr.error(JSON.stringify(result.result), {timeOut: 2500});
 						    $btn.button('reset');
                         }
 					}
 				});
             });
+
+            //刷新任务状态
+            $('.update_data').click(function () {
+                var task_id = $(this).parent().siblings('.task_id').html();
+                var task_status = $(this).parent().siblings('.task_status');
+                var task_urls = $(this).parent().siblings('.task_urls');
+                var $btn = $(this).button('loading');
+                $.ajax({
+					url:"{% url 'huawei_cdn' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+                        'task_id':task_id,
+                        'huawei_cdn_tag_key':'history_update'
+					},
+					success:function(result){
+						if(result.status){
+						    if(result.result.status == 'task_inprocess'){
+						        task_status.html('执行中...');
+                            }
+                            else {
+                                task_status.html('已完成');
+                                task_status.css("color","#00CC00");
+                            }
+                            task_urls.html(JSON.stringify(result.result.urls));
+						    $btn.button('reset');
+						    toastr.success('刷新成功', {timeOut: 1500});
+						}else {
+						    $btn.button('reset');
+						    toastr.error(JSON.stringify(result.result), {timeOut: 2500});
+                        }
+					}
+				});
+            });
+
+            // 任务记录查询详细资料
+            $('.view_detail').click(function () {
+                $('.view_detail_tb').empty();
+                var urls = $(this).parent().siblings('.task_urls').html();
+                urls = urls.replace(/ None/g,null);
+                urls = eval(urls);
+                $.each(urls,function(i,data){
+                    var status = '执行中...';
+                    if(data.status=='succeed'){
+                        status = '已完成'
+                    }
+                    $('.view_detail_tb').append("<tr><td>"+data.url+"</td><td>"+status+"</td></tr>");
+                });
+
+
+            });
+
 
 		});
 
     </script>
 {% endblock %}
 
-{% block panel-title_content %}Salt工具（封装常用和需求的一些salt执行命令，方便快速调用）{% endblock %}
+{% block panel-title_content %}华为CDN缓存预热管理{% endblock %}
 
 {% block panel_body_content %}
 
@@ -313,17 +222,13 @@
     <div class="col-xs-12 overflow_set" >
         <div class="he10"></div>
         <ul id="myTab" class="nav nav-tabs">
-            <li class="active">
-                <a href="#refresh" data-toggle="tab">
-                     刷新
-                </a>
-            </li>
+            <li class="{% if history != 'true' %}active {% endif %}"><a href="#refresh" data-toggle="tab">刷新</a></li>
             <li><a href="#preheating" data-toggle="tab">预热</a></li>
-            <li><a href="#history" data-toggle="tab">操作记录</a></li>
+            <li class="{% if history == 'true' %}active {% endif %}"><a href="#history" data-toggle="tab">操作记录</a></li>
         </ul>
         <div id="myTabContent" class="tab-content">
-            <div class="tab-pane fade in active col-xs-6" id="refresh">
-                <div id="huawei_cdn_tool" class="form-horizontal  salt_tool_collapse"   role="form" style="font-size: 15px;" >
+            <div class="tab-pane fade {% if history != 'true' %} in active {% endif %} col-xs-6" id="refresh">
+                <div class="form-horizontal "   role="form" style="font-size: 15px;" >
                     <div class="he10"></div>
                     <div class="alert alert-success">CDN节点的缓存不实时更新，当您的源站内容更新后，希望用户获取到最新资源，可以通过缓存刷新请求，强制CDN节点缓存过期。
 每个帐户每天最多刷新2000个URL和100个目录，URL单次提交数量不超过1000个。任务生效大约需要5分钟。</div>
@@ -349,196 +254,98 @@
 
                     <div class="form-group " >
                         <div class="col-sm-3 col-sm-offset-2" style="">
-                            <button type="button" class="btn btn-success " id="huawei_cdn_refresh_submit" data-loading-text="正在执行...">刷新</button>
+                            <button type="button" class="btn btn-success " id="huawei_cdn_refresh_submit" data-loading-text="正在执行...">提交</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade col-xs-6" id="preheating">
+                <div class="form-horizontal "   role="form" style="font-size: 15px;" >
+                    <div class="he10"></div>
+                    <div class="alert alert-success">当您的源站内容更新后，可以通过缓存预热请求，将源站的资源主动缓存到CDN节点。用户可以直接从CDN节点获取访问内容，无需回源。
+每个帐户每天最多预热1000个URL，单次提交数量不超过1000个。任务生效时间取决于预热文件数量、文件大小以及网络状况等。</div>
+                    <div class="form-group" >
+                        <label class="control-label col-sm-2 " style="text-align: center;">URL:</label>
+                        <div class="col-sm-9">
+                            <textarea class="form-control" id="huawei_cdn_preheating_urls_data" rows="10" placeholder="输入的URL必须带有http://或https://，URL之间以“;”进行分隔，或者一行一个URL，如http://www.example.com/file01.html;http://www.example.com/file02.html。其中，www.example.com为您的加速域名。"></textarea>
+                            <span  id="huawei_cdn_preheating_urls_data_help" style="color: #FF0000;">　</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group " >
+                        <div class="col-sm-3 col-sm-offset-2" style="">
+                            <button type="button" class="btn btn-success " id="huawei_cdn_preheating_submit" data-loading-text="正在执行...">提交</button>
 
                         </div>
-                        <!--<div class="col-sm-2" style="padding: 0;">-->
-                        <!---->
-
-                        <!--</div>-->
 
                     </div>
                 </div>
             </div>
-            <div class="tab-pane fade" id="preheating">
-                <p>正在开发中....</p>
-            </div>
-            <div class="tab-pane fade" id="history">
-                <p>正在开发中....</p>
-            </div>
-        </div>
+            <div class="tab-pane fade {% if history == 'true' %} in active {% endif %}" id="history">
+                <div style="margin-bottom: 5px;padding-top: 10px;">
+                    <table class="table table-hover  table-bordered table-striped table-responsive table-condensed" >
+                        <caption class="alert alert-info" >性能考虑“任务状态”不主动刷新，请手动点击刷新获取最新任务状态</caption>
+                    <thead>
+                    <!--给下面tr加个success是bootstrap的一个类颜色会改变下呵呵-->
+                      <tr class="success">
+                          <th width="18%">任务类型</th>
+                          <th width="12%">任务状态</th>
+                          <th width="16%">创建时间</th>
+                          <th width="10%">执行人</th>
+                          <th width="20%">操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                        {% for data in data_list%}
+                        <tr>
+                            <td class="task_type">{{ data.task_type }}</td>
+                            {% if  data.task_status == 'task_inprocess' %}
+                            <td style="color: #4d69cc" class="task_status">执行中...</td>
+                            {% else %}
+                            <td style="color: #00CC00" class="task_status">已完成</td>
+                            {% endif %}
+                            <td class="create_time">{{ data.create_time }}</td>
+                            <td class="operator">{{ data.operator }}</td>
 
-        <div class="hidden">
-            <div id="windows_task_tool" class="form-horizontal  salt_tool_collapse collapse"  role="form" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" >
-                <label class="label label-info " style="font-size: 17px;">windows计划任务</label>
-                <div class="he10"></div>
+                            <!--隐藏内容-->
+                            <td class="task_id hidden">{{ data.task_id }}</td>
+                            <td class="task_urls hidden">{{ data.urls}}</td>
 
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="control-label col-sm-2 " for="task_name_data">名称:</label>
-                    <div class="col-sm-3">
-                        <input type="text"  class="form-control" id="task_name_data" >
-                        <span class="" id="task_name_data_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入计划任务名称</label>
+                            <td>
+                                <button type="button" class="btn btn-info btn-sm update_data" data-loading-text="正在执行...">刷新</button>
+                                <button type="button" class="btn btn-info btn-sm view_detail" data-toggle="modal" data-target="#view_detail_modal">详情</button>
+                            </td>
+                        </tr>
+                        {% endfor%}
+
+                    </tbody>
+                  </table>
+                <div>
+                    <ul class="pager">
+                        {% if data_list.has_previous %}
+                        <!--注意如果url中已经有参数了比如http://192.168.68.50:8000/saltkey_manage/?status=denied那么需要把这个status加上，不然跳转错了哈哈-->
+                            <li><a href="?history=true&page={{ data_list.previous_page_number }}">上一页</a></li>
+                        {% else %}
+                            <li class="disabled"><a href="">上一页</a></li>
+                        {% endif %}
+
+                        <li class="current">
+                            页数 {{ data_list.number }} / {{ data_list.paginator.num_pages }}
+                        </li>
+
+                        {% if data_list.has_next %}
+                            <li><a href="?history=true&page={{ data_list.next_page_number }}">下一页</a></li>
+                        {% else %}
+                            <li class="disabled"><a href="">下一页</a></li>
+                        {% endif %}
+                        <li>
+                            &nbsp;&nbsp;<input type="text"  style="width: 30px;border-radius: 30%;" id="page_index">/{{ data_list.paginator.num_pages }}页
+                            <button type="button" class="btn btn-sm btn-success page_go" >跳转</button>
+                        </li>
+                    </ul>
                 </div>
-
-
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="control-label col-sm-2 " for="username_select">用户:</label>
-                    <div class="col-sm-3">
-                        <select class="form-control" id="username_select">
-                            <option value="administrator">administrator</option>
-                            <option value="system">system</option>
-                        </select>
-                        <span class="" id="username_select_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label col-sm-6 username_help" style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：需前台运行的任务请选择administrator用户</label>
-                </div>
-
-
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="control-label col-sm-2 " for="cmd_data">命令:</label>
-                    <div class="col-sm-7">
-                        <input type="text"  class="form-control" id="cmd_data" >
-                        <span class="" id="cmd_data_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入执行命令</label>
-                </div>
-
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="control-label col-sm-2 " for="force_select">强制:</label>
-                    <div class="col-sm-3">
-                        <select class="form-control" id="force_select">
-                            <option value="false">false</option>
-                            <option value="true">true</option>
-                        </select>
-                        <span class="" id="force_select_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label col-sm-5 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：如已存在计划任务名称是否强制覆盖</label>
-                </div>
-
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="control-label col-sm-2 " for="start_in_data">路径(可选):</label>
-                    <div class="col-sm-7">
-                        <input type="text"  class="form-control" id="start_in_data" >
-                        <span class="" id="start_in_data_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入命令起始路径</label>
-                </div>
-
-
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="control-label col-sm-2 " for="arg_data">参数(可选):</label>
-                    <div class="col-sm-7">
-                        <input type="text"  class="form-control" id="arg_data" >
-                        <span class="" id="arg_data_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入命令参数</label>
-                </div>
-
-                <div class="form-group " style="margin-left: 5px;margin-bottom: 5px;">
-                    <div class="col-sm-2">
-                    <button type="button" class="btn btn-success " id="windows_task_submit" data-loading-text="正在执行...">执行命令</button>
-
-                    </div>
-                    <label class="control-label col-sm-8 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：默认封装触发器系统启动时运行</label>
-
                 </div>
             </div>
-            <!--<div class="he10"></div>-->
-
-            <div id="supervisor_create_tool" class="form-horizontal  salt_tool_collapse collapse"   role="form" style="font-size: 15px;border: 1px #CCCCCC solid;border-radius: 5px;" >
-                <label class="label label-info " style="font-size: 17px;">supervisor创建</label>
-                <div class="he10"></div>
-
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="control-label col-sm-2 " for="supervisor_program_data">program:</label>
-                    <div class="col-sm-3">
-                        <input type="text"  class="form-control" id="supervisor_program_data" >
-                        <span class="" id="supervisor_program_data_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label col-sm-5 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入进程名称，并且生成的文件名为"进程名.ini"</label>
-                </div>
-
-
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="control-label col-sm-2 " for="supervisor_cmd_data">command:</label>
-                    <div class="col-sm-7">
-                        <input type="text"  class="form-control" id="supervisor_cmd_data" >
-                        <span class="" id="supervisor_cmd_data_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入执行命令</label>
-                </div>
-
-
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="control-label col-sm-2 " for="supervisor_force_select">强制:</label>
-                    <div class="col-sm-3">
-                        <select class="form-control" id="supervisor_force_select">
-                            <option value="false">false</option>
-                            <option value="true">true</option>
-                        </select>
-                        <span class="" id="supervisor_force_select_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label col-sm-5 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：如已存进程(文件名)名称是否强制覆盖</label>
-                </div>
-
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="control-label col-sm-2 " for="supervisor_cmd_data">dir(可选):</label>
-                    <div class="col-sm-7">
-                        <input type="text"  class="form-control" id="supervisor_directory_data" >
-                        <span class="" id="supervisor_directory_data_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入执行命令的目录</label>
-                </div>
-
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="control-label col-sm-2 " for="supervisor_env_data">env(可选):</label>
-                    <div class="col-sm-7">
-                        <input type="text"  class="form-control" id="supervisor_env_data" >
-                        <span class="" id="supervisor_env_data_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入环境变量</label>
-                </div>
-
-
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="control-label col-sm-2 " for="supervisor_log_data">日志路径(可选):</label>
-                    <div class="col-sm-7">
-                        <input type="text"  class="form-control" id="supervisor_log_data" placeholder="默认为/var/log/supervisor/进程名.log">
-                        <span class="" id="supervisor_log_data_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入日志路径</label>
-                </div>
-
-
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="control-label col-sm-2 " for="supervisor_errorlog_data">error日志路径(可选):</label>
-                    <div class="col-sm-7">
-                        <input type="text"  class="form-control" id="supervisor_errorlog_data" placeholder="默认为/var/log/supervisor/进程名.log">
-                        <span class="" id="supervisor_errorlog_data_help" style="color: #FF0000;">　</span>
-                    </div>
-                    <label class="control-label col-sm-3 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：输入错误日志路径</label>
-                </div>
-
-
-                <div class="form-group " style="margin-left: 5px;margin-bottom: 5px;">
-                    <div class="col-sm-3" style="padding: 0;">
-                        <button type="button" class="btn btn-info " id="supervisor_content_submit" data-loading-text="正在执行...">查看配置</button>
-                        <button type="button" class="btn btn-success " id="supervisor_create_submit" data-loading-text="正在执行...">执行创建</button>
-
-                    </div>
-                    <!--<div class="col-sm-2" style="padding: 0;">-->
-                    <!---->
-
-                    <!--</div>-->
-                    <label class="control-label col-sm-8 " style="font-weight: normal;color: #3FB8AF;font-size: 13px;text-align: left;padding: 7px 0" >提示：文件目录为/etc/supervisord.d/,如不存在则报错No such file or directory，如结果为:Wrote xx lines to "/etc/supervisord.d/xxx.ini"则说明成功并且update supervisor</label>
-
-                </div>
-            </div>
-            <!--<div class="he10"></div>-->
-
-            <!--<div class="he10"></div>-->
         </div>
     </div>
 </div>
@@ -547,22 +354,32 @@
 {% endblock %}
 
 {% block another_content %}
-<!--使用帮助模态框-->
-<div class="modal fade juzhong" id="salt_cmd_doc_modal" tabindex="-1" role="dialog" aria-labelledby="salt_cmd_doc_lable" aria-hidden="true" >
+<!--历史详细信息模态框-->
+<div class="modal fade juzhong" id="view_detail_modal" tabindex="-1" role="dialog" aria-labelledby="view_detail_lable" aria-hidden="true" >
 	<div class="modal-dialog" style="width: 780px;">
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
 					&times;
 				</button>
-				<h4 class="modal-title" id="salt_cmd_doc_lable">
-					<span class="salt_cmd_name"></span>使用帮助
+				<h4 class="modal-title" id="view_detail_lable">详细信息
 				</h4>
 
 			</div>
 			<div class="modal-body" style="padding-bottom:0;">
-                <div class="form-group" style="height:630px;">
-                    <pre class="form-control " id="salt_cmd_doc_info"   style="resize:none;font-weight: bold;line-height:100%;height: 100%;margin-top: 4px;background-color:#000;color:#00B600;"></pre>
+                <div style="margin-bottom: 5px;padding-top: 10px;">
+                    <table class="table table-hover  table-bordered table-striped table-responsive table-condensed" >
+                    <thead>
+                    <!--给下面tr加个success是bootstrap的一个类颜色会改变下呵呵-->
+                      <tr class="success">
+                          <th width="70%">url</th>
+                          <th width="30%">任务状态</th>
+                      </tr>
+                    </thead>
+                    <tbody class="view_detail_tb">
+
+                    </tbody>
+                  </table>
                 </div>
 
 			</div>

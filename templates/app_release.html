@@ -1180,7 +1180,7 @@
 //            点击删除填充模态框
             $('.delete_app').click(function () {
                 $('.hidden_app_name').val($(this).parent().siblings('.data_app_name').html());
-                $('input[name=delete_app_file_select]').removeAttr('checked');
+                $('input[name=delete_app_file_select]').eq(1).click();
                 $('.delete_app_file_select_help').html('');
             });
 
@@ -1265,7 +1265,7 @@
 				});
             });
 
-//            点击 发布 按钮跳出svn版本输入模态框等操作
+//            点击 发布 按钮跳出svn/git版本输入模态框等操作
             $('.release_app').click(function () {
                 $('#release_svn_version_modal').modal('toggle');
 //                清空模态框内容
@@ -1390,7 +1390,7 @@
             $('.app_single_release_btn').click(function () {
                 var single_cmd = $.trim($(this).text());
                 $('.single_release_svn_version').val('');
-                if(single_cmd == 'SVN更新'){
+                if(single_cmd == 'SVN更新' || single_cmd == 'GIT更新'){
                     $('.single_release_svn_version').removeClass('hidden');
                 }else{
                     $('.single_release_svn_version').addClass('hidden');
@@ -1734,7 +1734,7 @@
                   <th width="120px">Minion_ID</th>
                   <th width="17%">操作步骤</th>
                   <th  width="145px" >应用操作</th>
-                  <th width="220px" style="text-align: left;">SVN版本比对</th>
+                  <!--<th width="220px" style="text-align: left;">SVN版本比对</th>-->
                   <th width="220px" style="">发布操作</th>
                   <th width="6%">发布状态</th>
 
@@ -1757,18 +1757,19 @@
                         <button type="button" class="btn btn-danger btn-sm delete_app" data-toggle="modal" data-target="#delete_app_modal">删除</button>
                         {% endif %}
                     </td>
-                    <td  style="padding: 0 0 0 3px;text-align: left;">应用:
-                        {% if data.app_svn_version %}
-                        <span class="data_app_svn_version" style="color: royalblue;">{{ data.app_svn_version }}</span>
-                        {% else %}
-                        <span class="data_app_svn_version" style="color: #CC5522">未检出</span>
-                        {% endif %}
-                        　库:<span class="data_server_svn_version" style="color: #CC5522">未检查</span>
-                        　{% if data.app_svn_version %}
-                        <button type="button" class="btn btn-info btn-sm check_svn " style="">检查</button>
-                        {% else%}
-                        <button type="button" class="btn btn-info btn-sm check_svn" disabled="disabled">检查</button>
-                        {% endif %}</td>
+                    <!--<td  style="padding: 0 0 0 3px;text-align: left;">应用:-->
+                        <!--{% if data.app_svn_version %}-->
+                        <!--<span class="data_app_svn_version" style="color: royalblue;">{{ data.app_svn_version }}</span>-->
+                        <!--{% else %}-->
+                        <!--<span class="data_app_svn_version" style="color: #CC5522">未检出</span>-->
+                        <!--{% endif %}-->
+                        <!--　库:<span class="data_server_svn_version" style="color: #CC5522">未检查</span>-->
+                        <!--　{% if data.app_svn_version %}-->
+                        <!--<button type="button" class="btn btn-info btn-sm check_svn " style="">检查</button>-->
+                        <!--{% else%}-->
+                        <!--<button type="button" class="btn btn-info btn-sm check_svn" disabled="disabled">检查</button>-->
+                        <!--{% endif %}-->
+                    <!--</td>-->
 
                     <td class="data_release_operation" style="padding: 0;">
                         <button type="button" class="btn btn-primary btn-sm release_app" >发布</button>
@@ -2101,7 +2102,7 @@
                                     <label class="control-label col-sm-3 " >文件同步方式:</label>
                                 <div class="col-sm-8">
                                 <label class="radio-inline">
-                                <input type="radio" class="add_sync_file_style" name="add_sync_file_style"  value="check_file" data-toggle="tooltip" title="保证svn目录内容和应用目录内容一致性" > 差异比对
+                                <input type="radio" class="add_sync_file_style" name="add_sync_file_style"  value="check_file" data-toggle="tooltip" title="保证svn/git目录内容和应用目录内容一致性" > 差异比对
                                  </label>
                                 <label class="radio-inline">
                                 <input type="radio" class="add_sync_file_style" name="add_sync_file_style"   value="not_check_file" data-toggle="tooltip" title="同步svn文件，对应用目录下多余文件不进行操作" checked> 不比对差异
@@ -2474,16 +2475,18 @@
                 <!--隐藏属性，用来获取触发模态框的那条记录的相关数据-->
                 <input type="hidden" class="hidden_app_name"/>
                 <p style="color: #0063DC;">是否要删除应用目录和应用备份目录</p>
-                <div class="form-group " id="" style="text-align: center;margin-bottom: 0;">
+                <form class="form-horizontal" role="form">
+                    <div class="form-group " id="" style="text-align: center;margin-bottom: 0;">
                     <label class="radio-inline" style="margin-right: 20px;">
                     <input type="radio" class="delete_app_file_select" name="delete_app_file_select"  value="delete_app_file" > 是
                      </label>
                     <label class="radio-inline">
-                    <input type="radio" class="delete_app_file_select" name="delete_app_file_select"   value="not_delete_app_file" > 否
+                    <input type="radio" class="delete_app_file_select" name="delete_app_file_select"   value="not_delete_app_file" checked> 否
                     </label>
                     <p class=" delete_app_file_select_help " style="color: #FF0000;margin-bottom: 0;" ></p>
                     <!--</div>-->
                 </div>
+                </form>
             </div>
             <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
             <div class="modal-footer" style="height:100%;">
@@ -2546,7 +2549,7 @@
 	</div><!-- /.modal -->
 </div>
 
-<!--SVN版本输入提示框-->
+<!--SVN/GIT版本输入提示框-->
 <div class="modal fade juzhong " id="release_svn_version_modal" tabindex="-1" role="dialog" aria-labelledby="release_svn_version_lable" aria-hidden="true" data-backdrop="static">
     <div class="modal-dialog">
         <!--下面这个modal-content的div可以调整整个模态框的大小-->
@@ -2555,12 +2558,12 @@
                 <form class="form-horizontal" role="form">
                      <div class="form-group" style="margin: 0;">
                         <div class="col-sm-11">
-                          <input type="text" class="form-control" id="release_svn_version" placeholder="SVN版本号" style="padding-left: 0;" autocomplete="off">
+                          <input type="text" class="form-control" id="release_svn_version" placeholder="SVN/GIT版本号" style="padding-left: 0;" autocomplete="off">
                           <input type="text" class="form-control hidden" id="release_style"  >
                           <input type="text" class="form-control hidden" id="trSeq" >
                         </div>
                          <div class="col-sm-11">
-                            <label class="control-label" style="padding-left: 0;text-align: left;" id="release_svn_version_help">请输入SVN版本号，为空则默认为最新</label>
+                            <label class="control-label" style="padding-left: 0;text-align: left;" id="release_svn_version_help">请输入SVN/GIT版本号，为空则默认为最新</label>
                          </div>
                       </div>
                 </form>
@@ -2637,7 +2640,7 @@
                 <input type="hidden" class="single_release_trSeq"/>
                 <p style="font-weight: bold;">应用：<span class="single_operation_app_name"></span></p>
                 <p style="font-weight: bold;">操作：<span class="single_cmd"></span></p>
-                <input  class="single_release_svn_version hidden" placeholder="SVN版本号,不填默认最新" style="border-radius: 5px;"/>
+                <input  class="single_release_svn_version hidden" placeholder="SVN/GIT版本号,不填默认最新" style="border-radius: 5px;width: 250px;"/>
                 <p style="font-weight: bold;color: #ff0084;">确认要单独执行操作吗？</p>
             </div>
             <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->

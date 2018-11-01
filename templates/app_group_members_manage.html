@@ -498,7 +498,7 @@
             $('.app_single_release_btn').click(function () {
                 var single_cmd = $.trim($(this).text());
                 $('.single_release_svn_version').val('');
-                if(single_cmd == 'SVN更新'){
+                if(single_cmd == 'SVN更新' || single_cmd == 'GIT更新'){
                     $('.single_release_svn_version').removeClass('hidden');
                 }else{
                     $('.single_release_svn_version').addClass('hidden');
@@ -1322,7 +1322,7 @@
 	</div><!-- /.modal -->
 </div>
 
-<!--SVN版本输入提示框-->
+<!--SVN/GIT版本输入提示框-->
 <div class="modal fade juzhong " id="release_svn_version_modal" tabindex="-1" role="dialog" aria-labelledby="release_svn_version_lable" aria-hidden="true" data-backdrop="static">
     <div class="modal-dialog">
         <!--下面这个modal-content的div可以调整整个模态框的大小-->
@@ -1331,12 +1331,12 @@
                 <form class="form-horizontal" role="form">
                      <div class="form-group" style="margin: 0;">
                         <div class="col-sm-11">
-                          <input type="text" class="form-control" id="release_svn_version" placeholder="SVN版本号" style="padding-left: 0;" autocomplete="off">
+                          <input type="text" class="form-control" id="release_svn_version" placeholder="SVN/GIT版本号" style="padding-left: 0;" autocomplete="off">
                           <input type="text" class="form-control hidden" id="release_style"  >
                           <input type="text" class="form-control hidden" id="trSeq" >
                         </div>
                          <div class="col-sm-11">
-                            <label class="control-label" style="padding-left: 0;text-align: left;" id="release_svn_version_help">请输入SVN版本号，为空则默认为最新</label>
+                            <label class="control-label" style="padding-left: 0;text-align: left;" id="release_svn_version_help">请输入SVN/GIT版本号，为空则默认为最新</label>
                          </div>
                       </div>
                 </form>
@@ -1413,7 +1413,7 @@
                 <input type="hidden" class="single_release_trSeq"/>
                 <p style="font-weight: bold;">应用：<span class="single_operation_app_name"></span></p>
                 <p style="font-weight: bold;">操作：<span class="single_cmd"></span></p>
-                <input  class="single_release_svn_version hidden" placeholder="SVN版本号,不填默认最新" style="border-radius: 5px;"/>
+                <input  class="single_release_svn_version hidden" placeholder="SVN/GIT版本号,不填默认最新" style="border-radius: 5px;width: 250px;"/>
                 <p style="font-weight: bold;color: #ff0084;">确认要单独执行操作吗？</p>
             </div>
             <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->

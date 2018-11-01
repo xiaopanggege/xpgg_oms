@@ -599,3 +599,14 @@ class SaltAPI(object):
                 }
         message = 'git_pull_api'
         return self.public(data, message)
+
+    # 封装git.reset命令
+    def git_reset_api(self, client='local', tgt='*', tgt_type='glob', fun='git.reset', arg=None):
+        data = {'client': client,
+                'tgt': tgt,
+                'tgt_type': tgt_type,
+                'fun': fun,
+                'arg': arg,
+                }
+        message = 'git_reset_api'
+        return self.public(data, message)

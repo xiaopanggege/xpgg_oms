@@ -283,3 +283,21 @@ class NetworkList(models.Model):
 
     def __str__(self):
         return str(self.id)
+
+
+# 华为CDN任务信息表
+class HuaweiCdnInfo(models.Model):
+    task_id = models.CharField(max_length=100, verbose_name='任务ID', blank=True, null=True)
+    task_type = models.CharField(max_length=20, verbose_name='任务类型', blank=True, null=True)
+    task_status = models.CharField(max_length=20, verbose_name='任务状态', blank=True, null=True)
+    urls = models.TextField(verbose_name='urls信息', blank=True, null=True)
+    create_time = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+    operator = models.CharField(max_length=20, verbose_name='操作人', blank=True, null=True)
+
+    class Meta:
+        verbose_name = '华为CDN任务信息表'
+        verbose_name_plural = verbose_name
+        ordering = ['id']
+
+    def __str__(self):
+        return str(self.id)

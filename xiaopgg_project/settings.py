@@ -42,6 +42,14 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 
 
+# celery调用参数设置
+CELERY_BROKER_URL = 'redis://:123456@localhost:6379/0'  # 使用redis做为消息队列格式：redis://:password@hostname:port/db_number
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Shanghai'
+CELERY_RESULT_BACKEND = 'django-db'
+
+
 # django_crontab是定时任务使用的
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -55,6 +63,8 @@ INSTALLED_APPS = [
     'guardian',
     'django_filters',
     'rest_framework',
+    'django_celery_results',
+    'django_celery_beat',
 ]
 
 # django-guardian配置

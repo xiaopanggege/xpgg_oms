@@ -3158,7 +3158,7 @@ def app_release_ajax(request):
                     return JsonResponse(result)
             elif request.POST.get('app_tag_key') == 'release_app':
                 app_name = request.POST.get('app_name')
-                release_svn_version = request.POST.get('release_svn_version')
+                release_svn_version = request.POST.get('release_svn_version', 'HEAD')
                 app_data = AppRelease.objects.get(app_name=app_name)
                 # 判断执行的是否为单项操作执行判断，如果不是就是执行操作步骤顺序的操作
                 single_cmd = request.POST.get('single_cmd')
@@ -3223,7 +3223,7 @@ def app_release_ajax(request):
                                                 release_svn_version, app_svn_url, app_svn_co_path, app_svn_user, app_svn_password)
                                             check_data = 'Checked out revision'
                                         response_data = saltapi.cmd_run_api(tgt=settings.SITE_SALT_MASTER, arg=[
-                                            cmd_data, 'reset_system_locale=false'])
+                                            cmd_data, 'reset_system_locale=false',"shell='/bin/bash'","runas='root'"])
                                         # 当调用api失败的时候会返回false
                                         if response_data is False:
                                             app_log.append('\n更新svn后台出错_error(1)，请联系管理员. 时间戳%s\n' % time.strftime('%X'))
@@ -3263,8 +3263,6 @@ def app_release_ajax(request):
                                         return JsonResponse(result)
                                     else:
                                         # 判断状态是否为True，如果有说明已经检出过，那就使用更新pull，如果没有就用git clone
-                                        logger.error(app_git_co_status)
-                                        logger.error(type(app_git_co_status))
                                         if app_git_co_status is not True:
                                             app_log.append('\n\ngit clone ....\n')
                                             response_data = saltapi.git_clone_api(tgt=settings.SITE_SALT_MASTER, arg=[
@@ -3274,9 +3272,15 @@ def app_release_ajax(request):
                                                 'opts="-b %s"' % app_git_branch])
                                             check_data = True
                                         else:
-                                            response_data = saltapi.git_pull_api(tgt=settings.SITE_SALT_MASTER,
-                                                                                 arg=[app_svn_co_path])
-                                            check_data = 'Updating'
+                                            if release_svn_version == 'HEAD':
+                                                response_data = saltapi.git_pull_api(tgt=settings.SITE_SALT_MASTER,
+                                                                                     arg=[app_svn_co_path])
+                                                check_data = 'Updating'
+                                            else:
+                                                response_data = saltapi.git_reset_api(tgt=settings.SITE_SALT_MASTER,
+                                                                                      arg=[app_svn_co_path,
+                                                                                           'opts="--hard %s"' % release_svn_version])
+                                                check_data = 'HEAD is now at'
                                         # 当调用api失败的时候会返回false
                                         if response_data is False:
                                             app_log.append('\n更新svn后台出错_error(1)，请联系管理员. 时间戳%s\n' % time.strftime('%X'))
@@ -3284,20 +3288,24 @@ def app_release_ajax(request):
                                             return JsonResponse(result)
                                         else:
                                             response_data = response_data['return'][0][settings.SITE_SALT_MASTER]
-                                            # 对结果进行判断，妈的用salt的module方式还得自个判断结果，比较麻烦一点
-                                            logger.error(response_data)
-                                            logger.error('11111')
-                                            if response_data is True or check_data in response_data or 'Already up to date' in response_data:
-                                                try:
-                                                    AppRelease.objects.filter(app_name=app_name).update(
-                                                        app_git_co_status=True)
-                                                    app_log.append('\n'+str(response_data)+'\n\nGIT更新完成<- 时间戳%s\n' % time.strftime('%X'))
-                                                except Exception as e:
-                                                    app_log.append('\nGIT更新失败:\n'+str(response_data)+'\n时间戳%s' % time.strftime('%X'))
+                                            # 对结果进行判断，妈的用salt的module方式还得自个判断结果，比较麻烦一点，而且if还有可能代码错误得加try
+                                            try:
+                                                if response_data is True or check_data in response_data or 'Already up to date' in response_data:
+                                                    try:
+                                                        AppRelease.objects.filter(app_name=app_name).update(
+                                                            app_git_co_status=True)
+                                                        app_log.append('\n'+str(response_data)+'\n\nGIT更新完成<- 时间戳%s\n' % time.strftime('%X'))
+                                                    except Exception as e:
+                                                        app_log.append('\nGIT更新失败:\n'+str(response_data)+'\n时间戳%s' % time.strftime('%X'))
+                                                        result['result'] = app_log
+                                                        return JsonResponse(result)
+                                                else:
+                                                    app_log.append('\nGIT更新失败:'+str(response_data)+'\n时间戳%s' % time.strftime('%X'))
                                                     result['result'] = app_log
                                                     return JsonResponse(result)
-                                            else:
-                                                app_log.append('\nGIT更新失败:'+str(response_data)+'\n时间戳%s' % time.strftime('%X'))
+                                            except Exception as e:
+                                                app_log.append(
+                                                    '\nGIT更新失败:' + str(response_data) + '\n时间戳%s' % time.strftime('%X'))
                                                 result['result'] = app_log
                                                 return JsonResponse(result)
                             elif operation == '同步文件':
@@ -3631,7 +3639,7 @@ def app_release_ajax(request):
                                             result['result'] = app_log
                                             return JsonResponse(result)
                                         else:
-                                            response_data = saltapi.cmd_run_api(tgt=minion_id, arg=[stop_cmd])
+                                            response_data = saltapi.cmd_run_api(tgt=minion_id, arg=[stop_cmd,"shell='/bin/bash'","runas='root'"])
                                             # 当调用api失败的时候会返回false
                                             if response_data is False:
                                                 app_log.append('\n应用停止命令后台出错_error(5)，请联系管理员')
@@ -3867,7 +3875,7 @@ def app_release_ajax(request):
                                             result['result'] = app_log
                                             return JsonResponse(result)
                                         else:
-                                            response_data = saltapi.cmd_run_api(tgt=minion_id, arg=[start_cmd])
+                                            response_data = saltapi.cmd_run_api(tgt=minion_id, arg=[start_cmd,"shell='/bin/bash'","runas='root'"])
                                             # 当调用api失败的时候会返回false
                                             if response_data is False:
                                                 app_log.append('\n应用启动命令后台出错_error(4)，请联系管理员')
@@ -3981,7 +3989,7 @@ def app_release_ajax(request):
                                         result['result'] = app_log
                                         return JsonResponse(result)
                                     else:
-                                        response_data = saltapi.cmd_run_api(tgt=minion_id, arg=[execute_cmd])
+                                        response_data = saltapi.cmd_run_api(tgt=minion_id, arg=[execute_cmd,"shell='/bin/bash'","runas='root'"])
                                         # 当调用api失败的时候会返回false
                                         if response_data is False:
                                             app_log.append('\n执行命令1后台出错_error(1)，请联系管理员')
@@ -4024,7 +4032,7 @@ def app_release_ajax(request):
                                         result['result'] = app_log
                                         return JsonResponse(result)
                                     else:
-                                        response_data = saltapi.cmd_run_api(tgt=minion_id, arg=[execute_cmd])
+                                        response_data = saltapi.cmd_run_api(tgt=minion_id, arg=[execute_cmd,"shell='/bin/bash'","runas='root'"])
                                         # 当调用api失败的时候会返回false
                                         if response_data is False:
                                             app_log.append('\n执行命令2后台出错_error(1)，请联系管理员')
@@ -4690,8 +4698,96 @@ def app_release_test(request):
         return render(request, 'app_release_test.html')
 
 
+# 华为CDN,ajax处理也直接写一起
 def huawei_cdn(request):
-    return render(request, 'huawei_cdn.html')
+    if request.method == 'GET':
+        history = request.GET.get('history')
+        cdn_data = HuaweiCdnInfo.objects.all().order_by('-id')
+        data_list = getPage(request, cdn_data, 10)
+        return render(request, 'huawei_cdn.html', {'data_list':data_list, 'history':history})
+    result = {'result': None, 'status': False}
+    try:
+        if request.is_ajax():
+            if request.POST.get('huawei_cdn_tag_key') == 'cdn_refresh':
+                select_type = request.POST.get('select_type', 'file')
+                urls = re.split('\n|;', request.POST.get('urls'))
+                for url in urls:
+                    if select_type == 'file':
+                        if not re.match(r'https?://', url):
+                            result['result'] = 'urls格式有误'
+                            return JsonResponse(result)
+                    elif select_type == 'directory':
+                        if not re.match(r'https?://.+/$', url):
+                            result['result'] = 'urls格式有误'
+                            return JsonResponse(result)
+                    else:
+                        result['result'] = '类型不符'
+                        return JsonResponse(result)
+                from .scripts import huawei_cdn_manage
+                response_data = huawei_cdn_manage.refresh_cdn(select_type,urls)
+                if response_data['status']:
+                    try:
+                        urls_list = []
+                        for url in urls:
+                            urls_list.append({'url': url, 'status': '执行中'})
+                        HuaweiCdnInfo.objects.create(task_id=response_data['result']['id'], task_type='缓存刷新',
+                                                    task_status=response_data['result']['status'], urls=urls_list,
+                                                     operator=request.user.username)
+                        result['status'] = True
+                        result['result'] = '刷新缓存任务提交成功'
+                    except Exception as e:
+                        result['result'] = '刷新缓存任务提交成功，但插入数据库出错' + str(e)
+                else:
+                    result['result'] = response_data['result']
+                return JsonResponse(result)
+            elif request.POST.get('huawei_cdn_tag_key') == 'cdn_preheating':
+                urls = re.split('\n|;', request.POST.get('urls'))
+                for url in urls:
+                    if not re.match(r'https?://', url):
+                        result['result'] = 'urls格式有误'
+                        return JsonResponse(result)
+                from .scripts import huawei_cdn_manage
+                response_data = huawei_cdn_manage.preheating_cdn(urls)
+                if response_data['status']:
+                    try:
+                        urls_list = []
+                        for url in urls:
+                            urls_list.append({'url': url, 'status': '执行中'})
+                        HuaweiCdnInfo.objects.create(task_id=response_data['result']['id'], task_type='缓存预热',
+                                                    task_status=response_data['result']['status'], urls=urls_list,
+                                                     operator=request.user.username)
+                        result['status'] = True
+                        result['result'] = '缓存预热任务提交成功'
+                    except Exception as e:
+                        result['result'] = '缓存预热任务提交成功，但插入数据库出错' + str(e)
+                else:
+                    result['result'] = response_data['result']
+                return JsonResponse(result)
+            elif request.POST.get('huawei_cdn_tag_key') == 'history_update':
+                task_id = request.POST.get('task_id')
+                from .scripts import huawei_cdn_manage
+                response_data = huawei_cdn_manage.history_task(task_id)
+                if response_data['status']:
+                    try:
+                        HuaweiCdnInfo.objects.filter(task_id=task_id).update(urls=response_data['result']['urls'],
+                                                                             task_status=response_data['result']['status'])
+                        result['result'] = response_data['result']
+                        result['status'] = True
+                        return JsonResponse(result)
+                    except Exception as e:
+                        result['result'] = '刷新任务提交成功，但更新数据库出错' + str(e)
+                else:
+                    result['result'] = response_data['result']
+                return JsonResponse(result)
+            else:
+                result['result'] = '华为CDN,ajax提交了错误的tag'
+                return JsonResponse(result)
+    except Exception as e:
+        logger.error('华为CDN,ajax提交处理有问题', e)
+        result['result'] = '华为CDN,ajax提交处理有问题'
+        return JsonResponse(result)
+
+
 
 
 from rest_framework.pagination import PageNumberPagination
