@@ -3,3 +3,4 @@
 __pycache__/
 xpgg_oms/migrations/*
 !xpgg_oms/migrations/__init__.py
+celerybeat.pid
