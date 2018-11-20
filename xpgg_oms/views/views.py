@@ -3290,7 +3290,7 @@ def app_release_ajax(request):
                                             response_data = response_data['return'][0][settings.SITE_SALT_MASTER]
                                             # 对结果进行判断，妈的用salt的module方式还得自个判断结果，比较麻烦一点，而且if还有可能代码错误得加try
                                             try:
-                                                if response_data is True or check_data in response_data or 'Already up to date' in response_data:
+                                                if response_data is True or check_data in response_data or 'Already up' in response_data:
                                                     try:
                                                         AppRelease.objects.filter(app_name=app_name).update(
                                                             app_git_co_status=True)
