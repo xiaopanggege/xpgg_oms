@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import AppRelease
+from xpgg_oms.models import AppRelease
 
 
 class AppReleaseListSerializer(serializers.ModelSerializer):

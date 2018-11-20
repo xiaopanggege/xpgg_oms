@@ -1,11 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, AbstractBaseUser
-import os
-from django.conf import settings
-from django.contrib.auth import password_validation
-from django.contrib.auth.hashers import (
-    check_password, is_password_usable, make_password,
-)
 # Create your models here.
 
 

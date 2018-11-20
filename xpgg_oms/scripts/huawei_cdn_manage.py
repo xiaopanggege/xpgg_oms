@@ -4,7 +4,6 @@
 # 用户名密码还有domain的name都要按时间填写才行，下面没有填写哈哈
 
 import requests
-import json
 import logging
 # Create your views here.
 logger = logging.getLogger('xpgg_oms.views')

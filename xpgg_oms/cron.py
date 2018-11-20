@@ -2,8 +2,8 @@
 #-.- coding=utf-8 -.-
 
 import time
-from .models import *
-from . import views
+from xpgg_oms.models import *
+from xpgg_oms.views import views
 import requests
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)

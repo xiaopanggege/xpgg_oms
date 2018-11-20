@@ -1,6 +1,6 @@
 from django.db.models.signals import post_save, pre_delete, post_delete
 from django.dispatch import receiver
-from .models import *
+from xpgg_oms.models import *
 import time
 import logging
 # Create your views here.

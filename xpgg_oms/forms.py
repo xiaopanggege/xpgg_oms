@@ -1,6 +1,6 @@
 from django import forms
 from django.forms import widgets
-from .models import *
+from xpgg_oms.models import *
 from django.core.exceptions import ValidationError
 import re
 import logging

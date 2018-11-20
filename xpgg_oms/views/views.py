@@ -4,8 +4,6 @@
 from django.shortcuts import render, redirect, HttpResponse
 import json
 from django.http import JsonResponse, HttpResponseRedirect, FileResponse  # 1.7以后版本json数据返回方法
-import re
-import os
 import time
 from xpgg_oms.forms import *
 from xpgg_oms.models import *
@@ -18,8 +16,6 @@ import requests
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-
-from django.views.generic import TemplateView, ListView, DetailView
 from django.core.paginator import Paginator
 from django.contrib.auth import logout, login, authenticate  # 登陆注销注册django自带模块引用
 from django.contrib.auth.hashers import make_password  # django自带密码加密模块
@@ -27,7 +23,6 @@ import ast  # 去掉字符串的一层""
 import openpyxl  # 操作excel读写
 from io import BytesIO
 from django.utils.encoding import escape_uri_path  # 下载文件中文名时使用
-from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone  # 调用django的时间参数timezone.now()
 
 

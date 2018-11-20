@@ -1,8 +1,8 @@
 from django.contrib import admin
 # 下面两条是为了用户表单在admin管理中显示使用的
-from django.utils.translation import ugettext, ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth.admin import UserAdmin
-from .models import *
+from xpgg_oms.models import *
 # Register your models here.
 
 
