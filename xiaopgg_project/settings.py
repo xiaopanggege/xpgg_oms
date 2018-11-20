@@ -102,7 +102,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'xpgg_oms.views.global_setting'   # 添加在这里django启动的时候就会运行，全局使用的东西都配置在这方法里
+                'xpgg_oms.views.views.global_setting'   # 添加在这里django启动的时候就会运行，全局使用的东西都配置在这方法里
             ],
         },
     },
