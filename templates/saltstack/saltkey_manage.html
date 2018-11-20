@@ -1,5 +1,5 @@
-{% extends 'saltkey_base.html' %}
-{% block custom_js%}
+{% extends 'saltstack/saltkey_base.html' %}
+{% block custom_js %}
 <script>
     	$(function() {
 //    	    复选框选中操作
@@ -37,26 +37,54 @@
                     $(this).find('input').click();
                 });
 
- //            分页页面跳转
+//            分页页面跳转
             $('.page_go').click(function () {
-                window.location.href = window.location.href.split("?")[0]+'?status=denied'+'&search='+'{{ search }}'+'&page='+$("#page_index").val();
+                window.location.href = window.location.href.split("?")[0]+'?status=accepted'+'&search='+'{{ search }}'+'&page='+$("#page_index").val();
             });
 
-//            django的提交安全认证必须放在每个页面下才能有效，听说
             $.ajaxSetup({
                  data: {csrfmiddlewaretoken: '{{ csrf_token }}' }
             });
-
+//            执行test.ping测试key是否正常
+            $(".accept_key_test").click(function () {
+                var minion_id = $(this).parent().siblings('.minion_id').html();
+                $.ajax({
+					url:"{% url 'salt_test_ping' %}",
+					type:'POST',
+					dataType:'json',
+                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
+					traditional:true,
+					data:{
+						'minion_id':minion_id
+					},
+					success:function(result){
+						if(result.status){
+						    if(result.result[minion_id]){
+                                $('.loading_modal').modal('toggle');
+//                                    result.result的值是字典，所以要用JSON.stringify转成字符串
+                                toastr.success(JSON.stringify(result.result), '测试成功结果为：', {timeOut: 2500});
+                                }else {
+						        $('.loading_modal').modal('toggle');
+                                toastr.error(JSON.stringify(result.result), '测试成功结果为：', {timeOut: 2500});
+                            }
+						}else {
+						    $('.loading_modal').modal('toggle');
+						    toastr.error(result.result,'测试失败：',{timeOut: 2500});
+                        }
+					}
+				});
+            });
 
 //            删除key的操作
 //            先把点击删除的那条记录的数据传给删除的那个弹出确认模态框
-            $(".salt_key_delete_denied_button").click(function () {
+            $(".salt_key_delete_button").click(function () {
                 var minion_id = $(this).parent().siblings('.minion_id').html();
-                $('.hidden_denied_minion_id').val(minion_id);
+                $('.hidden_minion_id').val(minion_id);
+                $('.salt_key_delete_modal').modal('toggle');
             });
 //            批量删除key的操作
 //            先把点击删除的那条记录的数据传给删除的那个弹出确认模态框
-            $(".batch_salt_key_delete_denied_button").click(function () {
+            $(".batch_salt_key_delete_button").click(function () {
                 var minion_id = [];
                 if($('input[name="checkItem"]:checked').length > 0){
                     $('input[name="checkItem"]:checked').each(function () {
@@ -64,41 +92,19 @@
                     });
 //                    这里很奇怪赋值给下面的input后发现不是一个列表而是像这样：192.168.68.50-master,192.168.68.1逗号隔开的字符串，
 //                    不过这样也方便，删除的时候数据就'minion_id':[minion_id]刚好删除单个本来就是字符串
-                    $('.hidden_denied_minion_id').val(minion_id);
-                    $('.salt_key_delete_denied_modal').modal('toggle');
+                    $('.hidden_minion_id').val(minion_id);
+                    $('.salt_key_delete_modal').modal('toggle');
                 }else {
                     toastr.warning('未选中任何条目');
                 }
             });
-//           点击确认执行删除操作
-            $(".salt_key_delete_denied").click(function () {
-                var minion_id =  $('.hidden_denied_minion_id').val();
-                $.ajax({
-					url:"{% url 'salt_key_denied_delete' %}",
-					type:'POST',
-					dataType:'json',
-                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
-					traditional:true,
-					data:{
-						'minion_id':[minion_id]
-					},
-					success:function(result){
-						if(result.status){
-                            $('.loading_modal').modal('toggle');
-                            window.location.href=window.location.href;
+//           点击确认执行删除和批量等操作在基类saltkey_base.html写了这里不重复写不然会重复执行
 
-						}else {
-						    $('.loading_modal').modal('toggle');
-						    toastr.error(result.result,'删除失败：',{timeOut: 2500});
-                        }
-					}
-				});
-            });
 
 //            查询按钮事件
             $('.search_btn').click(function () {
                var search_data = $('#saltkey_search').val();
-               window.location.href=window.location.href.split("?")[0]+'?status=denied'+'&search='+search_data;
+               window.location.href=window.location.href.split("?")[0]+'?status=accepted'+'&search='+search_data;
             });
 
 //            搜索框回车触发查询按钮事件
@@ -107,59 +113,60 @@
                     $('.search_btn').click();
                 }
             });
-
         });
 </script>
 {% endblock %}
 {% block saltkey_list%}
 <div class="panel panel-primary">
-    <div class="panel-heading" style="background-color: burlywood;">
-        <h3 class="panel-title">未被允许KEYS列表</h3>
+    <div class="panel-heading" style="background-color: #337A5C;">
+        <h3 class="panel-title">已认证KEYS列表</h3>
     </div>
     <div class="panel-body">
         <div style="margin-bottom: 5px;">
         <div class="form-inline" role="form">
             <div class="form-group">
-                <button type="button" class="btn btn-primary batch_salt_key_delete_denied_button">批量删除</button>
+                <button type="button" class="btn btn-primary batch_salt_key_delete_button">批量删除</button>
             </div>
               <div class="form-group pull-right">
-                  <input type="text" class="form-control" id="saltkey_search" placeholder="搜索 MinionID"  value="{{ search }}">
+                  <input type="text" class="form-control" id="saltkey_search" placeholder="搜索 MinionID" value="{{ search }}">
                 <button type="button" class="btn btn-primary search_btn"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span>查询</button>
               </div>
         </div>
+
     </div>
     <table class="table table-hover  table-bordered table-striped table-responsive table-condensed" >
-        <!--<caption>主机列表</caption>-->
-        <thead>
-        <!--给下面tr加个success是bootstrap的一个类颜色会改变下呵呵-->
-          <tr class="success">
-              <th width="4%"><input type="checkbox" id="checkAll" name="checkAll" /></th>
-            <th width="11%">MinionID</th>
-            <th width="11%">KEY状态</th>
-              <th width="16%">最近一次更新时间</th>
-              <th width="28%">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-            {% for minion in data_list%}
-            <tr>
-                <td><input type="checkbox" name="checkItem" /></td>
-                <td class="minion_id">{{ minion.minion_id }}</td>
-                <td>{{ minion.certification_status }}</td>
-                <td>{{ minion.update_time }}</td>
-                <td>
-                    <button type="button" class="btn btn-danger salt_key_delete_denied_button" data-toggle="modal" data-target=".salt_key_delete_denied_modal">删除</button>
-                </td>
-            </tr>
-            {% endfor%}
+    <!--<caption>主机列表</caption>-->
+    <thead>
+    <!--给下面tr加个success是bootstrap的一个类颜色会改变下呵呵-->
+      <tr class="success">
+          <th width="4%"><input type="checkbox" id="checkAll" name="checkAll" /></th>
+        <th width="11%">MinionID</th>
+        <th width="11%">KEY状态</th>
+          <th width="16%">最近一次更新时间</th>
+          <th width="28%">操作</th>
+      </tr>
+    </thead>
+    <tbody>
+        {% for minion in data_list%}
+        <tr>
+            <td><input type="checkbox" name="checkItem" /></td>
+            <td class="minion_id">{{ minion.minion_id }}</td>
+            <td>{{ minion.certification_status }}</td>
+            <td>{{ minion.update_time }}</td>
+            <td>
+                <button type="button" class="btn btn-primary accept_key_test" data-toggle="modal" data-target=".loading_modal">测试</button>
+                <button type="button" class="btn btn-danger salt_key_delete_button">删除</button>
+            </td>
+        </tr>
+        {% endfor%}
 
-        </tbody>
-      </table>
+    </tbody>
+    </table>
     <div>
         <ul class="pager">
             {% if data_list.has_previous %}
             <!--注意如果url中已经有参数了比如http://192.168.68.50:8000/saltkey_manage/?status=denied那么需要把这个status加上，不然跳转错了哈哈-->
-                <li><a href="?status=denied&search={{ search }}&page={{ data_list.previous_page_number }}">上一页</a></li>
+                <li><a href="?status=accepted&search={{ search }}&page={{ data_list.previous_page_number }}">上一页</a></li>
             {% else %}
                 <li class="disabled"><a href="">上一页</a></li>
             {% endif %}
@@ -169,7 +176,7 @@
             </li>
 
             {% if data_list.has_next %}
-                <li><a href="?status=denied&search={{ search }}&page={{ data_list.next_page_number }}">下一页</a></li>
+                <li><a href="?status=accepted&search={{ search }}&page={{ data_list.next_page_number }}">下一页</a></li>
             {% else %}
                 <li class="disabled"><a href="">下一页</a></li>
             {% endif %}
@@ -181,27 +188,6 @@
     </div>
     </div>
  </div>
-
-<div class="modal fade juzhong salt_key_delete_denied_modal">
-    <div class="modal-dialog">
-        <!--下面这个modal-content的div可以调整整个模态框的大小-->
-        <div class="modal-content" style="width:50%;">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-                <h4 class="modal-title">操作提醒</h4>
-            </div>
-            <div class="modal-body">
-                <!--隐藏属性，用来获取触发模态框的那条记录的相关数据-->
-                <input type="hidden" class="hidden_denied_minion_id"/>
-                <p style="color: #FF000C;">确定要删除吗</p>
-            </div>
-            <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
-            <div class="modal-footer" style="height:100%;">
-                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-danger salt_key_delete_denied" data-dismiss="modal" data-toggle="modal" data-target=".loading_modal"> 确定</button>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock%}
+
 

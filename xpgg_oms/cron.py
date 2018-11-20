@@ -3,7 +3,7 @@
 
 import time
 from xpgg_oms.models import *
-from xpgg_oms.views import views
+from xpgg_oms.views import views_test
 import requests
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -110,7 +110,7 @@ def saltkey_list():
     salt_list = SaltKeyList.objects.values_list('minion_id', 'certification_status')
     minion_list = []
     with requests.Session() as s:
-        saltapi = views.SaltAPI(session=s)
+        saltapi = views_test.SaltAPI(session=s)
         if saltapi.get_token() is False:
             logger.error('saltkey_list定时操作获取SaltAPI调用get_token请求出错')
             print('saltkey_list定时操作获取SaltAPI调用get_token请求出错')
@@ -167,7 +167,7 @@ def old2_minion_status():
     id_list = []
     print('开始更新Minion列表'+time.strftime('%Y年%m月%d日 %X'))
     with requests.Session() as s:
-        saltapi = views.SaltAPI(session=s)
+        saltapi = views_test.SaltAPI(session=s)
         if saltapi.get_token() is False:
             logger.error('minion_status定时操作获取SaltAPI调用get_token请求出错')
             print('minion_status定时操作获取SaltAPI调用get_token请求出错')
@@ -248,7 +248,7 @@ def minion_status():
     id_list = []
     print('开始更新Minion列表'+time.strftime('%Y年%m月%d日 %X'))
     with requests.Session() as s:
-        saltapi = views.SaltAPI(session=s)
+        saltapi = views_test.SaltAPI(session=s)
         if saltapi.get_token() is False:
             logger.error('minion_status定时操作获取SaltAPI调用get_token请求出错')
             print('minion_status定时操作获取SaltAPI调用get_token请求出错')

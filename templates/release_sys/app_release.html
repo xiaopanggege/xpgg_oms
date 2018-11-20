@@ -120,6 +120,7 @@
                 $("#add_app_name").focus();
             });
 
+      
 
 //           新增发布模态框 隐藏时数据清除,更新编辑也是共用这个模态框
             $("#app_add_modal").on("hidden.bs.modal", function() {
@@ -135,13 +136,23 @@
 				$('#add_app_svn_url').val('');
 				$('#add_app_svn_user').val('');
 				$('#add_app_svn_password').val('');
+				$('#add_app_git_url').val('');
+				$('#add_app_git_user').val('');
+				$('#add_app_git_password').val('');
+				$('#add_app_git_branch').val('');
 				$("input[name='add_execution_style']").eq(0).click();
 				$("#add_select_operation").empty();
                 $("#add_selected_operation").empty();
-                $('<option value="SVN更新">SVN更新</option><option value="同步文件">同步文件</option><option value="应用停止">应用停止</option><option value="应用启动">应用启动</option><option value="执行命令1">执行命令1</option><option value="执行命令2">执行命令2</option>').appendTo("#add_select_operation");
+                $('<option value="SVN更新">SVN更新</option><option value="GIT更新">GIT更新</option><option value="同步文件">同步文件</option><option value="应用停止">应用停止</option><option value="应用启动">应用启动</option><option value="执行命令1">执行命令1</option><option value="执行命令2">执行命令2</option>').appendTo("#add_select_operation");
+                $("#add_select_minion_id_btn").attr("disabled",true);
+                $("#add_delete_minion_id_btn").attr("disabled",true);
+                $("#add_select_operation_btn").attr("disabled",true);
+                $("#add_delete_operation_btn").attr("disabled",true);
+                $(".app_svn_info").addClass("hidden");
+                $(".app_git_info").addClass("hidden");
                 $("#add_sync_file_div").addClass("hidden");
                 $("#add_sync_file_method_div").addClass("hidden");
-                $("input[name='add_sync_file_style']").eq(0).click();
+                $("input[name='add_sync_file_style']").eq(1).click();
                 $("input[name='add_sync_file_method']").eq(0).click();
                 $("#add_rsync_server_content_div").addClass("hidden");
                 $('#add_rsync_server_ip').val('192.168.18.18');
@@ -167,6 +178,10 @@
 				$('#add_app_svn_url_help').text('　');
 				$('#add_app_svn_user_help').text('　');
 				$('#add_app_svn_password_help').text('　');
+				$('#add_app_git_url_help').text('　');
+				$('#add_app_git_user_help').text('　');
+				$('#add_app_git_password_help').text('　');
+				$('#add_app_git_branch_help').text('　');
 				$('#add_rsync_server_ip_help').text('　');
 				$('#add_rsync_server_port_help').text('　');
 				$('#add_operation_content_help').text('　');
@@ -197,6 +212,18 @@
 	    	});
             $('#add_app_svn_password').keyup(function(){
 	    		$('#add_app_svn_password_help').text('　');
+	    	});
+            $('#add_app_git_url').keyup(function(){
+	    		$('#add_app_git_url_help').text('　');
+	    	});
+            $('#add_app_git_user').keyup(function(){
+	    		$('#add_app_git_user_help').text('　');
+	    	});
+            $('#add_app_git_password').keyup(function(){
+	    		$('#add_app_git_password_help').text('　');
+	    	});
+            $('#add_app_git_branch').keyup(function(){
+	    		$('#add_app_git_branch_help').text('　');
 	    	});
             $('#add_rsync_server_ip').keyup(function(){
 	    		$('#add_rsync_server_ip_help').text('　');
@@ -359,6 +386,12 @@
                     else if($.trim($(this).val())=="执行命令2"){
                         $("#add_execute_command_2_div").removeClass("hidden");
                     }
+                    else if($.trim($(this).val())=="SVN更新"){
+                        $(".app_svn_info").removeClass("hidden");
+                    }
+                    else if($.trim($(this).val())=="GIT更新"){
+                        $(".app_git_info").removeClass("hidden");
+                    }
                     $("#add_select_operation_btn").attr("disabled",true);
                 })
             });
@@ -383,6 +416,12 @@
                     }
                     else if($.trim($(this).val())=="执行命令2"){
                         $("#add_execute_command_2_div").addClass("hidden");
+                    }
+                    else if($.trim($(this).val())=="SVN更新"){
+                        $(".app_svn_info").addClass("hidden");
+                    }
+                    else if($.trim($(this).val())=="GIT更新"){
+                        $(".app_git_info").addClass("hidden");
                     }
                     $("#add_delete_operation_btn").attr("disabled",true);
                 })
@@ -458,9 +497,13 @@
 				var minion_id=$('#add_selected_minion_id option').map(function(){return $(this).val();}).get().join(",");
 				var app_path=$.trim($('#add_app_path').val());
 				var app_path_owner=$.trim($('#add_app_path_owner').val());
-				var app_svn_url=$.trim($('#add_app_svn_url').val());
-				var app_svn_user=$.trim($('#add_app_svn_user').val());
-				var app_svn_password=$.trim($('#add_app_svn_password').val());
+				var app_svn_url="";
+				var app_svn_user="";
+				var app_svn_password="";
+				var app_git_url="";
+				var app_git_user="";
+				var app_git_password="";
+				var app_git_branch="";
 				var execution_style = $("input[name='add_execution_style']:checked").val();
 				var operation_content=$('#add_selected_operation option').map(function(){return $.trim($(this).val());}).get().join(",");
 				var server_stop_style= "";
@@ -481,6 +524,52 @@
 				var execute_command_1_cmd= "";
 				var execute_command_2_key= "执行命令2";
 				var execute_command_2_cmd= "";
+				if(operation_content.indexOf("SVN更新")>-1){
+					app_svn_url=$.trim($('#add_app_svn_url').val());
+                    app_svn_user=$.trim($('#add_app_svn_user').val());
+                    app_svn_password=$.trim($('#add_app_svn_password').val());
+                    if(app_svn_url.length < 1){
+                        $('#add_app_svn_url_help').text('该项不能为空');
+                        $('#add_app_svn_url')[0].focus();
+					    return false;
+                    }
+                    if(app_svn_user.length <1){
+                        $('#add_app_svn_user_help').text('该项不能为空');
+                        $('#add_app_svn_user')[0].focus();
+                        return false;
+				    }
+				    if(app_svn_password.length <1){
+                        $('#add_app_svn_password_help').text('该项不能为空');
+                        $('#add_app_svn_password')[0].focus();
+                        return false;
+				    }
+				}
+				if(operation_content.indexOf("GIT更新")>-1){
+					app_git_url=$.trim($('#add_app_git_url').val());
+                    app_git_user=$.trim($('#add_app_git_user').val());
+                    app_git_password=$.trim($('#add_app_git_password').val());
+                    app_git_branch=$.trim($('#add_app_git_branch').val());
+                    if(app_git_url.length < 1){
+                        $('#add_app_git_url_help').text('该项不能为空');
+                        $('#add_app_git_url')[0].focus();
+					    return false;
+                    }
+                    if(app_git_user.length <1){
+                        $('#add_app_git_user_help').text('该项不能为空');
+                        $('#add_app_git_user')[0].focus();
+                        return false;
+				    }
+				    if(app_git_password.length <1){
+                        $('#add_app_git_password_help').text('该项不能为空');
+                        $('#add_app_git_password')[0].focus();
+                        return false;
+				    }
+				    if(app_git_branch.length <1){
+                        $('#add_app_git_branch_help').text('该项不能为空');
+                        $('#add_app_git_branch')[0].focus();
+                        return false;
+				    }
+				}
 				if(operation_content.indexOf("同步文件")>-1){
 					sync_file_style = $("input[name='add_sync_file_style']:checked").val();
                     operation_arguments = operation_arguments+'"' + sync_file_style_key +'":r"'+ sync_file_style +'",' ;
@@ -645,6 +734,10 @@
                         'app_svn_url':app_svn_url,
                         'app_svn_user':app_svn_user,
                         'app_svn_password':app_svn_password,
+                        'app_git_url':app_git_url,
+                        'app_git_user':app_git_user,
+                        'app_git_password':app_git_password,
+                        'app_git_branch':app_git_branch,
                         'execution_style':execution_style,
                         'operation_content':operation_content,
                         'operation_arguments':'{'+operation_arguments+'}',
@@ -686,9 +779,13 @@
                 $('#view_app_svn_url').val($.trim($(this).parent().siblings('.data_app_svn_url').html()));
                 $('#view_app_svn_user').val($.trim($(this).parent().siblings('.data_app_svn_user').html()));
                 $('#view_app_svn_co_path').val($.trim($(this).parent().siblings('.data_app_svn_co_path').html()));
+                $('#view_app_git_url').val($.trim($(this).parent().siblings('.data_app_git_url').html()));
+                $('#view_app_git_user').val($.trim($(this).parent().siblings('.data_app_git_user').html()));
+                $('#view_app_git_branch').val($.trim($(this).parent().siblings('.data_app_git_branch').html()));
+                $('#view_app_git_co_status').val($.trim($(this).parent().siblings('.data_app_git_co_status').html()));
                 $('#view_app_svn_version_success').val($.trim($(this).parent().siblings('.data_app_svn_version_success').html()));
                 $('#view_execution_style').val($.trim($(this).parent().siblings('.data_execution_style').html()));
-                $('#view_operation_arguments').val($.trim($(this).parent().siblings('.data_operation_arguments').html()));
+                $('#view_operation_arguments').val($.trim($(this).parent().siblings('.data_operation_arguments').text()));
                 $('#view_app_backup_path').val($.trim($(this).parent().siblings('.data_app_backup_path').html()));
                 $('#view_create_time').val($.trim($(this).parent().siblings('.data_create_time').html()));
                 $('#view_app_group_name').val($.trim($(this).parent().siblings('.data_app_group_name').html()));
@@ -729,6 +826,10 @@
                 $('#add_app_svn_url').val($(this).parent().siblings('.data_app_svn_url').html());
                 $('#add_app_svn_user').val($(this).parent().siblings('.data_app_svn_user').html());
                 $('#add_app_svn_password').val($(this).parent().siblings('.data_app_svn_password').html());
+                $('#add_app_git_url').val($(this).parent().siblings('.data_app_git_url').html());
+                $('#add_app_git_user').val($(this).parent().siblings('.data_app_git_user').html());
+                $('#add_app_git_password').val($(this).parent().siblings('.data_app_git_password').html());
+                $('#add_app_git_branch').val($(this).parent().siblings('.data_app_git_branch').html());
 
                 var data_execution_style = $(this).parent().siblings('.data_execution_style').html();
                 if(data_execution_style=='parallel'){
@@ -764,7 +865,7 @@
                         var stop_style = $.trim($(this).parent().siblings('.data_server_stop_style').html());
 //                       设置按值选中radio
                         $("input[name='add_server_stop_style'][value="+stop_style+"]").click();
-                        var stop_cmd = $.trim($(this).parent().siblings('.data_server_stop_cmd').html());
+                        var stop_cmd = $.trim($(this).parent().siblings('.data_server_stop_cmd').text());
                         $("#add_server_stop_cmd").val(stop_cmd);
                     }
                     if($.trim(content_data[i]) == "应用启动"){
@@ -772,18 +873,24 @@
                         var start_style = $.trim($(this).parent().siblings('.data_server_start_style').html());
 //                       设置按值选中radio
                         $("input[name='add_server_start_style'][value="+start_style+"]").click();
-                        var start_cmd = $.trim($(this).parent().siblings('.data_server_start_cmd').html());
+                        var start_cmd = $.trim($(this).parent().siblings('.data_server_start_cmd').text());
                         $("#add_server_start_cmd").val(start_cmd);
                     }
                     if($.trim(content_data[i]) == "执行命令1"){
                         $("#add_execute_command_1_div").removeClass("hidden");
-                        var execute_command_1_cmd = $.trim($(this).parent().siblings('.data_execute_command_1_cmd').html());
+                        var execute_command_1_cmd = $.trim($(this).parent().siblings('.data_execute_command_1_cmd').text());
                         $("#add_execute_command_1_cmd").val(execute_command_1_cmd);
                     }
                     if($.trim(content_data[i]) == "执行命令2"){
                         $("#add_execute_command_2_div").removeClass("hidden");
-                        var execute_command_2_cmd = $.trim($(this).parent().siblings('.data_execute_command_2_cmd').html());
+                        var execute_command_2_cmd = $.trim($(this).parent().siblings('.data_execute_command_2_cmd').text());
                         $("#add_execute_command_2_cmd").val(execute_command_2_cmd);
+                    }
+                    if($.trim(content_data[i]) == "SVN更新"){
+                        $(".app_svn_info").removeClass("hidden");
+                    }
+                    if($.trim(content_data[i]) == "GIT更新"){
+                        $(".app_git_info").removeClass("hidden");
                     }
                 }
 
@@ -802,9 +909,13 @@
 				var minion_id=$('#add_selected_minion_id option').map(function(){return $(this).val();}).get().join(",");
 				var app_path=$.trim($('#add_app_path').val());
 				var app_path_owner=$.trim($('#add_app_path_owner').val());
-				var app_svn_url=$.trim($('#add_app_svn_url').val());
-				var app_svn_user=$.trim($('#add_app_svn_user').val());
-				var app_svn_password=$.trim($('#add_app_svn_password').val());
+				var app_svn_url="";
+				var app_svn_user="";
+				var app_svn_password="";
+				var app_git_url="";
+				var app_git_user="";
+				var app_git_password="";
+				var app_git_branch="";
 				var execution_style = $("input[name='add_execution_style']:checked").val();
 				var operation_content=$('#add_selected_operation option').map(function(){return $.trim($(this).val());}).get().join(",");
 				var server_stop_style= "";
@@ -827,6 +938,52 @@
 				var execute_command_1_cmd= "";
 				var execute_command_2_key= "执行命令2";
 				var execute_command_2_cmd= "";
+				if(operation_content.indexOf("SVN更新")>-1){
+					app_svn_url=$.trim($('#add_app_svn_url').val());
+                    app_svn_user=$.trim($('#add_app_svn_user').val());
+                    app_svn_password=$.trim($('#add_app_svn_password').val());
+                    if(app_svn_url.length < 1){
+                        $('#add_app_svn_url_help').text('该项不能为空');
+                        $('#add_app_svn_url')[0].focus();
+					    return false;
+                    }
+                    if(app_svn_user.length <1){
+                        $('#add_app_svn_user_help').text('该项不能为空');
+                        $('#add_app_svn_user')[0].focus();
+                        return false;
+				    }
+				    if(app_svn_password.length <1){
+                        $('#add_app_svn_password_help').text('该项不能为空');
+                        $('#add_app_svn_password')[0].focus();
+                        return false;
+				    }
+				}
+				if(operation_content.indexOf("GIT更新")>-1){
+					app_git_url=$.trim($('#add_app_git_url').val());
+                    app_git_user=$.trim($('#add_app_git_user').val());
+                    app_git_password=$.trim($('#add_app_git_password').val());
+                    app_git_branch=$.trim($('#add_app_git_branch').val());
+                    if(app_git_url.length < 1){
+                        $('#add_app_git_url_help').text('该项不能为空');
+                        $('#add_app_git_url')[0].focus();
+					    return false;
+                    }
+                    if(app_git_user.length <1){
+                        $('#add_app_git_user_help').text('该项不能为空');
+                        $('#add_app_git_user')[0].focus();
+                        return false;
+				    }
+				    if(app_git_password.length <1){
+                        $('#add_app_git_password_help').text('该项不能为空');
+                        $('#add_app_git_password')[0].focus();
+                        return false;
+				    }
+				    if(app_git_branch.length <1){
+                        $('#add_app_git_branch_help').text('该项不能为空');
+                        $('#add_app_git_branch')[0].focus();
+                        return false;
+				    }
+				}
 				if(operation_content.indexOf("同步文件")>-1){
 					sync_file_style = $("input[name='add_sync_file_style']:checked").val();
                     operation_arguments = operation_arguments+'"' + sync_file_style_key +'":r"'+ sync_file_style +'",' ;
@@ -988,6 +1145,10 @@
                         'app_svn_url':app_svn_url,
                         'app_svn_user':app_svn_user,
                         'app_svn_password':app_svn_password,
+                        'app_git_url':app_git_url,
+                        'app_git_user':app_git_user,
+                        'app_git_password':app_git_password,
+                        'app_git_branch':app_git_branch,
                         'execution_style':execution_style,
                         'operation_content':operation_content,
                         'operation_arguments':'{'+operation_arguments+'}',
@@ -1019,7 +1180,7 @@
 //            点击删除填充模态框
             $('.delete_app').click(function () {
                 $('.hidden_app_name').val($(this).parent().siblings('.data_app_name').html());
-                $('input[name=delete_app_file_select]').removeAttr('checked');
+                $('input[name=delete_app_file_select]').eq(1).click();
                 $('.delete_app_file_select_help').html('');
             });
 
@@ -1104,7 +1265,7 @@
 				});
             });
 
-//            点击 发布 按钮跳出svn版本输入模态框等操作
+//            点击 发布 按钮跳出svn/git版本输入模态框等操作
             $('.release_app').click(function () {
                 $('#release_svn_version_modal').modal('toggle');
 //                清空模态框内容
@@ -1229,7 +1390,7 @@
             $('.app_single_release_btn').click(function () {
                 var single_cmd = $.trim($(this).text());
                 $('.single_release_svn_version').val('');
-                if(single_cmd == 'SVN更新'){
+                if(single_cmd == 'SVN更新' || single_cmd == 'GIT更新'){
                     $('.single_release_svn_version').removeClass('hidden');
                 }else{
                     $('.single_release_svn_version').addClass('hidden');
@@ -1512,44 +1673,13 @@
                 }
             });
 
-
-            getForm();
-
-            function getForm(page) {
-                page = 1;
-                $.ajax({
-					url:"{%url 'appreleaselist-list'%}",
-					type:'GET',
-					dataType:'json',
-                    //如果数据是列表即数组的话要加下面这个traditional不然传不过去
-					traditional:true,
-					data:{
-						'page':page
-
-					},
-					success:function(data){
-						console.log(data.results);
-						 $.each(data.results,function (index,content) {
-                                 $('#tbSeq').append(
-                                     '<tr class="trSeq">' +
-                                     '<td><input type="checkbox" name="checkItem" /></td>' +
-                                     '<td class="data_app_name">'+content.app_name+'</td>' +
-                                     '<td class="data_minion_id">'+data.minion_id+'</td>' +
-                                     '</tr>'
-                                 )
-
-                             });
-					}
-				});
-            }
-
 		});
 
 </script>
 
 {% endblock %}
 
-{% block panel-title_content %}新应用发布{% endblock %}
+{% block panel-title_content %}应用发布{% endblock %}
 
 {% block panel_body_content %}
 
@@ -1591,7 +1721,7 @@
                   </div>
 
 
-            </div>
+                </div>
 
         </div>
         <table class="table table-hover  table-bordered table-striped  table-condensed" >
@@ -1604,13 +1734,13 @@
                   <th width="120px">Minion_ID</th>
                   <th width="17%">操作步骤</th>
                   <th  width="145px" >应用操作</th>
-                  <th width="220px" style="text-align: left;">SVN版本比对</th>
+                  <!--<th width="220px" style="text-align: left;">SVN版本比对</th>-->
                   <th width="220px" style="">发布操作</th>
                   <th width="6%">发布状态</th>
 
               </tr>
             </thead>
-            <tbody id="tbSeq">
+            <tbody>
                 {% for data in data_list%}
                 <tr class="trSeq">
                     <td><input type="checkbox" name="checkItem" /></td>
@@ -1627,18 +1757,19 @@
                         <button type="button" class="btn btn-danger btn-sm delete_app" data-toggle="modal" data-target="#delete_app_modal">删除</button>
                         {% endif %}
                     </td>
-                    <td  style="padding: 0 0 0 3px;text-align: left;">应用:
-                        {% if data.app_svn_version %}
-                        <span class="data_app_svn_version" style="color: royalblue;">{{ data.app_svn_version }}</span>
-                        {% else %}
-                        <span class="data_app_svn_version" style="color: #CC5522">未检出</span>
-                        {% endif %}
-                        　库:<span class="data_server_svn_version" style="color: #CC5522">未检查</span>
-                        　{% if data.app_svn_version %}
-                        <button type="button" class="btn btn-info btn-sm check_svn " style="">检查</button>
-                        {% else%}
-                        <button type="button" class="btn btn-info btn-sm check_svn" disabled="disabled">检查</button>
-                        {% endif %}</td>
+                    <!--<td  style="padding: 0 0 0 3px;text-align: left;">应用:-->
+                        <!--{% if data.app_svn_version %}-->
+                        <!--<span class="data_app_svn_version" style="color: royalblue;">{{ data.app_svn_version }}</span>-->
+                        <!--{% else %}-->
+                        <!--<span class="data_app_svn_version" style="color: #CC5522">未检出</span>-->
+                        <!--{% endif %}-->
+                        <!--　库:<span class="data_server_svn_version" style="color: #CC5522">未检查</span>-->
+                        <!--　{% if data.app_svn_version %}-->
+                        <!--<button type="button" class="btn btn-info btn-sm check_svn " style="">检查</button>-->
+                        <!--{% else%}-->
+                        <!--<button type="button" class="btn btn-info btn-sm check_svn" disabled="disabled">检查</button>-->
+                        <!--{% endif %}-->
+                    <!--</td>-->
 
                     <td class="data_release_operation" style="padding: 0;">
                         <button type="button" class="btn btn-primary btn-sm release_app" >发布</button>
@@ -1681,6 +1812,11 @@
                     <td class="data_app_svn_url hidden">{{ data.app_svn_url }}</td>
                     <td class="data_app_svn_user hidden">{{ data.app_svn_user }}</td>
                     <td class="data_app_svn_password hidden">{{ data.app_svn_password }}</td>
+                    <td class="data_app_git_url hidden">{{ data.app_git_url }}</td>
+                    <td class="data_app_git_user hidden">{{ data.app_git_user }}</td>
+                    <td class="data_app_git_password hidden">{{ data.app_git_password }}</td>
+                    <td class="data_app_git_branch hidden">{{ data.app_git_branch}}</td>
+                    <td class="data_app_git_co_status hidden">{{ data.app_git_co_status}}</td>
                     <td class="data_app_svn_co_path hidden">{{ data.app_svn_co_path }}</td>
                     <td class="data_app_svn_version_success hidden">{{ data.app_svn_version_success }}</td>
                     <td class="data_execution_style hidden">{{ data.execution_style }}</td>
@@ -1827,7 +1963,7 @@
                                 <label class="control-label  " style="color: #FF0000;" >*</label>
 							</div>
 
-                            <div class="form-group">
+                            <div class="form-group app_svn_info hidden">
 										<label class="control-label col-sm-2 " for="add_app_svn_url">SVN地址:</label>
                                 <div class="col-sm-8">
 										<input type="text" class="form-control" id="add_app_svn_url"
@@ -1837,7 +1973,7 @@
                                 <label class="control-label  " style="color: #FF0000;" >*</label>
 							</div>
 
-							<div class="form-group">
+							<div class="form-group app_svn_info hidden">
 										<label class="control-label col-sm-2 " for="add_app_svn_user">SVN账户:</label>
                                 <div class="col-sm-8">
 
@@ -1850,7 +1986,7 @@
                                 <label class="control-label  " style="color: #FF0000;" >*</label>
 							</div>
 
-                            <div class="form-group">
+                            <div class="form-group app_svn_info hidden">
 										<label class="control-label col-sm-2 " for="add_app_svn_password">SVN密码:</label>
                                 <div class="col-sm-8">
                                     <!--防止自动填充-->
@@ -1858,6 +1994,51 @@
 										<input type="password" name="fuck_pwd"  class="form-control" id="add_app_svn_password"
 									   style="font-size: 14px;background-color: white;"  autocomplete="new-password"  required="required" >
 									    <span class="" id="add_app_svn_password_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+							</div>
+
+
+
+                            <div class="form-group app_git_info hidden">
+										<label class="control-label col-sm-2 " for="add_app_git_url">git地址:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="add_app_git_url"
+									    style="font-size: 14px;"  required="required" placeholder="暂不支持ssh的git地址">
+									    <span class="" id="add_app_git_url_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+							</div>
+
+							<div class="form-group app_git_info hidden">
+								<label class="control-label col-sm-2 " for="add_app_git_user">git账户:</label>
+                                <div class="col-sm-3">
+
+										<input type="text" name="fuck_user" class="form-control" id="add_app_git_user"
+									   style="font-size: 14px;" autocomplete="off" required="required" >
+                                    <!--防止自动填充  注意位子要放在下面passwd中间-->
+                                        <input type="text" name="fuck_user" style="display:none;">
+									    <span class="" id="add_app_git_user_help" style="color: #FF0000;">　</span>
+								</div>
+                                <div class="pull-left"><label class="control-label  " style="color: #FF0000;" >*</label></div>
+
+                                <label class="control-label col-sm-2 " for="add_app_git_password">git密码:</label>
+                                <div class="col-sm-3">
+                                    <!--防止自动填充-->
+                                        <input type="password" name="fuck_pwd" style="display:none;">
+										<input type="password" name="fuck_pwd"  class="form-control" id="add_app_git_password"
+									   style="font-size: 14px;background-color: white;"  autocomplete="new-password"  required="required" >
+									    <span class="" id="add_app_git_password_help" style="color: #FF0000;">　</span>
+								</div>
+                                <label class="control-label  " style="color: #FF0000;" >*</label>
+							</div>
+
+                            <div class="form-group app_git_info hidden">
+								<label class="control-label col-sm-2 " for="add_app_git_branch">git分支:</label>
+                                <div class="col-sm-4">
+										<input type="text" class="form-control" id="add_app_git_branch"
+									   style="font-size: 14px;" required="required" value="master">
+									    <span class="" id="add_app_git_branch_help" style="color: #FF0000;">　</span>
 								</div>
                                 <label class="control-label  " style="color: #FF0000;" >*</label>
 							</div>
@@ -1884,12 +2065,13 @@
                                         <h3 class="panel-title " style="font-size: 12px;">可选的操作</h3>
                                     </div>
                                     <select multiple class="form-control panel-body" id="add_select_operation" style="padding: 0  0 0 15px;border-top-right-radius: 0;border-top-left-radius: 0;">
-                                            <option value="SVN更新">SVN更新</option>
-                                            <option value="同步文件">同步文件</option>
-                                            <option value="应用停止">应用停止</option>
-                                            <option value="应用启动">应用启动</option>
-                                            <option value="执行命令1">执行命令1</option>
-                                            <option value="执行命令2">执行命令2</option>
+                                        <option value="SVN更新">SVN更新</option>
+                                        <option value="GIT更新">GIT更新</option>
+                                        <option value="同步文件">同步文件</option>
+                                        <option value="应用停止">应用停止</option>
+                                        <option value="应用启动">应用启动</option>
+                                        <option value="执行命令1">执行命令1</option>
+                                        <option value="执行命令2">执行命令2</option>
                                     </select>
                                 </div>
 
@@ -1920,10 +2102,10 @@
                                     <label class="control-label col-sm-3 " >文件同步方式:</label>
                                 <div class="col-sm-8">
                                 <label class="radio-inline">
-                                <input type="radio" class="add_sync_file_style" name="add_sync_file_style"  value="check_file" data-toggle="tooltip" title="保证svn目录内容和应用目录内容一致性" checked> 差异比对
+                                <input type="radio" class="add_sync_file_style" name="add_sync_file_style"  value="check_file" data-toggle="tooltip" title="保证svn/git目录内容和应用目录内容一致性" > 差异比对
                                  </label>
                                 <label class="radio-inline">
-                                <input type="radio" class="add_sync_file_style" name="add_sync_file_style"   value="not_check_file" data-toggle="tooltip" title="同步svn文件，对应用目录下多余文件不进行操作"> 不比对差异
+                                <input type="radio" class="add_sync_file_style" name="add_sync_file_style"   value="not_check_file" data-toggle="tooltip" title="同步svn文件，对应用目录下多余文件不进行操作" checked> 不比对差异
                                 </label>
                                 </div>
                             </div>
@@ -2148,12 +2330,42 @@
 							</div>
 
                             <div class="form-group">
-										<label class="control-label col-sm-3 " for="view_app_svn_co_path">控制台SVN检出目录:</label>
+										<label class="control-label col-sm-3 " for="view_app_svn_co_path">SVN/GIT检出目录:</label>
                                 <div class="col-sm-8">
 										<input type="text" class="form-control" id="view_app_svn_co_path"
 									    style="font-size: 14px;"  readonly="readonly">
 								</div>
 							</div>
+                            
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_git_url">git地址:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_git_url"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_git_user">git账户:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_git_user"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+                            <div class="form-group">
+										<label class="control-label col-sm-3 " for="view_app_git_co_status">git克隆状态:</label>
+                                <div class="col-sm-8">
+										<input type="text" class="form-control" id="view_app_git_co_status"
+									    style="font-size: 14px;"  readonly="readonly">
+								</div>
+							</div>
+
+
+                            </form>
+                        </div>
+                    <div class="col-sm-6">
+                        <form class="form-horizontal " role="form">
 
                             <div class="form-group">
 										<label class="control-label col-sm-3 " for="view_app_svn_version_success">最近一次成功发布SVN版本:</label>
@@ -2170,10 +2382,7 @@
 									    style="font-size: 14px;" readonly="readonly">
 								</div>
 							</div>
-                            </form>
-                        </div>
-                    <div class="col-sm-6">
-                        <form class="form-horizontal " role="form">
+
                             <div class="form-group">
 										<label class="control-label col-sm-3 " for="view_execution_style">多主机执行顺序:</label>
                                 <div class="col-sm-8">
@@ -2266,16 +2475,18 @@
                 <!--隐藏属性，用来获取触发模态框的那条记录的相关数据-->
                 <input type="hidden" class="hidden_app_name"/>
                 <p style="color: #0063DC;">是否要删除应用目录和应用备份目录</p>
-                <div class="form-group " id="" style="text-align: center;margin-bottom: 0;">
+                <form class="form-horizontal" role="form">
+                    <div class="form-group " id="" style="text-align: center;margin-bottom: 0;">
                     <label class="radio-inline" style="margin-right: 20px;">
                     <input type="radio" class="delete_app_file_select" name="delete_app_file_select"  value="delete_app_file" > 是
                      </label>
                     <label class="radio-inline">
-                    <input type="radio" class="delete_app_file_select" name="delete_app_file_select"   value="not_delete_app_file" > 否
+                    <input type="radio" class="delete_app_file_select" name="delete_app_file_select"   value="not_delete_app_file" checked> 否
                     </label>
                     <p class=" delete_app_file_select_help " style="color: #FF0000;margin-bottom: 0;" ></p>
                     <!--</div>-->
                 </div>
+                </form>
             </div>
             <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->
             <div class="modal-footer" style="height:100%;">
@@ -2290,7 +2501,7 @@
 <div class="modal fade juzhong loading_modal " data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog"  aria-hidden="true" >
 	<div class="modal-dialog" style="width:100px;">
 		<div class="modal-content" style="background-color: rgba(255,255,255,0.5);">
-				<img src="../static/images/loading.gif"  alt="未加载" >
+				<img src="../../static/images/loading.gif" alt="未加载" >
 		</div>
 	</div>
 </div>
@@ -2338,7 +2549,7 @@
 	</div><!-- /.modal -->
 </div>
 
-<!--SVN版本输入提示框-->
+<!--SVN/GIT版本输入提示框-->
 <div class="modal fade juzhong " id="release_svn_version_modal" tabindex="-1" role="dialog" aria-labelledby="release_svn_version_lable" aria-hidden="true" data-backdrop="static">
     <div class="modal-dialog">
         <!--下面这个modal-content的div可以调整整个模态框的大小-->
@@ -2347,12 +2558,12 @@
                 <form class="form-horizontal" role="form">
                      <div class="form-group" style="margin: 0;">
                         <div class="col-sm-11">
-                          <input type="text" class="form-control" id="release_svn_version" placeholder="SVN版本号" style="padding-left: 0;" autocomplete="off">
+                          <input type="text" class="form-control" id="release_svn_version" placeholder="SVN/GIT版本号" style="padding-left: 0;" autocomplete="off">
                           <input type="text" class="form-control hidden" id="release_style"  >
                           <input type="text" class="form-control hidden" id="trSeq" >
                         </div>
                          <div class="col-sm-11">
-                            <label class="control-label" style="padding-left: 0;text-align: left;" id="release_svn_version_help">请输入SVN版本号，为空则默认为最新</label>
+                            <label class="control-label" style="padding-left: 0;text-align: left;" id="release_svn_version_help">请输入SVN/GIT版本号，为空则默认为最新</label>
                          </div>
                       </div>
                 </form>
@@ -2429,7 +2640,7 @@
                 <input type="hidden" class="single_release_trSeq"/>
                 <p style="font-weight: bold;">应用：<span class="single_operation_app_name"></span></p>
                 <p style="font-weight: bold;">操作：<span class="single_cmd"></span></p>
-                <input  class="single_release_svn_version hidden" placeholder="SVN版本号,不填默认最新" style="border-radius: 5px;"/>
+                <input  class="single_release_svn_version hidden" placeholder="SVN/GIT版本号,不填默认最新" style="border-radius: 5px;width: 250px;"/>
                 <p style="font-weight: bold;color: #ff0084;">确认要单独执行操作吗？</p>
             </div>
             <!--下面这个modal-footer调整高度的话是调整最下面一行的高度-->

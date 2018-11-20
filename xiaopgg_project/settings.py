@@ -102,7 +102,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'xpgg_oms.views.views.global_setting'   # 添加在这里django启动的时候就会运行，全局使用的东西都配置在这方法里
+                'xpgg_oms.views.v_general.global_setting'   # 添加在这里django启动的时候就会运行，全局使用的东西都配置在这方法里
             ],
         },
     },
@@ -210,10 +210,10 @@ AUTH_USER_MODEL = 'xpgg_oms.MyUser'
 # 自定义日志输出信息
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': True,
+    'disable_existing_loggers': False,
     'formatters': {
         'standard': {
-            'format': '%(asctime)s [%(threadName)s:%(thread)d] [%(name)s:%(lineno)d] [%(module)s:%(funcName)s] [%(levelname)s]- %(message)s'}  # 日志格式
+            'format': '%(asctime)s  [%(levelname)s]- %(message)s'},  # 日志格式
     },
     'filters': {
     },
@@ -223,64 +223,49 @@ LOGGING = {
             'class': 'django.utils.log.AdminEmailHandler',
             'include_html': True,
             },
-        # 下面是django自带的最详细的输出
+
         'default': {
             'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs/all.log'),     # 日志输出文件，根目录下需要手动新建
+            'class': 'logging.handlers.RotatingFileHandler',  # 这个类是写入文件使用的
+            'filename': os.path.join(BASE_DIR, 'logs/accecss.log'),     # 日志输出文件，根目录下需要手动新建
             'maxBytes': 1024*1024*5,                  # 文件大小5M
             'backupCount': 5,                         # 备份份数
             'formatter': 'standard',                   # 使用哪种formatters日志格式上面定义了standard
         },
-        # 下面是django自带的控制台输出
+
         'console': {
             'level': 'INFO',
-            'class': 'logging.StreamHandler',
+            'class': 'logging.StreamHandler',  # 这个类是输出到控制台使用的stream
             'formatter': 'standard'
         },
-        # 下面是django自带的5xx或者4xx错误记录在script.log里
+
         'request_handler': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs/script.log'),
+            'filename': os.path.join(BASE_DIR, 'logs/error.log'),
             'maxBytes': 1024*1024*5,
             'backupCount': 5,
             'formatter': 'standard',
             },
-        # 下面是django自带的脚本错误记录
-        'scprits_handler': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR,'logs/script.log'),
-            'maxBytes': 1024*1024*5,
-            'backupCount': 5,
-            'formatter': 'standard',
-            }
     },
     # 下面是定义日志器
     'loggers': {
-
+        # django自带父日志器
         'django': {
             'handlers': ['default', 'console'],
-            'level': 'DEBUG',
-            'propagate': False
+            'propagate': True
         },
-
+        # django自带的5xx或者4xx错误记录在script.log里
         'django.request': {
             'handlers': ['request_handler'],
-            'level': 'DEBUG',
-            'propagate': False,  # 是否继承父类
+            'level': 'ERROR',
+            'propagate': False,  # 是否继承父类即上面这个django
             },
-        'scripts': {
-            'handlers': ['scprits_handler'],
-            'level': 'INFO',
-            'propagate': False
-        },
+
         # 下面是给views调用使用的
         'xpgg_oms.views': {
             'handlers': ['default', 'console'],
-            'level': 'DEBUG',
-            'propagate': True
+            'level': 'INFO',
         },
     }
 }
