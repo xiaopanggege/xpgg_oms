@@ -1,5 +1,5 @@
 from django.conf.urls import url, include
-from . import views
+from .views import views
 
 # drf的router
 from rest_framework.routers import DefaultRouter
