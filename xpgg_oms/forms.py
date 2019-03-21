@@ -139,7 +139,7 @@ def app_group_validate(value):
     for app_group in value.split(','):
         is_app_group_exist = AppGroup.objects.filter(app_group_name=app_group).exists()
         if not is_app_group_exist:
-            raise ValidationError('应用发布组列表中没有应用组名称：%s 的记录' % app_name)
+            raise ValidationError('应用发布组列表中没有应用组名称：%s 的记录' % app_group)
 
 
 # 发布系统 应用授权  更新应用授权表单添加权限验证 主
