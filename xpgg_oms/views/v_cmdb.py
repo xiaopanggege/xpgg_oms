@@ -167,7 +167,7 @@ def server_list_ajax(request):
                                 'kernel': row[9].value, 'product_name': row[10].value, 'ipv4_address': row[11].value,
                                 'mac_address': row[12].value, 'mem_total': row[13].value, 'mem_explain': row[14].value,
                                 'disk_total': row[15].value, 'disk_explain': row[16].value, 'minion_id': row[17].value,
-                                'idc_name': row[18].value, 'idc_num': row[17].value, 'login_ip': row[20].value,
+                                'idc_name': row[18].value, 'idc_num': row[19].value, 'login_ip': row[20].value,
                                 'login_port': row[21].value, 'login_user': row[22].value,
                                 'login_password': row[23].value, 'description': row[24].value}
                         obj = ServerListAddForm(data)
