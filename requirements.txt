@@ -18,7 +18,7 @@ et-xmlfile==1.0.1
 idna==2.6
 jdcal==1.4
 kombu==4.2.1
-lxml==4.2.2
+lxml==4.6.3
 Markdown==2.6.11
 multiprocess==0.70.5
 olefile==0.45.1
