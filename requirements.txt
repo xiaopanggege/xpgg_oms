@@ -36,5 +36,5 @@ scapy==2.4.0
 scapy-python3==0.23
 six==1.11.0
 tzlocal==1.5.1
-urllib3==1.22
+urllib3==1.26.5
 vine==1.1.4
