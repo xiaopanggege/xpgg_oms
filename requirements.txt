@@ -24,7 +24,7 @@ multiprocess==0.70.5
 olefile==0.45.1
 openpyxl==2.5.3
 pexpect==4.5.0
-Pillow==5.1.0
+Pillow==8.2.0
 psutil==5.4.5
 ptyprocess==0.5.2
 PyMySQL==0.8.1
