@@ -2,7 +2,7 @@
 >本人自学python，正好工作中使用saltstack，为了不生疏所学python所以自己弄了个平台，当做学习巩固知识。  
 目前平台还在开发中并不是一个完成品，前端技术渣渣每次都要一点点设计页面和js耗时比写后端还久o(╯□╰)o 
    
->有兴趣的朋友可以参考一下&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;欢迎交流QQ:175714259
+>有兴趣的朋友可以参考一下&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;欢迎交流QQ群:429350669
 
 ***
 >**环境**：  
